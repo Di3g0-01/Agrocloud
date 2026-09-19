@@ -1,0 +1,10 @@
+{
+  "description": "Streamline incident management and system monitoring for clients with features for tracking issues, documenting processes, and configuring instances.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
