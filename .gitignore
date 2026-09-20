@@ -1,29 +1,120 @@
-# Dependencies
-node_modules/
-.pnpm-store/
+# ==========================================
+# Java
+# ==========================================
 
-# Build outputs
-dist/
-build/
+# Compiled class files
+*.class
 
-# Logs
+# Log files
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
 
-# Environment
-.env
-.env.local
-.env.*.local
+# Package files
+*.jar
+*.war
+*.ear
 
-# IDE & System
-.vscode/
+# JVM crash logs
+hs_err_pid*
+
+# ==========================================
+# Maven
+# ==========================================
+
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+.flattened-pom.xml
+
+# ==========================================
+# Gradle
+# ==========================================
+
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ==========================================
+# IntelliJ IDEA
+# ==========================================
+
 .idea/
-.DS_Store
-Thumbs.db
-desktop.ini
+*.iws
+*.iml
+*.ipr
 
-# Temporary extraction files
-*.txt
+# ==========================================
+# Visual Studio Code
+# ==========================================
+
+.vscode/
+
+# ==========================================
+# Eclipse
+# ==========================================
+
+.classpath
+.project
+.settings/
+
+# ==========================================
+# NetBeans
+# ==========================================
+
+/nbproject/private/
+/nbbuild/
+/dist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ==========================================
+# OS generated files
+# ==========================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# ==========================================
+# Environment / Secrets
+# ==========================================
+
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# Spring Boot
+# ==========================================
+
+# Local configuration files
+application-local.properties
+application-local.yml
+application-local.yaml
+
+# ==========================================
+# Temporary files
+# ==========================================
+
+*.tmp
+*.temp
+*.swp
+*.swo
