@@ -2,7 +2,71 @@
 
 @layer base {
   body {
-    @apply bg-slate-900 text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white;
+    @apply bg-white text-gray-900 font-sans antialiased selection:bg-lime-400 selection:text-gray-900;
+  }
+
+  /* Form Controls, Inputs & Selects Standardizing */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="search"],
+  input[type="date"],
+  input[type="datetime-local"],
+  select,
+  textarea {
+    color: #111827 !important; /* High contrast text gray-900 */
+    background-color: #ffffff !important;
+    border-color: #d1d5db !important; /* Consistent border gray-300 */
+    border-radius: 0.75rem !important; /* rounded-xl */
+    font-size: 0.875rem !important; /* text-sm */
+    line-height: 1.25rem !important;
+    font-family: Inter, sans-serif !important;
+  }
+
+  /* Custom Native Select Dropdown Option Menu Styling */
+  select option {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    font-size: 0.875rem !important;
+    padding: 8px 12px !important;
+  }
+
+  select option:hover,
+  select option:focus,
+  select option:active,
+  select option:checked {
+    background-color: #ecfccb !important; /* lime-100 */
+    color: #1a2e05 !important; /* dark lime */
+    font-weight: 600 !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af !important; /* Visible placeholder gray-400 */
+    opacity: 1 !important;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: 2px solid transparent !important;
+    outline-offset: 2px !important;
+    border-color: #a3e635 !important; /* lime-400 */
+    box-shadow: 0 0 0 2px #a3e635 !important;
+  }
+
+  /* Calendar / DatePicker popup styling */
+  ::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(0.3) sepia(1) saturate(5) hue-rotate(40deg); /* Brand lime tint */
+    padding: 4px;
+    border-radius: 4px;
+  }
+
+  ::-webkit-calendar-picker-indicator:hover {
+    background-color: #f7fee7; /* lime-50 */
   }
 }
 
@@ -13,14 +77,17 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94a3b8;
 }
+
+
+
