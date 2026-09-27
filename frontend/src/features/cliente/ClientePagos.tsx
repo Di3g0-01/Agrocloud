@@ -2,7 +2,7 @@ import { useState } from "react";
 import { PAGOS_MOCK } from "../../data/cliente";
 import type { Pago } from "../../types/cliente";
 
-function PagoDetalleDrawer({ pago, onClose }: { pago: Pago; onClose: () => void }) {
+function PagoDetalleDrawer({ pago, organizationName, onClose }: { pago: Pago; organizationName: string; onClose: () => void }) {
   const subtotal = pago.monto;
   const impuesto = 0;
   return (
@@ -43,7 +43,7 @@ function PagoDetalleDrawer({ pago, onClose }: { pago: Pago; onClose: () => void 
           <div>
             <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-3">Datos de facturación</p>
             <div className="bg-gray-50 rounded-xl p-4 space-y-1.5 text-xs">
-              {[["Razón social", "Finca Los Pinos"], ["NIT", "CF"], ["Dirección", "Guatemala, Guatemala"]].map(([k, v]) => (
+              {[["Razón social", organizationName], ["NIT", "CF"], ["Dirección", "Guatemala, Guatemala"]].map(([k, v]) => (
                 <div key={k} className="flex justify-between">
                   <span className="text-gray-400">{k}</span>
                   <span className="text-gray-700">{v}</span>
@@ -79,7 +79,7 @@ function PagoDetalleDrawer({ pago, onClose }: { pago: Pago; onClose: () => void 
   );
 }
 
-export function ClientePagos() {
+export function ClientePagos({ organizationName }: { organizationName: string }) {
   const [search, setSearch] = useState("");
   const [yearFilter, setYearFilter] = useState("2026");
   const [detalle, setDetalle] = useState<Pago | null>(null);
@@ -192,7 +192,7 @@ export function ClientePagos() {
         </div>
       )}
 
-      {detalle && <PagoDetalleDrawer pago={detalle} onClose={() => setDetalle(null)} />}
+      {detalle && <PagoDetalleDrawer pago={detalle} organizationName={organizationName} onClose={() => setDetalle(null)} />}
     </div>
   );
 }

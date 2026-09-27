@@ -10,7 +10,6 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<UserRole>;
   register: (nombre: string, email: string, pass: string, empresa?: string) => Promise<UserRole>;
   logout: () => void;
-  setSimulatedRole: (role: UserRole) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,7 +46,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (nombre: string, email: string, pass: string, empresa?: string): Promise<UserRole> => {
-    const res = await registerApi({ nombre, email, password: pass, empresa });
+    const res = await registerApi({
+      organizationName: empresa?.trim() || nombre.trim(),
+      contactName: nombre.trim(),
+      email,
+      password: pass,
+    });
     setToken(res.token);
     setUser(res.user);
     localStorage.setItem('agrocloud_token', res.token);
@@ -62,27 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('agrocloud_user');
   };
 
-  const setSimulatedRole = (role: UserRole) => {
-    if (!user) {
-      const mockUser: User = {
-        id: 'usr-simulated',
-        nombre: role === 'ADMIN' ? 'Admin Diego' : role === 'SOPORTE' ? 'Soporte Técnico' : 'Diego Ovalle',
-        email: `${role.toLowerCase()}@agrocloud.gt`,
-        rol: role,
-        empresa: 'Finca Los Pinos',
-        estado: 'ACTIVO',
-      };
-      setUser(mockUser);
-      setToken('mock-jwt-token');
-      localStorage.setItem('agrocloud_token', 'mock-jwt-token');
-      localStorage.setItem('agrocloud_user', JSON.stringify(mockUser));
-    } else {
-      const updatedUser = { ...user, rol: role };
-      setUser(updatedUser);
-      localStorage.setItem('agrocloud_user', JSON.stringify(updatedUser));
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -93,7 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         logout,
-        setSimulatedRole,
       }}
     >
       {children}

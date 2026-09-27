@@ -1,6 +1,7 @@
 export type AdminPage =
   | "dashboard"
   | "clientes"
+  | "usuarios"
   | "instancias"
   | "suscripciones"
   | "pagos"

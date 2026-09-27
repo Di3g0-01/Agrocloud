@@ -14,9 +14,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
 
   // Form states
   const [nombre, setNombre] = useState<string>('');
-  const [email, setEmail] = useState<string>('cliente@finca.gt');
-  const [password, setPassword] = useState<string>('password123');
-  const [empresa, setEmpresa] = useState<string>('Finca Los Pinos');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [empresa, setEmpresa] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
 
@@ -48,20 +48,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
       setErrorMsg('Error de autenticación. Verifica tus credenciales.');
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const fillQuickAccount = (type: 'cliente' | 'admin' | 'soporte') => {
-    setIsRegistering(false);
-    if (type === 'cliente') {
-      setEmail('cliente@finca.gt');
-      setPassword('password123');
-    } else if (type === 'admin') {
-      setEmail('admin@agrocloud.gt');
-      setPassword('admin123');
-    } else if (type === 'soporte') {
-      setEmail('soporte@agrocloud.gt');
-      setPassword('soporte123');
     }
   };
 
@@ -178,34 +164,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
               {submitting ? 'Procesando...' : isRegistering ? 'Crear Mi Cuenta' : 'Ingresar a la Plataforma'}
             </button>
           </form>
-
-          {/* Quick Demo Credentials Assistant */}
-          <div className="mt-6 pt-4 border-t border-slate-800">
-            <p className="text-[11px] font-semibold text-slate-400 mb-2">Acceso rápido para demostración:</p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => fillQuickAccount('cliente')}
-                className="px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-semibold text-emerald-400 hover:border-emerald-500 transition-colors"
-              >
-                Cliente
-              </button>
-              <button
-                type="button"
-                onClick={() => fillQuickAccount('admin')}
-                className="px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-semibold text-amber-400 hover:border-amber-500 transition-colors"
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => fillQuickAccount('soporte')}
-                className="px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[10px] font-semibold text-sky-400 hover:border-sky-500 transition-colors"
-              >
-                Soporte
-              </button>
-            </div>
-          </div>
 
           {/* Toggle Register / Login */}
           <div className="mt-6 text-center">

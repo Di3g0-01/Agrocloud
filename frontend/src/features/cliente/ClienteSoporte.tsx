@@ -3,7 +3,7 @@ import type { Ticket, TicketEstado, TicketPrioridad } from "../../types/cliente"
 import { TICKETS_INIT, C_INSTANCIAS } from "../../data/cliente";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 
-export function ClienteSoporte() {
+export function ClienteSoporte({ organizationName, initials }: { organizationName: string; initials: string }) {
   const [tickets, setTickets] = useState<Ticket[]>(TICKETS_INIT);
   const [search, setSearch] = useState("");
   const [detalle, setDetalle] = useState<Ticket | null>(null);
@@ -229,12 +229,12 @@ export function ClienteSoporte() {
                     <div key={i} className="flex gap-3">
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold
                         ${h.autor === "cliente" ? "bg-lime-100 text-lime-700" : "bg-blue-100 text-blue-700"}`}>
-                        {h.autor === "cliente" ? "FL" : "ST"}
+                        {h.autor === "cliente" ? initials : "ST"}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                           <span className="text-[10px] font-semibold text-gray-700">
-                            {h.autor === "cliente" ? "Finca Los Pinos" : "Soporte AgroCloud"}
+                            {h.autor === "cliente" ? organizationName : "Soporte AgroCloud"}
                           </span>
                           <span className="text-[10px] text-gray-400">{h.fecha}</span>
                         </div>

@@ -118,3 +118,7 @@ application-local.yaml
 *.temp
 *.swp
 *.swo
+
+# Local database backups
+backups/
+build-artifacts/

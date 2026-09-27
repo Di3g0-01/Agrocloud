@@ -1,8 +1,9 @@
 import { useState } from "react";
+import type { User } from "../../types";
 import { Toggle } from "../../components/ui";
 
-export function ClienteConfiguracion() {
-  const [perfil, setPerfil] = useState({ nombre: "Carlos Monterroso", correo: "carlos@fincalospinos.gt", telefono: "+502 4455 6677", nit: "1234567-8" });
+export function ClienteConfiguracion({ user, organizationName, initials }: { user: User; organizationName: string; initials: string }) {
+  const [perfil, setPerfil] = useState({ nombre: user.nombre, correo: user.email, telefono: user.telefono || "", nit: "" });
   const [perfilEdit, setPerfilEdit] = useState({ ...perfil });
   const [perfilDirty, setPerfilDirty] = useState(false);
   const [perfilOk, setPerfilOk] = useState(false);
@@ -74,10 +75,10 @@ export function ClienteConfiguracion() {
             {sectionHead("Perfil y organización", "Información de tu cuenta y datos de contacto.")}
 
             <div className="flex items-center gap-4 mb-6 pb-5 border-b border-gray-100">
-              <div className="w-14 h-14 rounded-full bg-lime-600 flex items-center justify-center text-white text-lg font-bold shrink-0">FL</div>
+              <div className="w-14 h-14 rounded-full bg-lime-600 flex items-center justify-center text-white text-lg font-bold shrink-0">{initials}</div>
               <div>
-                <p className="font-semibold text-gray-900">Finca Los Pinos</p>
-                <p className="text-xs text-gray-400">Organización · Plan Productor</p>
+                <p className="font-semibold text-gray-900">{organizationName}</p>
+                <p className="text-xs text-gray-400">Organización · Cliente</p>
               </div>
             </div>
 
@@ -145,7 +146,7 @@ export function ClienteConfiguracion() {
             <div className="space-y-4 mb-5">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Correo de acceso</label>
-                <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5 text-sm text-gray-500 select-none">carlos@fincalospinos.gt</div>
+                <div className="bg-gray-50 border border-gray-100 rounded-lg px-3 py-2.5 text-sm text-gray-500 select-none">{user.email}</div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1.5">Contraseña</label>
