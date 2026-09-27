@@ -1,4 +1,56 @@
-# AgroCloud con Docker
+# AgroCloud con Docker local
+
+Los archivos de Compose y las migraciones se comparten por Git. Cada integrante
+ejecuta Docker en su propia computadora; la base de datos, las claves, las imagenes
+y los contenedores no se suben al repositorio ni se despliegan en Railway.
+
+Hay dos recetas para los mismos dos servicios:
+
+- `docker-compose.yml` conserva la instalacion de esta computadora, con la imagen
+  original `agrocloud-backend:original-2026-09-22`, la red y el volumen existentes.
+- `docker-compose.team.yml` permite a un integrante nuevo construir la API desde
+  `backend/` y crear un volumen local nuevo. No necesita el archivo TAR original.
+
+No ejecutes ambas recetas en la misma computadora: usan los nombres
+`agrocloud-api` y `agrocloud-db` y los mismos puertos.
+
+## Primera ejecucion de un integrante nuevo
+
+1. Instala Docker Desktop, clona el repositorio y cambia a la rama del equipo.
+2. Copia `.env.example` a `.env` y sustituye `POSTGRES_PASSWORD` y `JWT_SECRET`
+   por valores privados. `JWT_SECRET` debe ser una clave aleatoria de al menos
+   32 bytes codificada en Base64. `.env` esta excluido de Git.
+3. Desde la raiz del repositorio ejecuta:
+
+   ```sh
+   docker compose -f docker-compose.team.yml up -d --build
+   ```
+
+Compose construye la API con la version de Java indicada en `backend/Dockerfile`,
+descarga PostgreSQL 16, crea solo `agrocloud-api` y `agrocloud-db` y guarda los
+datos en el volumen local `agrocloud-team-postgres-data`. Flyway crea las tablas
+desde las migraciones del repositorio. Cada instalacion comienza sin los usuarios
+ni los datos de otros integrantes.
+
+Comprueba `http://localhost:8080/actuator/health`. Deberia mostrar
+`"status":"UP"`. La primera construccion puede tardar mientras Docker descarga
+las imagenes y las dependencias.
+
+Despues de recibir cambios de Git, actualiza la API con:
+
+```sh
+git pull
+docker compose -f docker-compose.team.yml up -d --build
+```
+
+El contenedor de la API se reconstruye desde el codigo actualizado y los datos
+permanecen en el volumen. Para detenerlos usa
+`docker compose -f docker-compose.team.yml down` sin `-v`.
+
+El frontend sigue ejecutandose localmente desde `frontend/` con sus comandos de
+instalacion y desarrollo; esta receta de Docker administra solo la API y PostgreSQL.
+
+## Instalacion original de esta computadora
 
 La receta `docker-compose.yml` administra únicamente los servicios `agrocloud-api` y
 `agrocloud-db`. `agrocloud-api` se crea desde la imagen original entregada en
@@ -8,10 +60,10 @@ para ejecutar los cambios actuales sin reemplazar esa imagen. PostgreSQL usa el 
 La base publica el puerto 15432 solo en `127.0.0.1` para conectarse desde DataGrip
 en esta computadora. Ambos servicios se comunican por la red `agrocloud-net`.
 
-## Primera ejecución en otra computadora
+## Preparacion original de esta computadora
 
-Instala Docker Desktop, descarga este repositorio y consigue una copia de
-`agrocloud-backend.tar`. El TAR de la imagen no se guarda en Git. Desde la carpeta raíz:
+La receta original usa `agrocloud-backend.tar`. El TAR de la imagen no se guarda
+en Git. Si es necesario restaurar esta instalacion desde cero:
 
 1. Carga y etiqueta la imagen original:
 
@@ -56,7 +108,7 @@ del archivo `.env` local como base de datos, usuario y contraseña. Usa
 **Test Connection** antes de guardar. La conexión solo funciona en esta
 computadora mientras `agrocloud-db` está activo; no requiere otro contenedor.
 
-## Después de obtener cambios de Git
+## Despues de obtener cambios de Git en esta computadora
 
 ```sh
 git pull
