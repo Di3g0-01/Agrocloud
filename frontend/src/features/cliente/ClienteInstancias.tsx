@@ -4,12 +4,18 @@ import { CustomSelect } from "../../components/ui/CustomSelect";
 import { C_INSTANCIAS, C_PLAN, C_PLANTILLAS } from "../../data/cliente";
 import type { CInstancia } from "../../types/cliente";
 
-export function CInstanciaStatusBadge({ s }: { s: CInstancia["estado"] }) {
-  const cls = s === "Activa" ? "bg-lime-100 text-lime-700 border border-lime-300"
-    : s === "Reiniciando" ? "bg-amber-50 text-amber-700 border border-amber-200"
-    : s === "Suspendida" ? "bg-gray-100 text-gray-500 border border-gray-200"
+export function CInstanciaStatusBadge({ s }: { s: CInstancia["estado"] | string }) {
+  const label =
+    s === "active" || s === "Activa" || s === "OPERATIVA" ? "Operativa"
+    : s === "revision" || s === "EN_REVISION" || s === "Reiniciando" ? "En revisión"
+    : s === "suspended" || s === "SUSPENDIDA" || s === "Suspendida" ? "Suspendida"
+    : s === "terminated" || s === "DETENIDA" ? "Detenida"
+    : s;
+  const cls = s === "Activa" || s === "active" || s === "OPERATIVA" ? "bg-lime-100 text-lime-700 border border-lime-300"
+    : s === "Reiniciando" || s === "revision" ? "bg-amber-50 text-amber-700 border border-amber-200"
+    : s === "Suspendida" || s === "suspended" ? "bg-gray-100 text-gray-500 border border-gray-200"
     : "bg-red-50 text-red-600 border border-red-200";
-  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{s}</span>;
+  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{label}</span>;
 }
 
 export function SvgPaths({ d, className }: { d: string; className?: string }) {

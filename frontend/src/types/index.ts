@@ -26,7 +26,7 @@ export interface InstanciaDB {
   cliente: string;
   usuarioId: string;
   tipo: string;
-  estado: 'OPERATIVA' | 'EN_REVISION' | 'DETENIDA' | 'SUSPENDIDA';
+  estado: 'active' | 'revision' | 'suspended' | 'terminated';
   version: string;
   uptime: string;
   cpu: number;
@@ -46,7 +46,7 @@ export interface Suscripcion {
   planId: string;
   planNombre: string;
   usuarioId: string;
-  estado: 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA';
+  estado: 'pending_payment' | 'active' | 'suspended' | 'cancelled';
   fechaInicio: string;
   fechaProximoPago: string;
   monto: number;
