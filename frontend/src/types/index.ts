@@ -6,6 +6,7 @@ export interface User {
   email: string;
   rol: UserRole;
   empresa?: string;
+  telefono?: string;
   fechaRegistro?: string;
   estado?: 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO';
 }

@@ -4,6 +4,7 @@ import { LogoIcon } from "../../components/ui";
 export const adminNav = [
   { page: "dashboard" as AdminPage, label: "Dashboard", section: "PRINCIPAL", icon: "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" },
   { page: "clientes" as AdminPage, label: "Clientes", section: "GESTIÓN", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" },
+  { page: "usuarios" as AdminPage, label: "Usuarios", section: null, icon: "M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2m14-14a4 4 0 110 8m6 6v-2a4 4 0 00-3-3.87M9 11a4 4 0 100-8 4 4 0 000 8z" },
   { page: "instancias" as AdminPage, label: "Instancias", section: null, icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" },
   { page: "suscripciones" as AdminPage, label: "Suscripciones", section: null, icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" },
   { page: "pagos" as AdminPage, label: "Pagos", section: null, icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
@@ -14,7 +15,7 @@ export const adminNav = [
   { page: "documentacion" as AdminPage, label: "Documentación", section: null, icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
 ];
 
-export function AdminSidebar({ page, setPage, onLogout, open, onClose, isDark }: { page: AdminPage; setPage: (p: AdminPage) => void; onLogout: () => void; open: boolean; onClose: () => void; isDark?: boolean }) {
+export function AdminSidebar({ page, setPage, onLogout, open, onClose, isDark, userName }: { page: AdminPage; setPage: (p: AdminPage) => void; onLogout: () => void; open: boolean; onClose: () => void; isDark?: boolean; userName: string }) {
   const navigate = (p: AdminPage) => { setPage(p); onClose(); };
   return (
     <>
@@ -47,7 +48,7 @@ export function AdminSidebar({ page, setPage, onLogout, open, onClose, isDark }:
           <div className="flex items-center gap-2 px-1">
             <div className="w-6 h-6 rounded-full bg-green-700 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">DA</div>
             <div className="min-w-0 flex-1">
-              <p className="text-white text-xs font-medium truncate leading-none">David Admin</p>
+              <p className="text-white text-xs font-medium truncate leading-none">{userName}</p>
               <p className="text-[9px] text-white/40 truncate mt-0.5">Plataforma operativa</p>
             </div>
           </div>

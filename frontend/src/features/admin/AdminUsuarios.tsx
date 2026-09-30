@@ -1,125 +1,105 @@
-import { useState } from "react";
-import { CustomSelect } from "../../components/ui";
-import { USUARIOS_DATA } from "../../data/admin";
-import type { UsuarioEstado, UsuarioRol } from "../../types/admin";
+import { useEffect, useMemo, useState } from 'react';
+import { adminUserError, createAdminUser, getAdminUser, listAdminUsers, updateAdminUser, type AdminUser, type ApiRole, type ApiStatus } from '../../api/adminUsersApi';
 
-function UsuarioBadge({ estado }: { estado: UsuarioEstado }) {
-  const cls = estado === "Activo" ? "bg-lime-100 text-lime-700 border border-lime-300"
-    : estado === "Pendiente" ? "bg-amber-50 text-amber-700 border border-amber-200"
-    : "bg-red-50 text-red-600 border border-red-200";
-  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{estado}</span>;
-}
+const roles: Record<ApiRole, string> = { ADMINISTRADOR: 'Administrador', CLIENTE: 'Cliente', SOPORTE: 'Soporte' };
+const statuses: Record<ApiStatus, string> = { ACTIVO: 'Activo', PENDIENTE: 'Pendiente', SUSPENDIDO: 'Suspendido' };
+const blank = { organizationName: 'AgroCloud', contactName: '', email: '', phone: '', password: '', role: 'SOPORTE' as ApiRole, status: 'ACTIVO' as ApiStatus };
 
-function RolBadge({ rol }: { rol: UsuarioRol }) {
-  const cls = rol === "Administrador" ? "bg-purple-50 text-purple-700 border border-purple-200"
-    : rol === "Soporte" ? "bg-blue-50 text-blue-600 border border-blue-200"
-    : "bg-gray-100 text-gray-600 border border-gray-200";
-  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{rol}</span>;
-}
+export function AdminUsuarios({ currentUserId }: { currentUserId: string }) {
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<ApiRole | ''>('');
+  const [statusFilter, setStatusFilter] = useState<ApiStatus | ''>('');
+  const [mode, setMode] = useState<'create' | 'edit' | 'view' | null>(null);
+  const [selected, setSelected] = useState<AdminUser | null>(null);
+  const [form, setForm] = useState({ ...blank });
 
-export function AdminUsuarios() {
-  const [search, setSearch] = useState("");
-  const [rolFilter, setRolFilter] = useState("Todos");
-  const [estadoFilter, setEstadoFilter] = useState("Todos");
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  useEffect(() => {
+    listAdminUsers().then(setUsers).catch(e => setError(adminUserError(e))).finally(() => setLoading(false));
+  }, []);
 
-  const filtered = USUARIOS_DATA.filter(u =>
-    (rolFilter === "Todos" || u.rol === rolFilter) &&
-    (estadoFilter === "Todos" || u.estado === estadoFilter) &&
-    (u.nombre.toLowerCase().includes(search.toLowerCase()) || u.correo.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = useMemo(() => users.filter(user => {
+    const term = search.trim().toLowerCase();
+    return (!roleFilter || user.role === roleFilter)
+      && (!statusFilter || user.status === statusFilter)
+      && (!term || [user.contactName, user.organizationName, user.email].some(value => value?.toLowerCase().includes(term)));
+  }), [users, search, roleFilter, statusFilter]);
 
-  return (
-    <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
-      <div className="flex items-start justify-between mb-6 gap-4">
-        <div>
-          <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">Usuarios</h1>
-          <p className="text-sm text-gray-500 mt-1">Gestión de usuarios de la plataforma AgroCloud. (Los usuarios se registran de forma autónoma)</p>
-        </div>
-      </div>
+  const openCreate = () => { setForm({ ...blank }); setSelected(null); setError(''); setMode('create'); };
+  const openExisting = async (user: AdminUser, nextMode: 'edit' | 'view') => {
+    setError('');
+    try {
+      const fresh = await getAdminUser(user.id);
+      setSelected(fresh);
+      setForm({ organizationName: fresh.organizationName, contactName: fresh.contactName || '', email: fresh.email,
+        phone: fresh.phone || '', password: '', role: fresh.role, status: fresh.status });
+      setMode(nextMode);
+    } catch (e) { setError(adminUserError(e)); }
+  };
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "TOTAL USUARIOS", value: "52", sub: "Usuarios registrados", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z", color: "text-blue-500 bg-blue-50" },
-          { label: "USUARIOS ACTIVOS", value: "45", sub: "Con acceso activo", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-lime-600 bg-lime-50" },
-          { label: "ADMINISTRADORES", value: "3", sub: "Con acceso total", icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z", color: "text-purple-500 bg-purple-50" },
-          { label: "SUSPENDIDOS", value: "4", sub: "Acceso restringido", icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636", color: "text-red-500 bg-red-50" },
-        ].map(k => (
-          <div key={k.label} className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col items-start">
-            <div className="flex items-center gap-2 mb-3">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${k.color}`}>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">{k.icon.split(" M").map((d, i) => <path key={i} strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={i === 0 ? d : "M" + d} />)}</svg>
-              </div>
-              <span className="text-[10px] text-gray-400 uppercase tracking-wide font-medium">{k.label}</span>
-            </div>
-            <div className="text-3xl font-semibold text-gray-900">{k.value}</div>
-            <div className="text-xs text-gray-400 mt-1">{k.sub}</div>
-          </div>
-        ))}
-      </div>
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault(); setSaving(true); setError(''); setNotice('');
+    try {
+      if (mode === 'create') {
+        const created = await createAdminUser(form);
+        setUsers(previous => [created, ...previous]);
+        setNotice(`Cuenta de ${roles[created.role].toLowerCase()} creada. Ya puede iniciar sesión.`);
+      } else if (mode === 'edit' && selected) {
+        const updated = await updateAdminUser(selected.id, { ...form, password: form.password || undefined });
+        setUsers(previous => previous.map(user => user.id === updated.id ? updated : user));
+        setNotice('Usuario actualizado.');
+      }
+      setMode(null);
+    } catch (e) { setError(adminUserError(e)); }
+    finally { setSaving(false); }
+  };
 
-      <div className="flex flex-wrap items-center gap-3 mb-5">
-        <div className="relative flex-1 min-w-48">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar usuario..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-lime-400" />
-        </div>
-        <CustomSelect
-          value={rolFilter}
-          onChange={(val) => setRolFilter(val)}
-          options={["Todos", "Cliente", "Soporte", "Administrador"].map((r) => ({ value: r, label: r }))}
-        />
-        <CustomSelect
-          value={estadoFilter}
-          onChange={(val) => setEstadoFilter(val)}
-          options={["Todos", "Activo", "Pendiente", "Suspendido"].map((s) => ({ value: s, label: s }))}
-        />
-      </div>
-
-      <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
-        <table className="w-full min-w-max text-sm">
-          <thead>
-            <tr className="border-b border-gray-100 bg-gray-50">
-              {["Usuario", "Correo", "Rol", "Organización", "Estado", "Registro", "Último acceso", ""].map(h => (
-                <th key={h} className="px-5 py-3 text-left text-gray-400 font-medium text-xs uppercase tracking-wide whitespace-nowrap">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(u => (
-              <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-semibold text-gray-600 shrink-0">{u.nombre.split(" ").map(n => n[0]).join("").slice(0, 2)}</div>
-                    <span className="text-xs font-medium text-gray-900 whitespace-nowrap">{u.nombre}</span>
-                  </div>
-                </td>
-                <td className="px-5 py-4 text-xs text-gray-500 whitespace-nowrap">{u.correo}</td>
-                <td className="px-5 py-4"><RolBadge rol={u.rol} /></td>
-                <td className="px-5 py-4 text-xs text-gray-600 whitespace-nowrap">{u.org}</td>
-                <td className="px-5 py-4"><UsuarioBadge estado={u.estado} /></td>
-                <td className="px-5 py-4 text-xs text-gray-400 whitespace-nowrap">{u.registro}</td>
-                <td className="px-5 py-4 text-xs text-gray-400 whitespace-nowrap">{u.acceso}</td>
-                <td className="px-5 py-4 relative">
-                  <button onClick={() => setMenuOpen(menuOpen === u.id ? null : u.id)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
-                  </button>
-                  {menuOpen === u.id && (
-                    <>
-                      <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
-                      <div className="absolute right-4 top-10 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-1 w-40 text-xs">
-                        {["Ver usuario", "Editar", "Cambiar rol", "Suspender", "Eliminar"].map((a, i) => (
-                          <button key={a} onClick={() => setMenuOpen(null)} className={`w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors ${i === 4 ? "text-red-500" : "text-gray-700"}`}>{a}</button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="px-5 py-3 text-xs text-gray-400 border-t border-gray-50">{filtered.length} usuario{filtered.length !== 1 ? "s" : ""}</div>
-      </div>
+  return <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+    <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+      <div><h1 className="text-2xl font-semibold">Usuarios</h1><p className="text-sm text-gray-500 mt-1">Administra cuentas de clientes, soporte y administradores.</p></div>
+      <button onClick={openCreate} className="px-4 py-2 rounded-lg bg-green-700 text-white text-sm font-medium hover:bg-green-800">Agregar miembro de soporte</button>
     </div>
-  );
+    {notice && <p role="status" className="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-800 px-4 py-3 text-sm">{notice}</p>}
+    {error && !mode && <p role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">{error}</p>}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      {([['Total usuarios', users.length], ['Activos', users.filter(u => u.status === 'ACTIVO').length], ['Soporte', users.filter(u => u.role === 'SOPORTE').length], ['Suspendidos', users.filter(u => u.status === 'SUSPENDIDO').length]] as const).map(([label, count]) =>
+        <div key={label} className="bg-white border border-gray-100 rounded-xl p-4"><p className="text-xs text-gray-500">{label}</p><p className="text-2xl font-semibold mt-2">{count}</p></div>)}
+    </div>
+    <div className="flex flex-wrap gap-3 mb-4">
+      <input aria-label="Buscar usuario" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre, finca o correo" className="flex-1 min-w-56 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" />
+      <select aria-label="Filtrar por rol" value={roleFilter} onChange={e => setRoleFilter(e.target.value as ApiRole | '')} className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"><option value="">Todos los roles</option>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <select aria-label="Filtrar por estado" value={statusFilter} onChange={e => setStatusFilter(e.target.value as ApiStatus | '')} className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"><option value="">Todos los estados</option>{Object.entries(statuses).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+    </div>
+    <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
+      <table className="w-full min-w-[740px] text-sm"><thead className="bg-gray-50 text-left text-xs text-gray-500"><tr>{['Nombre', 'Correo', 'Rol', 'Organización', 'Estado', 'Registro', 'Acciones'].map(h => <th key={h} className="px-4 py-3 font-medium">{h}</th>)}</tr></thead>
+        <tbody>{filtered.map(user => <tr key={user.id} className="border-t border-gray-100">
+          <td className="px-4 py-3 font-medium">{user.contactName || user.organizationName}</td><td className="px-4 py-3">{user.email}</td>
+          <td className="px-4 py-3">{roles[user.role]}</td><td className="px-4 py-3">{user.organizationName}</td><td className="px-4 py-3">{statuses[user.status]}</td>
+          <td className="px-4 py-3">{new Date(user.createdAt).toLocaleDateString('es-GT')}</td>
+          <td className="px-4 py-3 whitespace-nowrap"><button onClick={() => openExisting(user, 'view')} className="text-green-700 hover:underline mr-3">Ver</button><button onClick={() => openExisting(user, 'edit')} className="text-green-700 hover:underline">Editar</button></td>
+        </tr>)}</tbody></table>
+      <p className="border-t border-gray-100 px-4 py-3 text-xs text-gray-500">{loading ? 'Cargando usuarios...' : `${filtered.length} usuario(s)`}</p>
+    </div>
+    {mode && <div className="fixed inset-0 z-50 bg-black/50 grid place-items-center p-4" role="presentation">
+      <div role="dialog" aria-modal="true" aria-label={mode === 'create' ? 'Agregar miembro de soporte' : 'Detalles de usuario'} className="w-full max-w-xl bg-white rounded-xl shadow-xl p-6 max-h-[90vh] overflow-y-auto text-gray-900">
+        <div className="flex justify-between items-center mb-4"><h2 className="text-lg font-semibold">{mode === 'create' ? 'Agregar miembro de soporte' : mode === 'edit' ? 'Editar usuario' : 'Detalle del usuario'}</h2><button onClick={() => setMode(null)} aria-label="Cerrar" className="text-gray-500 text-xl">×</button></div>
+        {error && <p role="alert" className="mb-3 text-sm text-red-700">{error}</p>}
+        <form onSubmit={save} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label className="text-sm">Nombre del contacto<input required={mode === 'create'} maxLength={150} disabled={mode === 'view'} value={form.contactName} onChange={e => setForm({ ...form, contactName: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2" /></label>
+          <label className="text-sm">Organización o finca<input required maxLength={150} disabled={mode === 'view'} value={form.organizationName} onChange={e => setForm({ ...form, organizationName: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2" /></label>
+          <label className="text-sm">Correo electrónico<input type="email" required maxLength={254} disabled={mode === 'view'} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2" /></label>
+          <label className="text-sm">Teléfono<input maxLength={30} disabled={mode === 'view'} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2" /></label>
+          {mode === 'create' && <label className="text-sm sm:col-span-2">Contraseña inicial<input type="password" required minLength={8} maxLength={72} autoComplete="new-password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2" /><span className="text-xs text-gray-500">Compártela con el miembro de soporte por un canal privado.</span></label>}
+          {mode === 'edit' && <label className="text-sm sm:col-span-2">Nueva contraseña (opcional)<input type="password" minLength={8} maxLength={72} autoComplete="new-password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2" /><span className="text-xs text-gray-500">Déjala vacía para conservar la contraseña actual.</span></label>}
+          <label className="text-sm">Rol<select disabled={mode !== 'edit' || selected?.id === currentUserId} value={form.role} onChange={e => setForm({ ...form, role: e.target.value as ApiRole })} className="mt-1 w-full border rounded-lg px-3 py-2 bg-white">{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          {mode !== 'create' && <label className="text-sm">Estado<select disabled={mode === 'view' || selected?.id === currentUserId} value={form.status} onChange={e => setForm({ ...form, status: e.target.value as ApiStatus })} className="mt-1 w-full border rounded-lg px-3 py-2 bg-white">{Object.entries(statuses).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
+          <div className="sm:col-span-2 flex justify-end gap-2 mt-2"><button type="button" onClick={() => setMode(null)} className="px-4 py-2 rounded-lg border text-sm">Cerrar</button>{mode !== 'view' && <button disabled={saving} type="submit" className="px-4 py-2 rounded-lg bg-green-700 text-white text-sm disabled:opacity-50">{saving ? 'Guardando...' : mode === 'create' ? 'Crear cuenta' : 'Guardar cambios'}</button>}</div>
+        </form>
+      </div>
+    </div>}
+  </div>;
 }

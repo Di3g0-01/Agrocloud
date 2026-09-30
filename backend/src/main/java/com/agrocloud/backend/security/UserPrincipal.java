@@ -14,8 +14,7 @@ public record UserPrincipal(
         String email,
         String password,
         AccountStatus status,
-        Collection<? extends GrantedAuthority> authorities
-) implements UserDetails {
+        Collection<? extends GrantedAuthority> authorities) implements UserDetails {
 
     public static UserPrincipal from(User user) {
         return new UserPrincipal(
@@ -23,8 +22,7 @@ public record UserPrincipal(
                 user.getEmail(),
                 user.getPasswordHash(),
                 user.getStatus(),
-                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-        );
+                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
     }
 
     @Override

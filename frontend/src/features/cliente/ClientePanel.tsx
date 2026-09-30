@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { User } from "../../types";
 import type { ClientePage } from "../../types/cliente";
 import { LogoIcon } from "../../components/ui";
 import { SharedDocumentacion } from "../../components/shared/SharedDocumentacion";
@@ -23,10 +24,12 @@ export const clienteNav = [
   { page: "documentacion" as ClientePage, label: "Documentación", section: null, icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
 ];
 
-export function ClientePanel({ onLogout }: { onLogout: () => void }) {
+export function ClientePanel({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [page, setPage] = useState<ClientePage>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const organizationName = user.empresa || user.nombre;
+  const initials = organizationName.trim().split(/\s+/).slice(-2).map((word) => word[0]?.toUpperCase() || "").join("");
   const pageLabels: Record<ClientePage, string> = { dashboard: "Panel de Control", instancias: "Instancias", plantillas: "Plantillas DB", plan: "Plan y suscripción", pagos: "Pagos", soporte: "Soporte", configuracion: "Configuración", documentacion: "Documentación" };
   const navigate = (p: ClientePage) => { setPage(p); setSidebarOpen(false); };
   return (
@@ -51,10 +54,10 @@ export function ClientePanel({ onLogout }: { onLogout: () => void }) {
         </nav>
         <div className="p-2 border-t border-white/5 space-y-1.5 shrink-0">
           <div className="flex items-center gap-2 px-1">
-            <div className="w-6 h-6 rounded-full bg-lime-600 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">FL</div>
+            <div className="w-6 h-6 rounded-full bg-lime-600 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">{initials}</div>
             <div className="min-w-0 flex-1">
-              <p className="text-white text-xs font-medium truncate leading-none">Finca Los Pinos</p>
-              <p className="text-[9px] text-white/40 truncate mt-0.5">Plan Productor</p>
+              <p className="text-white text-xs font-medium truncate leading-none">{organizationName}</p>
+              <p className="text-[9px] text-white/40 truncate mt-0.5">Cliente</p>
             </div>
           </div>
           <button
@@ -85,17 +88,17 @@ export function ClientePanel({ onLogout }: { onLogout: () => void }) {
           </div>
           <NotificationMenu role="cliente" />
           <div className="hidden sm:flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold">FL</div>
-            <div><p className="text-xs font-medium text-gray-800 leading-none">Finca Los Pinos</p><p className="text-[10px] text-gray-400">Cliente</p></div>
+            <div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold">{initials}</div>
+            <div><p className="text-xs font-medium text-gray-800 leading-none">{organizationName}</p><p className="text-[10px] text-gray-400">Cliente</p></div>
           </div>
         </header>
         {page === "dashboard" && <ClienteDashboard onNavigate={navigate} />}
         {page === "instancias" && <ClienteInstancias onNavigate={navigate} />}
         {page === "plantillas" && <ClientePlantillas onNavigate={navigate} />}
-        {page === "plan" && <ClientePlan />}
-        {page === "pagos" && <ClientePagos />}
-        {page === "soporte" && <ClienteSoporte />}
-        {page === "configuracion" && <ClienteConfiguracion />}
+        {page === "plan" && <ClientePlan organizationName={organizationName} />}
+        {page === "pagos" && <ClientePagos organizationName={organizationName} />}
+        {page === "soporte" && <ClienteSoporte organizationName={organizationName} initials={initials} />}
+        {page === "configuracion" && <ClienteConfiguracion user={user} organizationName={organizationName} initials={initials} />}
         {page === "documentacion" && <SharedDocumentacion userRole="cliente" />}
       </div>
     </div>
