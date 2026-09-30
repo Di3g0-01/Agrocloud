@@ -104,6 +104,39 @@ export const crearInstancia = async (data: { nombre: string; plantilla?: string 
   }
 };
 
+export const mapInstanciaDBToCInstancia = (dbInst: InstanciaDB): any => {
+  const estadoMap: Record<string, "Activa" | "Reiniciando" | "Suspendida" | "Error"> = {
+    active: "Activa",
+    revision: "Reiniciando",
+    suspended: "Suspendida",
+    terminated: "Error",
+    Activa: "Activa",
+    Reiniciando: "Reiniciando",
+    Suspendida: "Suspendida",
+  };
+
+  return {
+    id: dbInst.id,
+    nombre: dbInst.nombre,
+    plantilla: (dbInst as any).plantilla || "Cultivos y parcelas",
+    usadoGB: dbInst.almacenamientoUsadoGb || 0,
+    totalGB: dbInst.almacenamientoTotalGb || 10,
+    estado: estadoMap[dbInst.estado] || "Activa",
+    creada: dbInst.fechaCreacion || new Date().toISOString().split("T")[0],
+    version: dbInst.version || "PostgreSQL 16",
+    host: dbInst.host || `${dbInst.nombre}.agrocloud.gt`,
+    puerto: dbInst.puerto ? String(dbInst.puerto) : "5432",
+    baseDatos: dbInst.databaseName || dbInst.nombre.replace(/-/g, "_"),
+    usuario: dbInst.dbUser || "agro_db_user",
+    password: "P@ssw0rd!" + Math.floor(Math.random() * 899 + 100),
+    cpu: dbInst.cpu || 5,
+    memoria: dbInst.memoria || 12,
+    actividad: [
+      { desc: "Instancia conectada a PostgreSQL", tiempo: "Hace un momento", tipo: "info" }
+    ]
+  };
+};
+
 export const reiniciarInstancia = async (id: string): Promise<boolean> => {
   try {
     await axiosClient.post(`/instancias/${id}/restart`);
@@ -123,3 +156,4 @@ export const eliminarInstancia = async (id: string): Promise<boolean> => {
     return true;
   }
 };
+

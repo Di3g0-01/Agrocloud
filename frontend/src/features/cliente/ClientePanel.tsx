@@ -1,5 +1,13 @@
+<<<<<<< Updated upstream
 import { useState } from "react";
 import type { ClientePage } from "../../types/cliente";
+=======
+import { useState, useEffect } from "react";
+import type { User } from "../../types";
+import { C_INSTANCIAS } from "../../data/cliente";
+import type { CInstancia, ClientePage } from "../../types/cliente";
+import { getInstancias, mapInstanciaDBToCInstancia } from "../../api/instanciasApi";
+>>>>>>> Stashed changes
 import { LogoIcon } from "../../components/ui";
 import { SharedDocumentacion } from "../../components/shared/SharedDocumentacion";
 import { NotificationMenu } from "../../components/shared/NotificationMenu";
@@ -25,8 +33,22 @@ export const clienteNav = [
 
 export function ClientePanel({ onLogout }: { onLogout: () => void }) {
   const [page, setPage] = useState<ClientePage>("dashboard");
+  const [instanciasList, setInstanciasList] = useState<CInstancia[]>(C_INSTANCIAS);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+<<<<<<< Updated upstream
+=======
+
+  useEffect(() => {
+    getInstancias().then((data) => {
+      if (data && Array.isArray(data) && data.length > 0) {
+        setInstanciasList(data.map(mapInstanciaDBToCInstancia));
+      }
+    });
+  }, []);
+  const organizationName = user.empresa || user.nombre;
+  const initials = organizationName.trim().split(/\s+/).slice(-2).map((word) => word[0]?.toUpperCase() || "").join("");
+>>>>>>> Stashed changes
   const pageLabels: Record<ClientePage, string> = { dashboard: "Panel de Control", instancias: "Instancias", plantillas: "Plantillas DB", plan: "Plan y suscripción", pagos: "Pagos", soporte: "Soporte", configuracion: "Configuración", documentacion: "Documentación" };
   const navigate = (p: ClientePage) => { setPage(p); setSidebarOpen(false); };
   return (
@@ -89,8 +111,8 @@ export function ClientePanel({ onLogout }: { onLogout: () => void }) {
             <div><p className="text-xs font-medium text-gray-800 leading-none">Finca Los Pinos</p><p className="text-[10px] text-gray-400">Cliente</p></div>
           </div>
         </header>
-        {page === "dashboard" && <ClienteDashboard onNavigate={navigate} />}
-        {page === "instancias" && <ClienteInstancias onNavigate={navigate} />}
+        {page === "dashboard" && <ClienteDashboard onNavigate={navigate} instanciasList={instanciasList} />}
+        {page === "instancias" && <ClienteInstancias onNavigate={navigate} instanciasList={instanciasList} setInstanciasList={setInstanciasList} />}
         {page === "plantillas" && <ClientePlantillas onNavigate={navigate} />}
         {page === "plan" && <ClientePlan />}
         {page === "pagos" && <ClientePagos />}

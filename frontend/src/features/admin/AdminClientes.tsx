@@ -99,10 +99,10 @@ export function AdminClientes({ isDark }: { isDark?: boolean }) {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "ACTIVAS", value: "28", sub: "Suscripciones vigentes", color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
-          { label: "PRÓX. RENOVAR", value: "7", sub: "Próximos 15 días", color: isDark ? "text-amber-400 bg-amber-950/60 border border-amber-800/40" : "text-amber-500 bg-amber-50", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
-          { label: "SUSPENDIDAS", value: "2", sub: "Acceso restringido", color: isDark ? "text-red-400 bg-red-950/60 border border-red-800/40" : "text-red-500 bg-red-50", icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" },
-          { label: "CANCELADAS", value: "3", sub: "Sin servicio activo", color: isDark ? "text-slate-400 bg-slate-800 border border-slate-700" : "text-gray-500 bg-gray-100", icon: "M6 18L18 6M6 6l12 12" },
+          { label: "ACTIVAS", value: "0", sub: "Suscripciones vigentes", color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+          { label: "PRÓX. RENOVAR", value: "0", sub: "Próximos 15 días", color: isDark ? "text-amber-400 bg-amber-950/60 border border-amber-800/40" : "text-amber-500 bg-amber-50", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
+          { label: "SUSPENDIDAS", value: "0", sub: "Acceso restringido", color: isDark ? "text-red-400 bg-red-950/60 border border-red-800/40" : "text-red-500 bg-red-50", icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" },
+          { label: "CANCELADAS", value: "0", sub: "Sin servicio activo", color: isDark ? "text-slate-400 bg-slate-800 border border-slate-700" : "text-gray-500 bg-gray-100", icon: "M6 18L18 6M6 6l12 12" },
         ].map(k => (
           <div key={k.label} className={`border rounded-xl p-5 flex flex-col items-start ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <div className="flex items-center gap-2 mb-3">

@@ -113,8 +113,8 @@ export const AdminDashboard: React.FC = () => {
               <span className="text-xs font-medium">Instancias Totales</span>
               <Database className="w-4 h-4 text-sky-400" />
             </div>
-            <div className="text-2xl font-bold text-white">6 en Plataforma</div>
-            <div className="text-[11px] text-slate-400 mt-1">4 Operativas / 2 En revisión</div>
+            <div className="text-2xl font-bold text-white">0 en Plataforma</div>
+            <div className="text-[11px] text-slate-400 mt-1">0 Operativas / 0 En revisión</div>
           </div>
 
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">

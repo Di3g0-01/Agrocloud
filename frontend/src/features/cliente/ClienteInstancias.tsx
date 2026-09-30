@@ -3,6 +3,7 @@ import { CopyBtn, ProgressBar } from "../../components/ui";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { C_INSTANCIAS, C_PLAN, C_PLANTILLAS } from "../../data/cliente";
 import type { CInstancia } from "../../types/cliente";
+import { crearInstancia, reiniciarInstancia, eliminarInstancia, mapInstanciaDBToCInstancia } from "../../api/instanciasApi";
 
 export function CInstanciaStatusBadge({ s }: { s: CInstancia["estado"] }) {
   const cls = s === "Activa" ? "bg-lime-100 text-lime-700 border border-lime-300"
@@ -137,8 +138,15 @@ export function CreateInstanciaModal({
   );
 }
 
-export function ClienteInstancias({ onNavigate }: { onNavigate?: (p: any) => void }) {
-  const [instanciasList, setInstanciasList] = useState<CInstancia[]>(C_INSTANCIAS);
+export function ClienteInstancias({
+  onNavigate,
+  instanciasList,
+  setInstanciasList,
+}: {
+  onNavigate?: (p: any) => void;
+  instanciasList: CInstancia[];
+  setInstanciasList: React.Dispatch<React.SetStateAction<CInstancia[]>>;
+}) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todas" | CInstancia["estado"]>("todas");
   const [view, setView] = useState<"list" | "grid">("list");
@@ -148,13 +156,22 @@ export function ClienteInstancias({ onNavigate }: { onNavigate?: (p: any) => voi
   const [showCreate, setShowCreate] = useState(false);
   const [showPass, setShowPass] = useState(false);
 
-  const handleAddInstance = (newInst: CInstancia) => {
-    setInstanciasList((prev) => [newInst, ...prev]);
-    C_INSTANCIAS.unshift(newInst);
+  const handleAddInstance = async (newInst: CInstancia) => {
+    try {
+      const res = await crearInstancia({ nombre: newInst.nombre, plantilla: newInst.plantilla });
+      const mapped = mapInstanciaDBToCInstancia(res);
+      setInstanciasList((prev) => [mapped, ...prev]);
+    } catch (err) {
+      console.error("Error al crear instancia en backend:", err);
+      setInstanciasList((prev) => [newInst, ...prev]);
+    }
     setShowCreate(false);
   };
 
-  const handleRestart = (nombre: string) => {
+  const handleRestart = async (nombre: string, id?: string) => {
+    if (id) {
+      reiniciarInstancia(id).catch((err) => console.error(err));
+    }
     setInstanciasList((prev) =>
       prev.map((inst) => {
         if (inst.nombre === nombre) {
@@ -189,7 +206,10 @@ export function ClienteInstancias({ onNavigate }: { onNavigate?: (p: any) => voi
     }, 3000);
   };
 
-  const handleDelete = (nombre: string) => {
+  const handleDelete = async (nombre: string, id?: string) => {
+    if (id) {
+      eliminarInstancia(id).catch((err) => console.error(err));
+    }
     setInstanciasList((prev) => prev.filter((inst) => inst.nombre !== nombre));
     const idx = C_INSTANCIAS.findIndex((i) => i.nombre === nombre);
     if (idx !== -1) C_INSTANCIAS.splice(idx, 1);
@@ -313,7 +333,7 @@ export function ClienteInstancias({ onNavigate }: { onNavigate?: (p: any) => voi
                     <div className="flex items-center justify-center gap-1 whitespace-nowrap">
                       <button onClick={() => setDrawer(inst)} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Detalles</button>
                       <button onClick={() => { setShowPass(false); setCredModal(inst); }} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Credenciales</button>
-                      <button onClick={() => handleRestart(inst.nombre)} className="px-2 py-1 text-xs text-amber-600 hover:bg-amber-50 rounded transition-colors">Reiniciar</button>
+                      <button onClick={() => handleRestart(inst.nombre, (inst as any).id)} className="px-2 py-1 text-xs text-amber-600 hover:bg-amber-50 rounded transition-colors">Reiniciar</button>
                       <button onClick={() => setDeleteConfirm(inst)} className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded transition-colors">Eliminar</button>
                     </div>
                   </td>
@@ -352,7 +372,7 @@ export function ClienteInstancias({ onNavigate }: { onNavigate?: (p: any) => voi
               <div className="border-t border-gray-100 pt-3 grid grid-cols-2 gap-2">
                 <button onClick={() => setDrawer(inst)} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Detalles</button>
                 <button onClick={() => { setShowPass(false); setCredModal(inst); }} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Credenciales</button>
-                <button onClick={() => handleRestart(inst.nombre)} className="py-1.5 text-xs font-medium text-amber-600 border border-amber-100 rounded-lg hover:bg-amber-50 transition-colors">Reiniciar</button>
+                <button onClick={() => handleRestart(inst.nombre, (inst as any).id)} className="py-1.5 text-xs font-medium text-amber-600 border border-amber-100 rounded-lg hover:bg-amber-50 transition-colors">Reiniciar</button>
                 <button onClick={() => setDeleteConfirm(inst)} className="py-1.5 text-xs font-medium text-red-500 border border-red-100 rounded-lg hover:bg-red-50 transition-colors">Eliminar</button>
               </div>
             </div>
@@ -481,7 +501,7 @@ export function ClienteInstancias({ onNavigate }: { onNavigate?: (p: any) => voi
             <p className="text-xs text-red-400 mb-6">Esta acción es irreversible. Se perderán todos los datos almacenados.</p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirm(null)} className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 font-medium transition-colors">Cancelar</button>
-              <button onClick={() => handleDelete(deleteConfirm.nombre)} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors">Eliminar</button>
+              <button onClick={() => handleDelete(deleteConfirm.nombre, (deleteConfirm as any).id)} className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors">Eliminar</button>
             </div>
           </div>
         </div>

@@ -24,10 +24,10 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
   // Planes State (from former AdminPlanes)
   const [modalOpen, setModalOpen] = useState(false);
   const [planes, setPlanes] = useState<PlanItem[]>([
-    { nombre: "Finca", precio: "Q25", storage: "10 GB", instancias: "1", clientes: 8, ingresos: "Q200", estado: "Activo" },
-    { nombre: "Productor", precio: "Q60", storage: "50 GB", instancias: "2", clientes: 14, ingresos: "Q840", estado: "Activo" },
-    { nombre: "Agro Pro", precio: "Q120", storage: "100 GB", instancias: "3", clientes: 6, ingresos: "Q720", estado: "Activo" },
-    { nombre: "Agro Enterprise", precio: "Q250", storage: "250 GB", instancias: "5", clientes: 3, ingresos: "Q750", estado: "Activo" },
+    { nombre: "Finca", precio: "Q25", storage: "10 GB", instancias: "1", clientes: 0, ingresos: "Q0", estado: "Activo" },
+    { nombre: "Productor", precio: "Q60", storage: "50 GB", instancias: "2", clientes: 0, ingresos: "Q0", estado: "Activo" },
+    { nombre: "Agro Pro", precio: "Q120", storage: "100 GB", instancias: "3", clientes: 0, ingresos: "Q0", estado: "Activo" },
+    { nombre: "Agro Enterprise", precio: "Q250", storage: "250 GB", instancias: "5", clientes: 0, ingresos: "Q0", estado: "Activo" },
   ]);
 
   // Form State for creating new plan
@@ -247,15 +247,15 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
               },
               {
                 label: "SUSCRIPCIONES",
-                value: "31",
+                value: String(SUSCRIPCIONES_DATA.length),
                 sub: "Activas en total",
                 color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50",
                 icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z",
               },
               {
                 label: "MÁS CONTRATADO",
-                value: "Productor",
-                sub: "14 suscriptores",
+                value: "—",
+                sub: "0 suscriptores",
                 color: isDark ? "text-purple-400 bg-purple-950/60 border border-purple-800/40" : "text-purple-500 bg-purple-50",
                 icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6",
               },
@@ -360,10 +360,10 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "ACTIVAS", value: "31", sub: "Suscripciones vigentes", color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
-              { label: "PRÓX. RENOVAR", value: "7", sub: "En los próximos 15 días", color: isDark ? "text-amber-400 bg-amber-950/60 border border-amber-800/40" : "text-amber-500 bg-amber-50", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
-              { label: "SUSPENDIDAS", value: "2", sub: "Acceso restringido", color: isDark ? "text-red-400 bg-red-950/60 border border-red-800/40" : "text-red-500 bg-red-50", icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" },
-              { label: "CANCELADAS", value: "3", sub: "Sin renovación", color: isDark ? "text-slate-400 bg-slate-800 border border-slate-700" : "text-gray-500 bg-gray-100", icon: "M6 18L18 6M6 6l12 12" },
+              { label: "ACTIVAS", value: String(SUSCRIPCIONES_DATA.filter(s => s.estado === "Activa").length), sub: "Suscripciones vigentes", color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+              { label: "PRÓX. RENOVAR", value: "0", sub: "En los próximos 15 días", color: isDark ? "text-amber-400 bg-amber-950/60 border border-amber-800/40" : "text-amber-500 bg-amber-50", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
+              { label: "SUSPENDIDAS", value: String(SUSCRIPCIONES_DATA.filter(s => s.estado === "Suspendida").length), sub: "Acceso restringido", color: isDark ? "text-red-400 bg-red-950/60 border border-red-800/40" : "text-red-500 bg-red-50", icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" },
+              { label: "CANCELADAS", value: "0", sub: "Sin renovación", color: isDark ? "text-slate-400 bg-slate-800 border border-slate-700" : "text-gray-500 bg-gray-100", icon: "M6 18L18 6M6 6l12 12" },
             ].map((k) => (
               <div key={k.label} className={`border rounded-xl p-5 flex flex-col items-start ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
                 <div className="flex items-center gap-2 mb-3">
