@@ -10,9 +10,9 @@ export function AdminMonitoreo({ isDark }: { isDark?: boolean }) {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
-          { label: "Operativas", count: 4, color: isDark ? "text-lime-400 bg-lime-950/40 border-lime-900/40" : "text-lime-600 bg-lime-50 border-lime-200" },
-          { label: "En revisión", count: 1, color: isDark ? "text-amber-400 bg-amber-950/40 border-amber-900/40" : "text-amber-600 bg-amber-50 border-amber-200" },
-          { label: "Detenidas", count: 2, color: isDark ? "text-red-400 bg-red-950/40 border-red-900/40" : "text-red-600 bg-red-50 border-red-200" }
+          { label: "Operativas", count: instances.filter(i => i.estado === "Operativa").length, color: isDark ? "text-lime-400 bg-lime-950/40 border-lime-900/40" : "text-lime-600 bg-lime-50 border-lime-200" },
+          { label: "En revisión", count: instances.filter(i => i.estado === "En revisión").length, color: isDark ? "text-amber-400 bg-amber-950/40 border-amber-900/40" : "text-amber-600 bg-amber-50 border-amber-200" },
+          { label: "Detenidas", count: instances.filter(i => i.estado === "Detenida").length, color: isDark ? "text-red-400 bg-red-950/40 border-red-900/40" : "text-red-600 bg-red-50 border-red-200" }
         ].map(({ label, count, color }) => (
           <div key={label} className={`rounded-xl border p-4 flex items-center gap-4 ${color}`}><span className="text-3xl font-semibold">{count}</span><span className="text-sm font-medium">{label}</span></div>
         ))}

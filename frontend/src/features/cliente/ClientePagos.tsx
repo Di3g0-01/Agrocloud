@@ -97,7 +97,7 @@ export function ClientePagos({ organizationName }: { organizationName: string })
   });
 
   const totalAnio = PAGOS_MOCK.filter(p => p.fecha.startsWith(yearFilter)).reduce((s, p) => s + p.monto, 0);
-  const ultimoPago = PAGOS_MOCK[0];
+  const ultimoPago = PAGOS_MOCK.length > 0 ? PAGOS_MOCK[0] : null;
 
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
@@ -110,8 +110,8 @@ export function ClientePagos({ organizationName }: { organizationName: string })
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
           { label: "TOTAL PAGADO EN 2026", value: `Q ${totalAnio.toFixed(2)}`, sub: "Pagos realizados durante el año", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z", color: "text-lime-600 bg-lime-50" },
-          { label: "ÚLTIMO PAGO", value: `Q ${ultimoPago.monto.toFixed(2)}`, sub: ultimoPago.fecha, icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-blue-500 bg-blue-50" },
-          { label: "MÉTODO USADO", value: "Visa •••• 4242", sub: "Tarjeta de crédito", icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z", color: "text-purple-500 bg-purple-50" },
+          { label: "ÚLTIMO PAGO", value: ultimoPago ? `Q ${ultimoPago.monto.toFixed(2)}` : "Q 0.00", sub: ultimoPago ? ultimoPago.fecha : "Sin registros", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-blue-500 bg-blue-50" },
+          { label: "MÉSTATICAMENTE CONFIGURADO", value: "Sin método registrado", sub: "Tarjeta / Transferencia", icon: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z", color: "text-purple-500 bg-purple-50" },
         ].map(k => (
           <div key={k.label} className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col items-start">
             <div className="flex items-center gap-2 mb-3">
