@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function Landing({ onLogin }: { onLogin: () => void }) {
+export function Landing({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
   const DARK = "#0d1a0b";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const features = [
@@ -44,10 +44,10 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
           </div>
           <div className="hidden md:flex items-center gap-3 shrink-0">
             <button onClick={onLogin} className="text-sm text-gray-600 hover:text-gray-900 font-medium">Iniciar sesión</button>
-            <button onClick={onLogin} className="text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold px-4 py-2 rounded-lg transition-colors">Comenzar gratis</button>
+            <button onClick={onRegister} className="text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold px-4 py-2 rounded-lg transition-colors">Comenzar gratis</button>
           </div>
           <div className="md:hidden flex items-center gap-2 ml-auto">
-            <button onClick={onLogin} className="text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold px-3 py-1.5 rounded-lg transition-colors">Comenzar</button>
+            <button onClick={onRegister} className="text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold px-3 py-1.5 rounded-lg transition-colors">Comenzar</button>
             <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 rounded-lg">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} /></svg>
             </button>
@@ -73,7 +73,7 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
             Crea y administra instancias de PostgreSQL en una infraestructura cloud diseñada para productores, fincas, cooperativas y empresas agroindustriales.
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            <button onClick={onLogin} className="flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors">
+            <button onClick={onRegister} className="flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors">
               Crear instancia →
             </button>
             <button className="border border-white/20 hover:border-white/40 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors">
@@ -185,7 +185,7 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
                   <span className="text-2xl font-bold text-white">{plan.price}</span>
                   <span className="text-xs text-white/40">/mes</span>
                 </div>
-                <button onClick={onLogin} className="w-full py-2 border border-white/20 hover:border-lime-400 hover:bg-lime-400 hover:text-gray-900 text-white text-sm font-medium rounded-lg transition-all">
+                <button onClick={onRegister} className="w-full py-2 border border-white/20 hover:border-lime-400 hover:bg-lime-400 hover:text-gray-900 text-white text-sm font-medium rounded-lg transition-all">
                   Elegir plan
                 </button>
               </div>
@@ -204,7 +204,7 @@ export function Landing({ onLogin }: { onLogin: () => void }) {
             Administra tus instancias de Bases de Datos de forma simple, segura y escalable, sin necesidad de mantener servidores propios.
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            <button onClick={onLogin} className="bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors">
+            <button onClick={onRegister} className="bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors">
               Comenzar ahora
             </button>
             <button className="border border-white/20 hover:border-white/40 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors">

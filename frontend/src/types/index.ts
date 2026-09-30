@@ -6,6 +6,7 @@ export interface User {
   email: string;
   rol: UserRole;
   empresa?: string;
+  telefono?: string;
   fechaRegistro?: string;
   estado?: 'ACTIVO' | 'INACTIVO' | 'SUSPENDIDO';
 }
@@ -26,7 +27,7 @@ export interface InstanciaDB {
   cliente: string;
   usuarioId: string;
   tipo: string;
-  estado: 'OPERATIVA' | 'EN_REVISION' | 'DETENIDA' | 'SUSPENDIDA';
+  estado: 'active' | 'revision' | 'suspended' | 'terminated';
   version: string;
   uptime: string;
   cpu: number;
@@ -46,7 +47,7 @@ export interface Suscripcion {
   planId: string;
   planNombre: string;
   usuarioId: string;
-  estado: 'ACTIVA' | 'SUSPENDIDA' | 'CANCELADA';
+  estado: 'pending_payment' | 'active' | 'suspended' | 'cancelled';
   fechaInicio: string;
   fechaProximoPago: string;
   monto: number;

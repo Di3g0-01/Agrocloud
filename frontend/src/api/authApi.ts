@@ -1,57 +1,76 @@
 import { axiosClient } from './axiosClient';
-import type { AuthResponse, UserRole } from '../types';
+import type { AuthResponse, User, UserRole } from '../types';
 
-export const loginApi = async (email: string, pass: string): Promise<AuthResponse> => {
-  try {
-    const res = await axiosClient.post('/auth/login', { email, password: pass });
-    return res.data?.data || res.data;
-  } catch {
-    console.warn('API Backend no conectada. Simulando login...');
-    let role: UserRole = 'CLIENTE';
-    let name = 'Diego Ovalle';
-    let empresa = 'Finca Los Pinos';
+interface ApiUser {
+  id: string;
+  organizationName: string;
+  contactName: string | null;
+  email: string;
+  phone: string | null;
+  role: 'ADMINISTRADOR' | 'CLIENTE' | 'SOPORTE';
+  status: 'ACTIVO' | 'PENDIENTE' | 'SUSPENDIDO';
+}
 
-    if (email.includes('admin')) {
-      role = 'ADMIN';
-      name = 'Administrador Sistema';
-      empresa = 'AgroCloud Platform';
-    } else if (email.includes('soporte')) {
-      role = 'SOPORTE';
-      name = 'Técnico de Soporte';
-      empresa = 'AgroCloud Support';
-    }
+interface ApiAuthResponse {
+  token: string;
+  user: ApiUser;
+}
 
-    const mockResponse: AuthResponse = {
-      token: 'jwt-mock-token-' + Date.now(),
-      user: {
-        id: 'usr-' + Math.floor(Math.random() * 1000),
-        nombre: name,
-        email,
-        rol: role,
-        empresa,
-        estado: 'ACTIVO',
-      },
-    };
-    return mockResponse;
+export interface RegistrationInput {
+  organizationName: string;
+  contactName?: string;
+  email: string;
+  phone?: string;
+  password: string;
+}
+
+function toFrontendUser(apiUser: ApiUser): User {
+  if (!apiUser?.id || !apiUser.organizationName || !apiUser.role) {
+    throw new Error('Los datos de la cuenta están incompletos.');
   }
-};
-
-export const registerApi = async (data: { nombre: string; email: string; password: string; empresa?: string }): Promise<AuthResponse> => {
-  try {
-    const res = await axiosClient.post('/auth/register', data);
-    return res.data?.data || res.data;
-  } catch {
-    console.warn('API Backend no conectada. Simulando registro...');
-    return {
-      token: 'jwt-mock-token-reg-' + Date.now(),
-      user: {
-        id: 'usr-' + Date.now(),
-        nombre: data.nombre,
-        email: data.email,
-        rol: 'CLIENTE',
-        empresa: data.empresa || 'Finca Agrícola',
-        estado: 'ACTIVO',
-      },
-    };
+  const roles: Record<ApiUser['role'], UserRole> = {
+    ADMINISTRADOR: 'ADMIN',
+    CLIENTE: 'CLIENTE',
+    SOPORTE: 'SOPORTE',
+  };
+  const role = roles[apiUser.role];
+  if (!role) {
+    throw new Error('El servidor devolvió un rol desconocido.');
   }
-};
+
+  return {
+    id: apiUser.id,
+    nombre: apiUser.contactName || apiUser.organizationName,
+    email: apiUser.email,
+    rol: role,
+    empresa: apiUser.organizationName,
+    telefono: apiUser.phone || undefined,
+    estado: apiUser.status === 'PENDIENTE' ? 'INACTIVO' : apiUser.status,
+  };
+}
+
+function toFrontendResponse(response: ApiAuthResponse): AuthResponse {
+  if (!response?.token) {
+    throw new Error('La respuesta de autenticación está incompleta.');
+  }
+  return { token: response.token, user: toFrontendUser(response.user) };
+}
+
+export async function loginApi(email: string, password: string): Promise<AuthResponse> {
+  const response = await axiosClient.post<ApiAuthResponse>('/auth/login', { email, password });
+  return toFrontendResponse(response.data);
+}
+
+export async function registerApi(data: RegistrationInput): Promise<AuthResponse> {
+  const response = await axiosClient.post<ApiAuthResponse>('/auth/register', data);
+  const result = toFrontendResponse(response.data);
+  if (result.user.rol !== 'CLIENTE') {
+    throw new Error('El registro público solo admite cuentas de cliente.');
+  }
+  return result;
+}
+
+export async function currentUserApi(): Promise<AuthResponse['user']> {
+  const response = await axiosClient.get<ApiUser>('/auth/me');
+  return toFrontendUser(response.data);
+}
