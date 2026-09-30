@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { ShieldCheck, LogOut, Sprout, LayoutDashboard, ChevronRight } from 'lucide-react';
-import type { UserRole } from '../../types';
+import { LogOut, Sprout, LayoutDashboard, ChevronRight } from 'lucide-react';
 
 interface NavbarProps {
   currentView: string;
@@ -9,15 +8,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
-  const { user, isAuthenticated, logout, setSimulatedRole } = useAuth();
-
-  const handleRoleSwitch = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const role = e.target.value as UserRole;
-    setSimulatedRole(role);
-    if (role === 'ADMIN') onNavigate('admin');
-    else if (role === 'SOPORTE') onNavigate('soporte');
-    else onNavigate('cliente');
-  };
+  const { user, isAuthenticated, logout } = useAuth();
 
   return (
     <nav className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3.5 transition-all">
@@ -76,21 +67,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
 
         {/* User / Actions */}
         <div className="flex items-center gap-3">
-          {/* Quick Role Switcher for Testing */}
-          <div className="hidden lg:flex items-center gap-2 bg-slate-800/80 border border-slate-700/60 rounded-lg px-2.5 py-1 text-xs">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-slate-400 font-medium">Rol:</span>
-            <select
-              value={user?.rol || 'CLIENTE'}
-              onChange={handleRoleSwitch}
-              className="bg-transparent text-emerald-300 font-semibold focus:outline-none cursor-pointer"
-            >
-              <option value="CLIENTE" className="bg-slate-900 text-slate-200">Cliente (Finca)</option>
-              <option value="ADMIN" className="bg-slate-900 text-slate-200">Administrador</option>
-              <option value="SOPORTE" className="bg-slate-900 text-slate-200">Soporte Técnico</option>
-            </select>
-          </div>
-
           {isAuthenticated && user ? (
             <div className="flex items-center gap-3">
               <button

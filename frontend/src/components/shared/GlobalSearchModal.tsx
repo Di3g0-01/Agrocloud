@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { instances, incidents, INITIAL_DOCS } from "../../data/shared";
-import { CLIENTES_DATA, USUARIOS_DATA, PLANTILLAS_ADMIN } from "../../data/admin";
+import { CLIENTES_DATA, PLANTILLAS_ADMIN } from "../../data/admin";
 
 export interface SearchResultItem {
   id: string;
@@ -72,27 +72,6 @@ export function GlobalSearchModal({
             subtitle: `${cli.tipo} · Responsable: ${cli.responsable} · ${cli.plan}`,
             category: "Clientes",
             targetPage: "clientes",
-          });
-        }
-      });
-    }
-
-    // Search Usuarios (only for admin/soporte)
-    if (role !== "cliente") {
-      USUARIOS_DATA.forEach((usr) => {
-        if (
-          usr.nombre.toLowerCase().includes(q) ||
-          usr.correo.toLowerCase().includes(q) ||
-          usr.org.toLowerCase().includes(q) ||
-          usr.rol.toLowerCase().includes(q)
-        ) {
-          results.push({
-            id: `usr-${usr.id}`,
-            type: "usuario",
-            title: usr.nombre,
-            subtitle: `${usr.rol} · ${usr.correo} · ${usr.org}`,
-            category: "Usuarios",
-            targetPage: "usuarios",
           });
         }
       });

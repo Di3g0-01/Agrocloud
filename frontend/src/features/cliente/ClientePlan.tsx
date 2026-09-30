@@ -64,7 +64,7 @@ const PLANES_DISPONIBLES: PlanAvailable[] = [
   },
 ];
 
-export function ClientePlan() {
+export function ClientePlan({ organizationName }: { organizationName: string }) {
   const [currentPlan, setCurrentPlan] = useState<PlanAvailable>(PLANES_DISPONIBLES[1]); // Productor default
   const [modalChangeOpen, setModalChangeOpen] = useState(false);
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<PlanAvailable | null>(null);
@@ -152,7 +152,7 @@ export function ClientePlan() {
                   <h2 className="font-semibold text-gray-900 text-xl">Plan {currentPlan.nombre}</h2>
                   <span className="bg-lime-100 text-lime-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Activo</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-0.5">Finca Los Pinos · Suscripción AgroCloud</p>
+                <p className="text-xs text-gray-400 mt-0.5">{organizationName} · Suscripción AgroCloud</p>
               </div>
             </div>
             <StatusBadge s="Activa" />
@@ -246,7 +246,7 @@ export function ClientePlan() {
                 </div>
               </div>
               <div className="space-y-2">
-                {[["Titular", "Finca Los Pinos"], ["Vencimiento", "08/28"]].map(([label, value]) => (
+                {[["Titular", organizationName], ["Vencimiento", "08/28"]].map(([label, value]) => (
                   <div key={label} className="flex flex-col gap-0.5">
                     <span className="text-[10px] text-gray-400 uppercase tracking-wide">{label}</span>
                     <span className="text-xs text-gray-700 font-medium">{value}</span>

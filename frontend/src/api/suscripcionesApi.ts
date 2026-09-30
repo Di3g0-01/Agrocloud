@@ -35,7 +35,7 @@ export const contratarPlan = async (planId: string, planNombre?: string, monto?:
       planId,
       planNombre: planNombre || 'Plan Contratado',
       usuarioId: 'usr-current',
-      estado: 'ACTIVA',
+      estado: 'active',
       fechaInicio: now.toISOString().split('T')[0],
       fechaProximoPago: nextMonth.toISOString().split('T')[0],
       monto: monto || 0,

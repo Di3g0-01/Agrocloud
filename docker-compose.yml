@@ -1,0 +1,61 @@
+name: agrocloud
+
+services:
+  db:
+    image: postgres:16
+    container_name: agrocloud-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Define POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:15432:5432"
+    networks:
+      - agrocloud
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  api:
+    image: agrocloud-backend:original-2026-09-22
+    pull_policy: never
+    container_name: agrocloud-api
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://agrocloud-db:5432/${POSTGRES_DB:?Define POSTGRES_DB en .env}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      DB_URL: jdbc:postgresql://agrocloud-db:5432/${POSTGRES_DB:?Define POSTGRES_DB en .env}
+      DB_USERNAME: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:8443}
+    volumes:
+      - type: bind
+        source: ./build-artifacts/app.jar
+        target: /app/app.jar
+        read_only: true
+        bind:
+          create_host_path: false
+    ports:
+      - "8080:8080"
+    networks:
+      - agrocloud
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    external: true
+    name: agrocloud-postgres-data
+
+networks:
+  agrocloud:
+    external: true
+    name: agrocloud-net

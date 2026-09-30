@@ -211,24 +211,14 @@ export const ClienteDashboard: React.FC = () => {
                       </div>
                       <span
                         className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-<<<<<<< Updated upstream
-                          inst.estado === 'OPERATIVA'
+                          inst.estado === 'active' || inst.estado === 'OPERATIVA'
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                            : inst.estado === 'EN_REVISION'
-=======
-                          inst.estado === 'active'
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                            : inst.estado === 'revision'
->>>>>>> Stashed changes
+                            : inst.estado === 'revision' || inst.estado === 'EN_REVISION'
                             ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
                             : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
                         }`}
                       >
-<<<<<<< Updated upstream
-                        {inst.estado}
-=======
-                        {inst.estado === 'active' ? 'Operativa' : inst.estado === 'revision' ? 'En revisión' : inst.estado === 'suspended' ? 'Suspendida' : inst.estado === 'terminated' ? 'Detenida' : inst.estado}
->>>>>>> Stashed changes
+                        {inst.estado === 'active' || inst.estado === 'OPERATIVA' ? 'Operativa' : inst.estado === 'revision' || inst.estado === 'EN_REVISION' ? 'En revisión' : inst.estado === 'suspended' ? 'Suspendida' : inst.estado === 'terminated' ? 'Detenida' : inst.estado}
                       </span>
                     </div>
 

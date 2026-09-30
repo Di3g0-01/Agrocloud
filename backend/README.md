@@ -1,6 +1,6 @@
-# AgroCloud — Backend (Java Spring Boot + PostgreSQL)
+# AgroCloud - Backend (Java Spring Boot + PostgreSQL)
 
-Esta carpeta contiene la estructura del proyecto Backend desarrollado en **Java Spring Boot**, con seguridad JWT y persistencia en **PostgreSQL**.
+Esta carpeta contiene el Backend desarrollado con **Java 24**, **Spring Boot 4.1.1**, seguridad JWT y persistencia en **PostgreSQL 16**.
 
 ## 📂 Estructura de Paquetes
 
@@ -9,4 +9,72 @@ Esta carpeta contiene la estructura del proyecto Backend desarrollado en **Java 
 - `src/main/java/com/agrocloud/backend/repository/`: Repositorios JPA para acceso a PostgreSQL.
 - `src/main/java/com/agrocloud/backend/entity/`: Entidades JPA mapeadas a las tablas de la base de datos.
 - `src/main/java/com/agrocloud/backend/dto/`: Data Transfer Objects para peticiones y respuestas JSON.
-- `src/main/java/com/agrocloud/backend/security/`: Configuración de Spring Security y JWT (`JwtFilter`, `JwtUtil`).
+- `src/main/java/com/agrocloud/backend/security/`: Configuración de Spring Security y JWT (`JwtAuthenticationFilter`, `JwtService`).
+
+## Autenticación
+
+La API implementa autenticación stateless con Spring Security, JWT y contraseñas BCrypt.
+Las contraseñas se guardan como hashes de una sola vía, nunca como texto plano ni como
+cifrado reversible. `RegistrationService` crea la cuenta y asigna `CLIENTE`, `LoginService`
+valida credenciales y estado, `CurrentUserService` consulta la cuenta autenticada y
+`AuthResponseFactory` construye la respuesta con el token. El controlador conserva
+los endpoints públicos de registro e inicio de sesión.
+La variable `JWT_SECRET` es obligatoria y debe contener una clave aleatoria en Base64.
+El registro público siempre asigna el rol `CLIENTE`; los roles administrativos no se aceptan
+desde la petición de registro.
+Cada usuario tiene exactamente un rol. Los roles `ADMINISTRADOR`, `CLIENTE` y `SOPORTE`
+se guardan en la tabla `roles` y pueden ser compartidos por varios usuarios. La migración
+`V2__create_roles.sql` conserva el rol de los usuarios existentes.
+El cierre de sesión elimina el token guardado en el navegador; el JWT emitido conserva
+su validez hasta su vencimiento (8 horas por defecto).
+
+### Ejecutar con Docker
+
+Consulta [DOCKER.md](../DOCKER.md) para configurar `.env`, iniciar los contenedores
+`agrocloud-api` y `agrocloud-db`, y conservar el volumen de PostgreSQL.
+
+### Pruebas de integración
+
+Las pruebas de integración arrancan la API contra PostgreSQL real y verifican registro,
+persistencia del usuario, inicio de sesión, acceso con JWT y errores de autenticación.
+Las pruebas unitarias se ejecutan durante la construcción de la imagen. La prueba de
+integración con PostgreSQL requiere una base de pruebas separada y la variable
+`RUN_DB_INTEGRATION_TESTS=true`; no usa la base `agrocloud-db`.
+
+En Windows, ejecuta `./backend/test-integration.ps1` desde la raíz del proyecto.
+El script crea `agrocloud_test` dentro del contenedor original `agrocloud-db` si hace
+falta, toma las credenciales de `.env` y ejecuta Maven en un contenedor temporal.
+Las pruebas se niegan a escribir si `DB_URL` no termina en `/agrocloud_test` y
+eliminan las cuentas temporales que crean. `agrocloud_db` no se modifica.
+
+### Endpoints
+
+- `POST /api/v1/auth/register`: crea una cuenta de cliente y devuelve un JWT.
+- `POST /api/v1/auth/login`: autentica por correo y contraseña.
+- `GET /api/v1/auth/me`: devuelve el usuario del token enviado como `Bearer`.
+- `GET /api/v1/usuarios`: lista las cuentas (solo `ADMINISTRADOR`).
+- `GET /api/v1/usuarios/{id}`: consulta una cuenta (solo `ADMINISTRADOR`).
+- `POST /api/v1/usuarios`: crea una cuenta de cliente, soporte o administrador (solo `ADMINISTRADOR`). Requiere `organizationName`, `email`, `password` y `role`; la contraseña se guarda con BCrypt. La cuenta inicia activa.
+- `PUT /api/v1/usuarios/{id}`: actualiza los datos, el rol y el estado de una cuenta (solo `ADMINISTRADOR`). Requiere `organizationName`, `email`, `role` y `status`; `password` es opcional y, si se envía, se guarda con BCrypt. No permite quitarse a sí mismo el rol administrativo ni suspenderse.
+- `GET /actuator/health`: estado del servicio y de sus dependencias.
+
+El panel **Usuarios** consume estos endpoints. Su botón **Agregar miembro de soporte**
+crea una cuenta con rol `SOPORTE`; el registro público sigue creando únicamente clientes.
+No hay envío de invitaciones por correo: el administrador entrega la contraseña inicial
+al miembro de soporte por un canal privado.
+
+Ejemplo de registro (también se aceptan los alias del frontend `nombreEmpresa`,
+`contactoNombre` y `telefono`):
+
+```json
+{
+  "organizationName": "Finca Los Pinos",
+  "contactName": "Carlos Monterroso",
+  "email": "carlos@fincalospinos.gt",
+  "phone": "+502 4455 6677",
+  "password": "ClaveSegura123"
+}
+```
+
+La selección y contratación de un plan corresponde al módulo de suscripciones; se realiza
+después de crear la cuenta y no forma parte del contrato de autenticación.
