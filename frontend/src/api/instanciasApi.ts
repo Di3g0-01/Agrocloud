@@ -1,75 +1,14 @@
 import { axiosClient } from './axiosClient';
 import type { InstanciaDB } from '../types';
 
-export const MOCK_INSTANCIAS: InstanciaDB[] = [
-  {
-    id: 'inst-01',
-    nombre: 'agro-produccion-db',
-    cliente: 'Finca Los Pinos',
-    usuarioId: 'usr-1',
-    tipo: 'PostgreSQL 16',
-    estado: 'active',
-    version: 'v16.2',
-    uptime: '99.9%',
-    cpu: 24,
-    memoria: 48,
-    almacenamientoUsadoGb: 6.2,
-    almacenamientoTotalGb: 10,
-    region: 'us-east-1 (Virginia)',
-    host: 'db.agrocloud.gt',
-    puerto: 5432,
-    databaseName: 'produccion_db',
-    dbUser: 'agrouser_lospinos',
-    fechaCreacion: '2026-08-15',
-  },
-  {
-    id: 'inst-02',
-    nombre: 'agro-inventario-db',
-    cliente: 'Finca El Roble',
-    usuarioId: 'usr-2',
-    tipo: 'PostgreSQL 16',
-    estado: 'revision',
-    version: 'v16.1',
-    uptime: '98.5%',
-    cpu: 76,
-    memoria: 82,
-    almacenamientoUsadoGb: 38.4,
-    almacenamientoTotalGb: 50,
-    region: 'us-east-1 (Virginia)',
-    host: 'db2.agrocloud.gt',
-    puerto: 5432,
-    databaseName: 'inventario_roble',
-    dbUser: 'agrouser_roble',
-    fechaCreacion: '2026-08-20',
-  },
-  {
-    id: 'inst-03',
-    nombre: 'coop-occidente-db',
-    cliente: 'Cooperativa Occidente',
-    usuarioId: 'usr-3',
-    tipo: 'PostgreSQL 16',
-    estado: 'active',
-    version: 'v16.2',
-    uptime: '99.99%',
-    cpu: 18,
-    memoria: 35,
-    almacenamientoUsadoGb: 42.1,
-    almacenamientoTotalGb: 100,
-    region: 'us-west-2 (Oregon)',
-    host: 'db3.agrocloud.gt',
-    puerto: 5432,
-    databaseName: 'coop_occidente_db',
-    dbUser: 'coop_admin',
-    fechaCreacion: '2026-09-01',
-  },
-];
+export const MOCK_INSTANCIAS: InstanciaDB[] = [];
 
 export const getInstancias = async (): Promise<InstanciaDB[]> => {
   try {
     const res = await axiosClient.get('/instancias');
     return res.data?.data || res.data;
   } catch {
-    console.warn('API /instancias no disponible. Retornando instancias Mock.');
+    console.warn('API /instancias no disponible. Retornando instancias Mock (vacío).');
     return MOCK_INSTANCIAS;
   }
 };
@@ -104,6 +43,39 @@ export const crearInstancia = async (data: { nombre: string; plantilla?: string 
   }
 };
 
+export const mapInstanciaDBToCInstancia = (dbInst: InstanciaDB): any => {
+  const estadoMap: Record<string, "Activa" | "Reiniciando" | "Suspendida" | "Error"> = {
+    active: "Activa",
+    revision: "Reiniciando",
+    suspended: "Suspendida",
+    terminated: "Error",
+    Activa: "Activa",
+    Reiniciando: "Reiniciando",
+    Suspendida: "Suspendida",
+  };
+
+  return {
+    id: dbInst.id,
+    nombre: dbInst.nombre,
+    plantilla: (dbInst as any).plantilla || "Cultivos y parcelas",
+    usadoGB: dbInst.almacenamientoUsadoGb || 0,
+    totalGB: dbInst.almacenamientoTotalGb || 10,
+    estado: estadoMap[dbInst.estado] || "Activa",
+    creada: dbInst.fechaCreacion || new Date().toISOString().split("T")[0],
+    version: dbInst.version || "PostgreSQL 16",
+    host: dbInst.host || `${dbInst.nombre}.agrocloud.gt`,
+    puerto: dbInst.puerto ? String(dbInst.puerto) : "5432",
+    baseDatos: dbInst.databaseName || dbInst.nombre.replace(/-/g, "_"),
+    usuario: dbInst.dbUser || "agro_db_user",
+    password: "P@ssw0rd!" + Math.floor(Math.random() * 899 + 100),
+    cpu: dbInst.cpu || 5,
+    memoria: dbInst.memoria || 12,
+    actividad: [
+      { desc: "Instancia conectada a PostgreSQL", tiempo: "Hace un momento", tipo: "info" }
+    ]
+  };
+};
+
 export const reiniciarInstancia = async (id: string): Promise<boolean> => {
   try {
     await axiosClient.post(`/instancias/${id}/restart`);
@@ -123,3 +95,4 @@ export const eliminarInstancia = async (id: string): Promise<boolean> => {
     return true;
   }
 };
+

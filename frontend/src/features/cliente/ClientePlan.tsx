@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProgressBar, StatusBadge } from "../../components/ui";
 import { C_PLAN } from "../../data/cliente";
+import { contratarPlan, getMiSuscripcionActiva } from "../../api/suscripcionesApi";
+import type { CInstancia } from "../../types/cliente";
 
 interface PlanAvailable {
+  id: string;
   nombre: string;
   precio: string;
   precioNum: number;
@@ -16,6 +19,7 @@ interface PlanAvailable {
 
 const PLANES_DISPONIBLES: PlanAvailable[] = [
   {
+    id: "plan-finca",
     nombre: "Finca",
     precio: "Q 25.00",
     precioNum: 25,
@@ -26,6 +30,7 @@ const PLANES_DISPONIBLES: PlanAvailable[] = [
     caracteristicas: ["1 Instancia PostgreSQL", "10 GB almacenamiento", "Soporte estándar por tickets", "Backups automáticos"],
   },
   {
+    id: "plan-productor",
     nombre: "Productor",
     precio: "Q 60.00",
     precioNum: 60,
@@ -37,6 +42,7 @@ const PLANES_DISPONIBLES: PlanAvailable[] = [
     caracteristicas: ["Hasta 2 Instancias PostgreSQL", "50 GB almacenamiento total", "Plantillas DB especializadas", "Soporte prioritario 24/7"],
   },
   {
+    id: "plan-agro-pro",
     nombre: "Agro Pro",
     precio: "Q 120.00",
     precioNum: 120,
@@ -47,6 +53,7 @@ const PLANES_DISPONIBLES: PlanAvailable[] = [
     caracteristicas: ["Hasta 3 Instancias PostgreSQL", "100 GB almacenamiento total", "Acceso a todas las plantillas", "Monitoreo avanzado de CPU y RAM"],
   },
   {
+    id: "plan-enterprise",
     nombre: "Agro Enterprise",
     precio: "Q 250.00",
     precioNum: 250,
@@ -58,24 +65,53 @@ const PLANES_DISPONIBLES: PlanAvailable[] = [
   },
 ];
 
-export function ClientePlan({ organizationName }: { organizationName: string }) {
+export function ClientePlan({
+  organizationName,
+  instanciasList = [],
+}: {
+  organizationName: string;
+  instanciasList?: CInstancia[];
+}) {
   const [currentPlan, setCurrentPlan] = useState<PlanAvailable>(PLANES_DISPONIBLES[1]); // Productor default
   const [modalChangeOpen, setModalChangeOpen] = useState(false);
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<PlanAvailable | null>(null);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
+  const [loadingSub, setLoadingSub] = useState(false);
 
-  const storageUsed = 32;
-  const instUsed = 2;
+  useEffect(() => {
+    getMiSuscripcionActiva().then((sub) => {
+      if (sub && sub.planId) {
+        const found = PLANES_DISPONIBLES.find((p) => p.id === sub.planId);
+        if (found) {
+          setCurrentPlan(found);
+          C_PLAN.nombre = found.nombre;
+          C_PLAN.maxInstancias = found.maxInstancias;
+          C_PLAN.totalGB = found.storageGB;
+        }
+      }
+    });
+  }, []);
 
-  const handleConfirmPlanChange = (plan: PlanAvailable) => {
-    setCurrentPlan(plan);
-    C_PLAN.nombre = plan.nombre;
-    C_PLAN.maxInstancias = plan.maxInstancias;
-    C_PLAN.totalGB = plan.storageGB;
-    setSelectedPlanForUpgrade(null);
-    setModalChangeOpen(false);
-    setNotificationMsg(`¡Plan actualizado con éxito al ${plan.nombre}! Tu límite ahora es de ${plan.maxInstancias} instancia(s) y ${plan.storage}.`);
-    setTimeout(() => setNotificationMsg(null), 5000);
+  const storageUsed = instanciasList.reduce((acc, inst) => acc + (inst.usadoGB || 0), 0);
+  const instUsed = instanciasList.length;
+
+  const handleConfirmPlanChange = async (plan: PlanAvailable) => {
+    setLoadingSub(true);
+    try {
+      await contratarPlan(plan.id, plan.nombre, plan.precioNum);
+      setCurrentPlan(plan);
+      C_PLAN.nombre = plan.nombre;
+      C_PLAN.maxInstancias = plan.maxInstancias;
+      C_PLAN.totalGB = plan.storageGB;
+      setSelectedPlanForUpgrade(null);
+      setModalChangeOpen(false);
+      setNotificationMsg(`¡Plan actualizado con éxito al ${plan.nombre}! Tu límite ahora es de ${plan.maxInstancias} instancia(s) y ${plan.storage}.`);
+      setTimeout(() => setNotificationMsg(null), 5000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingSub(false);
+    }
   };
 
   return (
@@ -372,8 +408,12 @@ export function ClientePlan({ organizationName }: { organizationName: string }) 
               <button onClick={() => setSelectedPlanForUpgrade(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
                 Cancelar
               </button>
-              <button onClick={() => handleConfirmPlanChange(selectedPlanForUpgrade)} className="flex-1 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-bold rounded-xl text-xs transition-colors shadow-sm">
-                Confirmar cambio
+              <button
+                disabled={loadingSub}
+                onClick={() => handleConfirmPlanChange(selectedPlanForUpgrade)}
+                className="flex-1 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-bold rounded-xl text-xs transition-colors shadow-sm disabled:opacity-50"
+              >
+                {loadingSub ? "Procesando..." : "Confirmar cambio"}
               </button>
             </div>
           </div>

@@ -9,6 +9,7 @@ export type ClientePage =
   | "documentacion";
 
 export interface CInstancia {
+  id?: string;
   nombre: string;
   plantilla: string;
   usadoGB: number;

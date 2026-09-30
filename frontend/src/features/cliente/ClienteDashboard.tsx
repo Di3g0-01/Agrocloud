@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { ActivityIcon, StatusBadge } from "../../components/ui";
-import { C_PLANTILLAS } from "../../data/cliente";
-import type { CPlantillaDB, ClientePage } from "../../types/cliente";
+import { C_PLAN, C_PLANTILLAS } from "../../data/cliente";
+import type { CInstancia, CPlantillaDB, ClientePage } from "../../types/cliente";
 import { SvgPaths } from "./ClienteInstancias";
 
-export function ClienteDashboard({ onNavigate }: { onNavigate?: (p: ClientePage) => void }) {
+export function ClienteDashboard({
+  onNavigate,
+  instanciasList = [],
+}: {
+  onNavigate?: (p: ClientePage) => void;
+  instanciasList?: CInstancia[];
+}) {
   const [selectedTemplate, setSelectedTemplate] = useState<CPlantillaDB | null>(null);
 
   const clienteActivity = [
@@ -12,10 +18,11 @@ export function ClienteDashboard({ onNavigate }: { onNavigate?: (p: ClientePage)
     { icon: "abierta" as const, title: "Suscripción renovada", sub: "Plan Productor · 29 ago" },
     { icon: "asignada" as const, title: "Incidencia enviada", sub: "INC-024 · 28 ago" },
   ];
-  const myInstances = [
-    { nombre: "agro-produccion-db", motor: "PostgreSQL", plantilla: "Cosechas y producción", almac: "22 / 50 GB", estado: "Activa" },
-    { nombre: "agro-inventario-db", motor: "PostgreSQL", plantilla: "Control de inventarios", almac: "10 / 50 GB", estado: "Activa" },
-  ];
+
+  const totalUsado = instanciasList.reduce((s, i) => s + i.usadoGB, 0);
+  const totalGB = C_PLAN.totalGB;
+  const dispGB = Math.max(0, totalGB - totalUsado);
+  const activas = instanciasList.filter((i) => i.estado === "Activa").length;
 
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
@@ -26,9 +33,9 @@ export function ClienteDashboard({ onNavigate }: { onNavigate?: (p: ClientePage)
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "INSTANCIAS", value: "2", sub: "Instancias activas", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: "text-lime-600 bg-lime-50" },
-          { label: "ALMACENAMIENTO", value: "32 GB", sub: "/ 50 GB", icon: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4", color: "text-blue-500 bg-blue-50" },
-          { label: "PLAN", value: "Productor", sub: "Q60 / mes", icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z", color: "text-purple-500 bg-purple-50" },
+          { label: "INSTANCIAS", value: String(instanciasList.length), sub: `${activas} activas`, icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: "text-lime-600 bg-lime-50" },
+          { label: "ALMACENAMIENTO", value: `${totalUsado} GB`, sub: `/ ${totalGB} GB`, icon: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4", color: "text-blue-500 bg-blue-50" },
+          { label: "PLAN", value: C_PLAN.nombre, sub: "Q60 / mes", icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z", color: "text-purple-500 bg-purple-50" },
           { label: "SUSCRIPCIÓN", value: "Activa", sub: "Estado actual", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-lime-600 bg-lime-50" },
         ].map(k => (
           <div key={k.label} className="bg-white border border-gray-100 rounded-xl p-5 text-left flex flex-col items-start">
@@ -55,24 +62,32 @@ export function ClienteDashboard({ onNavigate }: { onNavigate?: (p: ClientePage)
               Ver detalles
             </button>
           </div>
-          <table className="w-full min-w-max text-xs">
-            <thead><tr className="border-b border-gray-100">{["Nombre", "Motor", "Plantilla", "Almac.", "Estado", ""].map(h => <th key={h} className="px-5 py-3 text-center text-gray-400 font-medium uppercase tracking-wide text-[10px]">{h}</th>)}</tr></thead>
-            <tbody>
-              {myInstances.map(inst => (
-                <tr key={inst.nombre} className="border-b border-gray-50 hover:bg-gray-50 transition-colors text-center">
-                  <td className="px-5 py-4 font-mono font-medium text-gray-900">{inst.nombre}</td>
-                  <td className="px-5 py-4 text-gray-500">{inst.motor}</td>
-                  <td className="px-5 py-4 text-gray-600">{inst.plantilla}</td>
-                  <td className="px-5 py-4 text-gray-500">{inst.almac}</td>
-                  <td className="px-5 py-4 flex justify-center"><StatusBadge s={inst.estado} /></td>
-                  <td className="px-5 py-4 text-gray-400">
-                    <button onClick={() => onNavigate?.("instancias")} className="text-xs text-lime-600 hover:text-lime-700 font-medium">Ver</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="px-5 py-3 text-center text-xs text-gray-400">2 de 2 instancias · Capacidad disponible 18 GB</div>
+          {instanciasList.length === 0 ? (
+            <div className="p-8 text-center text-xs text-gray-400">
+              No tienes ninguna instancia activa en este momento.
+            </div>
+          ) : (
+            <table className="w-full min-w-max text-xs">
+              <thead><tr className="border-b border-gray-100">{["Nombre", "Motor", "Plantilla", "Almac.", "Estado", ""].map(h => <th key={h} className="px-5 py-3 text-center text-gray-400 font-medium uppercase tracking-wide text-[10px]">{h}</th>)}</tr></thead>
+              <tbody>
+                {instanciasList.map(inst => (
+                  <tr key={inst.id || inst.nombre} className="border-b border-gray-50 hover:bg-gray-50 transition-colors text-center">
+                    <td className="px-5 py-4 font-mono font-medium text-gray-900">{inst.nombre}</td>
+                    <td className="px-5 py-4 text-gray-500">PostgreSQL</td>
+                    <td className="px-5 py-4 text-gray-600">{inst.plantilla}</td>
+                    <td className="px-5 py-4 text-gray-500">{inst.usadoGB} / {inst.totalGB} GB</td>
+                    <td className="px-5 py-4 flex justify-center"><StatusBadge s={inst.estado} /></td>
+                    <td className="px-5 py-4 text-gray-400">
+                      <button onClick={() => onNavigate?.("instancias")} className="text-xs text-lime-600 hover:text-lime-700 font-medium">Ver</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <div className="px-5 py-3 text-center text-xs text-gray-400">
+            {instanciasList.length} de {C_PLAN.maxInstancias} instancias · Capacidad disponible {dispGB} GB
+          </div>
         </div>
 
         <div className="bg-white border border-gray-100 rounded-xl">

@@ -31,7 +31,7 @@ public class AdminUserService {
     @Transactional(readOnly = true)
     public List<UserResponse> list() {
         return users.findAll().stream()
-                .sorted(Comparator.comparing(User::getCreatedAt).reversed())
+                .sorted(Comparator.comparing((User u) -> u.getCreatedAt()).reversed())
                 .map(UserResponse::from)
                 .toList();
     }

@@ -12,26 +12,9 @@ export interface NotificationItem {
 }
 
 const INITIAL_NOTIFICATIONS: Record<RoleType, NotificationItem[]> = {
-  cliente: [
-    { id: "n1", titulo: "Aviso de pago", descripcion: "Próximo vencimiento de cuota mensual de tu Plan Productor el 25 de Septiembre.", tiempo: "Hace 15 min", leida: false, categoria: "pago" },
-    { id: "n2", titulo: "Activación de instancia", descripcion: "La instancia 'agro-produccion-db' se ha activado y está lista para recibir conexiones.", tiempo: "Hace 1 hora", leida: false, categoria: "activacion" },
-    { id: "n3", titulo: "Respuesta a ticket de soporte", descripcion: "Lucía Méndez respondió a tu incidencia INC-024 sobre el problema de conexión.", tiempo: "Hace 2 horas", leida: false, categoria: "soporte" },
-    { id: "n4", titulo: "Fallo o alerta de rendimiento", descripcion: "La instancia 'agro-inventario-db' superó el 75% de almacenamiento utilizado.", tiempo: "Hace 4 horas", leida: true, categoria: "fallo" },
-    { id: "n5", titulo: "Mantenimiento general", descripcion: "Mantenimiento programado de motor PostgreSQL para el domingo a las 02:00 UTC.", tiempo: "Hace 1 día", leida: true, categoria: "sistema" },
-  ],
-  admin: [
-    { id: "na1", titulo: "Nuevo cliente registrado", descripcion: "La organización 'Finca El Roble' completó su registro autónomo en la plataforma.", tiempo: "Hace 10 min", leida: false, categoria: "cliente" },
-    { id: "na2", titulo: "Pago recibido", descripcion: "Se recibió la transferencia de Q120.00 por suscripción de 'Finca Los Pinos'.", tiempo: "Hace 35 min", leida: false, categoria: "pago" },
-    { id: "na3", titulo: "Factura pendiente de pago", descripcion: "'Cooperativa Occidente' tiene 1 pago pendiente de regularizar.", tiempo: "Hace 2 horas", leida: false, categoria: "morosidad" },
-    { id: "na4", titulo: "Instancia cancelada / suspendida", descripcion: "La instancia 'cafe-export-db' fue suspendida automáticamente.", tiempo: "Hace 5 horas", leida: true, categoria: "cancelacion" },
-    { id: "na5", titulo: "Reporte de soporte técnico", descripcion: "El equipo de soporte ha resuelto 4 incidencias críticas esta semana.", tiempo: "Hace 8 horas", leida: true, categoria: "soporte" },
-  ],
-  soporte: [
-    { id: "ns1", titulo: "Nueva solicitud de soporte", descripcion: "Se asignó la incidencia INC-024 (Problema de conexión) a tu bandeja.", tiempo: "Hace 5 min", leida: false, categoria: "ticket" },
-    { id: "ns2", titulo: "Estado crítico de recurso", descripcion: "La instancia 'agro-produccion-db' sobrepasó el 78% de uso de CPU.", tiempo: "Hace 20 min", leida: false, categoria: "critico" },
-    { id: "ns3", titulo: "Mensaje del administrador", descripcion: "David Admin autorizó la actualización del esquema para plantillas de cosechas.", tiempo: "Hace 2 horas", leida: true, categoria: "admin" },
-    { id: "ns4", titulo: "Instancia restablecida", descripcion: "La instancia 'agricola-norte-db' recuperó métricas normales de uptime (99.8%).", tiempo: "Hace 6 horas", leida: true, categoria: "resolucion" },
-  ],
+  cliente: [],
+  admin: [],
+  soporte: [],
 };
 
 export function NotificationMenu({ role }: { role: RoleType }) {

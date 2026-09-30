@@ -21,6 +21,11 @@ export function AdminPagos({ isDark }: { isDark?: boolean }) {
     (p.cliente.toLowerCase().includes(search.toLowerCase()) || p.id.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const totalIngresos = PAGOS_ADMIN.filter(p => p.estado === "Pagado").reduce((acc, p) => acc + (p.monto || 0), 0);
+  const pagosCompletados = PAGOS_ADMIN.filter(p => p.estado === "Pagado").length;
+  const pagosPendientes = PAGOS_ADMIN.filter(p => p.estado === "Pendiente").length;
+  const pagosRechazados = PAGOS_ADMIN.filter(p => p.estado === "Rechazado").length;
+
   return (
     <div className={`flex-1 overflow-auto p-4 lg:p-8 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
       <div className="flex items-start justify-between mb-6 gap-4">
@@ -32,10 +37,10 @@ export function AdminPagos({ isDark }: { isDark?: boolean }) {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: "INGRESOS DEL MES", value: "Q2,510", sub: "Septiembre 2026", color: isDark ? "text-lime-400 bg-lime-950/40" : "text-lime-600 bg-lime-50", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 13v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-          { label: "PAGOS COMPLETADOS", value: "28", sub: "Este mes", color: isDark ? "text-blue-400 bg-blue-950/40" : "text-blue-500 bg-blue-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
-          { label: "PAGOS PENDIENTES", value: "4", sub: "En proceso", color: isDark ? "text-amber-400 bg-amber-950/40" : "text-amber-500 bg-amber-50", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
-          { label: "PAGOS RECHAZADOS", value: "1", sub: "Requieren atención", color: isDark ? "text-red-400 bg-red-950/40" : "text-red-500 bg-red-50", icon: "M6 18L18 6M6 6l12 12" },
+          { label: "INGRESOS DEL MES", value: `Q${totalIngresos.toLocaleString()}`, sub: "Mes actual", color: isDark ? "text-lime-400 bg-lime-950/40" : "text-lime-600 bg-lime-50", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 13v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+          { label: "PAGOS COMPLETADOS", value: String(pagosCompletados), sub: "Este mes", color: isDark ? "text-blue-400 bg-blue-950/40" : "text-blue-500 bg-blue-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+          { label: "PAGOS PENDIENTES", value: String(pagosPendientes), sub: "En proceso", color: isDark ? "text-amber-400 bg-amber-950/40" : "text-amber-500 bg-amber-50", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
+          { label: "PAGOS RECHAZADOS", value: String(pagosRechazados), sub: "Requieren atención", color: isDark ? "text-red-400 bg-red-950/40" : "text-red-500 bg-red-50", icon: "M6 18L18 6M6 6l12 12" },
         ].map(k => (
           <div key={k.label} className={`border rounded-xl p-5 flex flex-col items-start ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <div className="flex items-center gap-2 mb-3">

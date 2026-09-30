@@ -14,10 +14,10 @@ export function SoporteDashboard({ setPage, isDark }: { setPage: (p: SoportePage
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Incidencias abiertas", value: "12", sub: "Pendientes de atención", icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z", color: isDark ? "text-blue-400 bg-blue-950/40" : "text-blue-500 bg-blue-50" },
-          { label: "En revisión", value: "5", sub: "Atención técnica activa", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-orange-400 bg-orange-950/40" : "text-orange-500 bg-orange-50" },
-          { label: "Resueltas", value: "28", sub: "Esta semana", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-lime-400 bg-lime-950/40" : "text-lime-600 bg-lime-50" },
-          { label: "Con incidencias", value: "4", sub: "Instancias afectadas", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: isDark ? "text-slate-400 bg-slate-800" : "text-gray-500 bg-gray-100" },
+          { label: "Incidencias abiertas", value: "0", sub: "Pendientes de atención", icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z", color: isDark ? "text-blue-400 bg-blue-950/40" : "text-blue-500 bg-blue-50" },
+          { label: "En revisión", value: "0", sub: "Atención técnica activa", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-orange-400 bg-orange-950/40" : "text-orange-500 bg-orange-50" },
+          { label: "Resueltas", value: "0", sub: "Esta semana", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-lime-400 bg-lime-950/40" : "text-lime-600 bg-lime-50" },
+          { label: "Con incidencias", value: "0", sub: "Instancias afectadas", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: isDark ? "text-slate-400 bg-slate-800" : "text-gray-500 bg-gray-100" },
         ].map(k => (
           <div key={k.label} className={`border rounded-xl p-5 text-left flex flex-col items-start ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <div className="flex items-center justify-start gap-2 mb-3">
