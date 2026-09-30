@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StatusBadge } from "../../components/ui";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { PLANTILLAS_ADMIN } from "../../data/admin";
 import { C_PLANTILLAS } from "../../data/cliente";
 import type { PlantillaAdmin } from "../../types/admin";
+import { getPlantillas, crearPlantillaApi } from "../../api/plantillasApi";
 
 export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
   const [search, setSearch] = useState("");
@@ -12,6 +13,16 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
   const [tab, setTab] = useState("Resumen");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [plantillasList, setPlantillasList] = useState<PlantillaAdmin[]>(PLANTILLAS_ADMIN);
+
+  useEffect(() => {
+    getPlantillas()
+      .then((data) => {
+        if (data && data.length > 0) {
+          setPlantillasList(data);
+        }
+      })
+      .catch((err) => console.error("Error al cargar plantillas desde API:", err));
+  }, []);
 
   // Form State
   const [nombre, setNombre] = useState("");
@@ -28,7 +39,7 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
     setEstado("Activa");
   };
 
-  const handleCreatePlantilla = (e: React.FormEvent) => {
+  const handleCreatePlantilla = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !descripcion) return;
 
@@ -36,31 +47,38 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
       ? tablasText.split(",").map((t) => t.trim().toLowerCase().replace(/\s+/g, "_")).filter(Boolean)
       : ["registro", "datos", "reportes"];
 
-    const newTpl: PlantillaAdmin = {
-      id: `TPL-0${plantillasList.length + 1}`,
-      nombre,
-      descripcion,
-      tablas: schemaArr.length,
-      version: version || "1.0",
-      instancias: 0,
-      estado,
-      actualizada: "Hoy",
-      schema: schemaArr,
-    };
+    try {
+      const created = await crearPlantillaApi({
+        nombre,
+        descripcion,
+        version: version || "1.0",
+        estado,
+        schema: schemaArr,
+      });
 
-    setPlantillasList((prev) => [newTpl, ...prev]);
+      setPlantillasList((prev) => {
+        const combined = [created, ...prev];
+        const uniqueMap = new Map();
+        combined.forEach((item) => uniqueMap.set(item.id, item));
+        return Array.from(uniqueMap.values());
+      });
+    } catch (err) {
+      console.warn("Fallback local para crear plantilla:", err);
+      const uniqueId = `TPL-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      const newTpl: PlantillaAdmin = {
+        id: uniqueId,
+        nombre,
+        descripcion,
+        tablas: schemaArr.length,
+        version: version || "1.0",
+        instancias: 0,
+        estado,
+        actualizada: "Hoy",
+        schema: schemaArr,
+      };
 
-    PLANTILLAS_ADMIN.unshift(newTpl);
-    C_PLANTILLAS.unshift({
-      id: newTpl.id,
-      nombre: newTpl.nombre,
-      categoria: "General",
-      descripcion: newTpl.descripcion,
-      tablas: newTpl.tablas,
-      entidades: schemaArr.slice(0, 5),
-      casosDeUso: ["Gestión agrícola general", "Estructura relacional optimizada"],
-      icon: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6z",
-    });
+      setPlantillasList((prev) => [newTpl, ...prev]);
+    }
 
     resetForm();
     setCreateModalOpen(false);
@@ -157,6 +175,12 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
     );
   }
 
+  const totalInstanciasPlantillas = plantillasList.reduce((acc, p) => acc + (p.instancias || 0), 0);
+  const masUtilizadaObj = plantillasList.reduce<PlantillaAdmin | null>((max, p) => {
+    if (!max || (p.instancias || 0) > (max.instancias || 0)) return p;
+    return max;
+  }, null);
+
   return (
     <div className={`flex-1 overflow-auto p-4 lg:p-8 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
       <div className="flex items-start justify-between mb-6 gap-4">
@@ -174,8 +198,8 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
         {[
           { label: "DISPONIBLES", value: String(plantillasList.length), sub: "Plantillas en plataforma", color: isDark ? "text-blue-400 bg-blue-950/40" : "text-blue-500 bg-blue-50", icon: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" },
           { label: "ACTIVAS", value: String(plantillasList.filter(p => p.estado === "Activa").length), sub: "En uso por clientes", color: isDark ? "text-lime-400 bg-lime-950/40" : "text-lime-600 bg-lime-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
-          { label: "INSTANCIAS", value: "38", sub: "Usan una plantilla", color: isDark ? "text-purple-400 bg-purple-950/40" : "text-purple-500 bg-purple-50", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" },
-          { label: "MÁS UTILIZADA", value: "Cosechas", sub: "12 instancias activas", color: isDark ? "text-orange-400 bg-orange-950/40" : "text-orange-500 bg-orange-50", icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
+          { label: "INSTANCIAS", value: String(totalInstanciasPlantillas), sub: "Usan una plantilla", color: isDark ? "text-purple-400 bg-purple-950/40" : "text-purple-500 bg-purple-50", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" },
+          { label: "MÁS UTILIZADA", value: masUtilizadaObj && masUtilizadaObj.instancias > 0 ? masUtilizadaObj.nombre : "Ninguna", sub: masUtilizadaObj && masUtilizadaObj.instancias > 0 ? `${masUtilizadaObj.instancias} instancia(s) activa(s)` : "Sin uso acumulado", color: isDark ? "text-orange-400 bg-orange-950/40" : "text-orange-500 bg-orange-50", icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
         ].map(k => (
           <div key={k.label} className={`border rounded-xl p-5 flex flex-col items-start ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <div className="flex items-center gap-2 mb-3">
@@ -198,8 +222,8 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filtered.map(p => (
-          <div key={p.id} className={`border rounded-xl p-5 flex flex-col transition-all cursor-pointer ${isDark ? "bg-slate-900 border-slate-800 hover:border-lime-500/50" : "bg-white border-gray-100 hover:border-lime-200 hover:shadow-sm"}`} onClick={() => setDetalle(p)}>
+        {filtered.map((p, idx) => (
+          <div key={`${p.id}-${idx}`} className={`border rounded-xl p-5 flex flex-col transition-all cursor-pointer ${isDark ? "bg-slate-900 border-slate-800 hover:border-lime-500/50" : "bg-white border-gray-100 hover:border-lime-200 hover:shadow-sm"}`} onClick={() => setDetalle(p)}>
             <div className="flex items-start justify-between mb-3">
               <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-100"}`}>
                 <svg className={`w-5 h-5 ${isDark ? "text-slate-400" : "text-gray-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>

@@ -34,7 +34,7 @@ export function ClientePanel({ user, onLogout }: { user: User; onLogout: () => v
 
   useEffect(() => {
     getInstancias().then((data) => {
-      if (data && Array.isArray(data) && data.length > 0) {
+      if (data && Array.isArray(data)) {
         setInstanciasList(data.map(mapInstanciaDBToCInstancia));
       }
     });
@@ -107,7 +107,7 @@ export function ClientePanel({ user, onLogout }: { user: User; onLogout: () => v
         {page === "dashboard" && <ClienteDashboard onNavigate={navigate} instanciasList={instanciasList} />}
         {page === "instancias" && <ClienteInstancias onNavigate={navigate} instanciasList={instanciasList} setInstanciasList={setInstanciasList} />}
         {page === "plantillas" && <ClientePlantillas onNavigate={navigate} />}
-        {page === "plan" && <ClientePlan organizationName={organizationName} />}
+        {page === "plan" && <ClientePlan organizationName={organizationName} instanciasList={instanciasList} />}
         {page === "pagos" && <ClientePagos organizationName={organizationName} />}
         {page === "soporte" && <ClienteSoporte organizationName={organizationName} initials={initials} />}
         {page === "configuracion" && <ClienteConfiguracion user={user} organizationName={organizationName} initials={initials} />}

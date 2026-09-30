@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { StatusBadge, CustomSelect } from "../../components/ui";
-import { SUSCRIPCIONES_DATA } from "../../data/admin";
+import { listAdminUsers } from "../../api/adminUsersApi";
 import type { Suscripcion } from "../../types/admin";
 
 interface PlanItem {
@@ -20,6 +20,7 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
   const [planFilter, setPlanFilter] = useState("Todos");
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<Suscripcion | null>(null);
+  const [suscripcionesList, setSuscripcionesList] = useState<Suscripcion[]>([]);
 
   // Planes State (from former AdminPlanes)
   const [modalOpen, setModalOpen] = useState(false);
@@ -29,6 +30,40 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
     { nombre: "Agro Pro", precio: "Q120", storage: "100 GB", instancias: "3", clientes: 0, ingresos: "Q0", estado: "Activo" },
     { nombre: "Agro Enterprise", precio: "Q250", storage: "250 GB", instancias: "5", clientes: 0, ingresos: "Q0", estado: "Activo" },
   ]);
+
+  useEffect(() => {
+    listAdminUsers()
+      .then((users) => {
+        const clienteUsers = users.filter((u) => u.role === "CLIENTE");
+        const mappedSubs: Suscripcion[] = clienteUsers.map((u, idx) => {
+          const formattedDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString("es-GT") : "Reciente";
+          return {
+            id: `SUB-${1000 + idx}`,
+            cliente: u.organizationName || u.contactName || u.email,
+            plan: "Productor",
+            precio: "Q60",
+            inicio: formattedDate,
+            renovacion: "Próximo mes",
+            estado: u.status === "ACTIVO" ? "Activa" : "Suspendida",
+            monto: 60,
+          };
+        });
+        setSuscripcionesList(mappedSubs);
+
+        setPlanes((prev) =>
+          prev.map((plan) => {
+            const count = mappedSubs.filter((s) => s.plan === plan.nombre).length;
+            const priceNum = parseInt(plan.precio.replace(/[^0-9]/g, "")) || 0;
+            return {
+              ...plan,
+              clientes: count,
+              ingresos: `Q${count * priceNum}`,
+            };
+          })
+        );
+      })
+      .catch((err) => console.error("Error al obtener suscripciones de usuarios:", err));
+  }, []);
 
   // Form State for creating new plan
   const [nombre, setNombre] = useState("");
@@ -84,7 +119,12 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
     return acc + val;
   }, 0);
 
-  const filtered = SUSCRIPCIONES_DATA.filter((s) =>
+  const masContratadoObj = planes.reduce<PlanItem | null>((max, p) => {
+    if (!max || p.clientes > max.clientes) return p;
+    return max;
+  }, null);
+
+  const filtered = suscripcionesList.filter((s) =>
     (estadoFilter === "Todos" || s.estado === estadoFilter) &&
     (planFilter === "Todos" || s.plan === planFilter) &&
     s.cliente.toLowerCase().includes(search.toLowerCase())
@@ -247,15 +287,15 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
               },
               {
                 label: "SUSCRIPCIONES",
-                value: String(SUSCRIPCIONES_DATA.length),
+                value: String(suscripcionesList.length),
                 sub: "Activas en total",
                 color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50",
                 icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z",
               },
               {
                 label: "MÁS CONTRATADO",
-                value: "—",
-                sub: "0 suscriptores",
+                value: masContratadoObj && masContratadoObj.clientes > 0 ? masContratadoObj.nombre : "—",
+                sub: masContratadoObj && masContratadoObj.clientes > 0 ? `${masContratadoObj.clientes} suscriptores` : "0 suscriptores",
                 color: isDark ? "text-purple-400 bg-purple-950/60 border border-purple-800/40" : "text-purple-500 bg-purple-50",
                 icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6",
               },
@@ -360,9 +400,9 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "ACTIVAS", value: String(SUSCRIPCIONES_DATA.filter(s => s.estado === "Activa").length), sub: "Suscripciones vigentes", color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
+              { label: "ACTIVAS", value: String(suscripcionesList.filter(s => s.estado === "Activa").length), sub: "Suscripciones vigentes", color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
               { label: "PRÓX. RENOVAR", value: "0", sub: "En los próximos 15 días", color: isDark ? "text-amber-400 bg-amber-950/60 border border-amber-800/40" : "text-amber-500 bg-amber-50", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
-              { label: "SUSPENDIDAS", value: String(SUSCRIPCIONES_DATA.filter(s => s.estado === "Suspendida").length), sub: "Acceso restringido", color: isDark ? "text-red-400 bg-red-950/60 border border-red-800/40" : "text-red-500 bg-red-50", icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" },
+              { label: "SUSPENDIDAS", value: String(suscripcionesList.filter(s => s.estado === "Suspendida").length), sub: "Acceso restringido", color: isDark ? "text-red-400 bg-red-950/60 border border-red-800/40" : "text-red-500 bg-red-50", icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" },
               { label: "CANCELADAS", value: "0", sub: "Sin renovación", color: isDark ? "text-slate-400 bg-slate-800 border border-slate-700" : "text-gray-500 bg-gray-100", icon: "M6 18L18 6M6 6l12 12" },
             ].map((k) => (
               <div key={k.label} className={`border rounded-xl p-5 flex flex-col items-start ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
@@ -668,48 +708,34 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
             </div>
 
             <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-              {Array.from({ length: viewSubscribersPlan.clientes }).map((_, idx) => {
-                const sampleClients = [
-                  { cliente: "Finca Los Pinos", contacto: "carlos@fincalospinos.com", fecha: "Desde Jun 2026", estado: "Activo" },
-                  { cliente: "Finca El Roble", contacto: "andrea@fincaelroble.com", fecha: "Desde Jun 2026", estado: "Activo" },
-                  { cliente: "Café Export S.A.", contacto: "diana@cafeexport.com", fecha: "Desde Ene 2026", estado: "Suspendido" },
-                  { cliente: "Agro Semillas del Sur", contacto: "contacto@semillasdelsur.com", fecha: "Desde Feb 2026", estado: "Activo" },
-                  { cliente: "Cooperativa San Juan", contacto: "info@coopsanjuan.com", fecha: "Desde Mar 2026", estado: "Activo" },
-                  { cliente: "Hacienda El Parral", contacto: "elparral@hacienda.com", fecha: "Desde Abr 2026", estado: "Activo" },
-                  { cliente: "Cultivos del Valle S.A.", contacto: "admin@cultivosdelvalle.com", fecha: "Desde Mayo 2026", estado: "Activo" },
-                  { cliente: "Finca La Esperanza", contacto: "laesperanza@finca.gt", fecha: "Desde Jun 2026", estado: "Activo" },
-                  { cliente: "Agrícola Los Olivos", contacto: "losolivos@agricola.com", fecha: "Desde Jul 2026", estado: "Activo" },
-                  { cliente: "Cosechas Verdes", contacto: "soporte@cosechasverdes.org", fecha: "Desde Ago 2026", estado: "Activo" },
-                  { cliente: "Distribuidora del Agro", contacto: "ventas@distroagro.com", fecha: "Desde Ago 2026", estado: "Activo" },
-                  { cliente: "Finca Santa Marta", contacto: "santamarta@finca.gt", fecha: "Desde Sep 2026", estado: "Activo" },
-                  { cliente: "Cooperativa Altiplano", contacto: "contacto@coopaltiplano.com", fecha: "Desde Sep 2026", estado: "Activo" },
-                  { cliente: "Agroindustrial El Sol", contacto: "elsol@agroindustrial.com", fecha: "Desde Sep 2026", estado: "Activo" },
-                ];
-                const item = sampleClients[idx % sampleClients.length];
-
-                return (
-                  <div key={idx} className="p-3 border border-gray-100 rounded-xl flex items-center justify-between hover:bg-gray-50/80 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-lime-100 text-lime-800 font-bold text-xs flex items-center justify-center shrink-0">
-                        {item.cliente.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+              {suscripcionesList.filter(s => s.plan === viewSubscribersPlan.nombre).length === 0 ? (
+                <p className="text-xs text-gray-400 text-center py-6">No hay clientes suscritos en este plan aún.</p>
+              ) : (
+                suscripcionesList
+                  .filter(s => s.plan === viewSubscribersPlan.nombre)
+                  .map((sub, idx) => (
+                    <div key={sub.id || idx} className="p-3 border border-gray-100 rounded-xl flex items-center justify-between hover:bg-gray-50/80 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-lime-100 text-lime-800 font-bold text-xs flex items-center justify-center shrink-0">
+                          {sub.cliente.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-gray-900">{sub.cliente}</p>
+                          <p className="text-[10px] text-gray-400">{sub.inicio}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-semibold text-gray-900">{item.cliente} #{idx + 1}</p>
-                        <p className="text-[10px] text-gray-400">{item.contacto} • {item.fecha}</p>
-                      </div>
+                      <span
+                        className={`px-2 py-0.5 text-[10px] font-semibold rounded ${
+                          sub.estado === "Activa"
+                            ? "bg-lime-100 text-lime-700 border border-lime-300"
+                            : "bg-red-50 text-red-600 border border-red-200"
+                        }`}
+                      >
+                        {sub.estado}
+                      </span>
                     </div>
-                    <span
-                      className={`px-2 py-0.5 text-[10px] font-semibold rounded ${
-                        item.estado === "Activo"
-                          ? "bg-lime-100 text-lime-700 border border-lime-300"
-                          : "bg-red-50 text-red-600 border border-red-200"
-                      }`}
-                    >
-                      {item.estado}
-                    </span>
-                  </div>
-                );
-              })}
+                  ))
+              )}
             </div>
 
             <div className="flex justify-end pt-3 border-t border-gray-100">

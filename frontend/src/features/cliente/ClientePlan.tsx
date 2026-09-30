@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ProgressBar, StatusBadge } from "../../components/ui";
 import { C_PLAN } from "../../data/cliente";
 import { contratarPlan, getMiSuscripcionActiva } from "../../api/suscripcionesApi";
+import type { CInstancia } from "../../types/cliente";
 
 interface PlanAvailable {
   id: string;
@@ -64,7 +65,13 @@ const PLANES_DISPONIBLES: PlanAvailable[] = [
   },
 ];
 
-export function ClientePlan({ organizationName }: { organizationName: string }) {
+export function ClientePlan({
+  organizationName,
+  instanciasList = [],
+}: {
+  organizationName: string;
+  instanciasList?: CInstancia[];
+}) {
   const [currentPlan, setCurrentPlan] = useState<PlanAvailable>(PLANES_DISPONIBLES[1]); // Productor default
   const [modalChangeOpen, setModalChangeOpen] = useState(false);
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<PlanAvailable | null>(null);
@@ -85,8 +92,8 @@ export function ClientePlan({ organizationName }: { organizationName: string }) 
     });
   }, []);
 
-  const storageUsed = 32;
-  const instUsed = 2;
+  const storageUsed = instanciasList.reduce((acc, inst) => acc + (inst.usadoGB || 0), 0);
+  const instUsed = instanciasList.length;
 
   const handleConfirmPlanChange = async (plan: PlanAvailable) => {
     setLoadingSub(true);

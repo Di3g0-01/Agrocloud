@@ -316,7 +316,7 @@ export function ClienteInstancias({
             </thead>
             <tbody>
               {filtered.map(inst => (
-                <tr key={inst.nombre} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors text-center">
+                <tr key={inst.id || inst.nombre} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors text-center">
                   <td className="px-4 py-3.5">
                     <div className="flex items-center justify-center gap-2.5">
                       <div className="w-7 h-7 rounded-md bg-lime-50 flex items-center justify-center shrink-0">
@@ -354,7 +354,7 @@ export function ClienteInstancias({
       {view === "grid" && filtered.length > 0 && (
         <div className="grid grid-cols-2 gap-4">
           {filtered.map(inst => (
-            <div key={inst.nombre} className="bg-white border border-gray-100 rounded-xl p-5">
+            <div key={inst.id || inst.nombre} className="bg-white border border-gray-100 rounded-xl p-5">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-lime-50 flex items-center justify-center">

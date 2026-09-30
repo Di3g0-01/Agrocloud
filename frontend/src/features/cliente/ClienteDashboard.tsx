@@ -71,7 +71,7 @@ export function ClienteDashboard({
               <thead><tr className="border-b border-gray-100">{["Nombre", "Motor", "Plantilla", "Almac.", "Estado", ""].map(h => <th key={h} className="px-5 py-3 text-center text-gray-400 font-medium uppercase tracking-wide text-[10px]">{h}</th>)}</tr></thead>
               <tbody>
                 {instanciasList.map(inst => (
-                  <tr key={inst.nombre} className="border-b border-gray-50 hover:bg-gray-50 transition-colors text-center">
+                  <tr key={inst.id || inst.nombre} className="border-b border-gray-50 hover:bg-gray-50 transition-colors text-center">
                     <td className="px-5 py-4 font-mono font-medium text-gray-900">{inst.nombre}</td>
                     <td className="px-5 py-4 text-gray-500">PostgreSQL</td>
                     <td className="px-5 py-4 text-gray-600">{inst.plantilla}</td>

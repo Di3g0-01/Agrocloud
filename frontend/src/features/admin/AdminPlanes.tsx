@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CustomSelect } from "../../components/ui/CustomSelect";
+import { listAdminUsers } from "../../api/adminUsersApi";
 
 interface PlanItem {
   nombre: string;
   precio: string;
+  precioNum: number;
   storage: string;
   instancias: string;
   clientes: number;
@@ -14,11 +16,30 @@ interface PlanItem {
 export function AdminPlanes() {
   const [modalOpen, setModalOpen] = useState(false);
   const [planes, setPlanes] = useState<PlanItem[]>([
-    { nombre: "Finca", precio: "Q25", storage: "10 GB", instancias: "1", clientes: 8, ingresos: "Q200", estado: "Activo" },
-    { nombre: "Productor", precio: "Q60", storage: "50 GB", instancias: "2", clientes: 14, ingresos: "Q840", estado: "Activo" },
-    { nombre: "Agro Pro", precio: "Q120", storage: "100 GB", instancias: "3", clientes: 6, ingresos: "Q720", estado: "Activo" },
-    { nombre: "Agro Enterprise", precio: "Q250", storage: "250 GB", instancias: "5", clientes: 3, ingresos: "Q750", estado: "Activo" },
+    { nombre: "Finca", precio: "Q25", precioNum: 25, storage: "10 GB", instancias: "1", clientes: 0, ingresos: "Q0", estado: "Activo" },
+    { nombre: "Productor", precio: "Q60", precioNum: 60, storage: "50 GB", instancias: "2", clientes: 0, ingresos: "Q0", estado: "Activo" },
+    { nombre: "Agro Pro", precio: "Q120", precioNum: 120, storage: "100 GB", instancias: "3", clientes: 0, ingresos: "Q0", estado: "Activo" },
+    { nombre: "Agro Enterprise", precio: "Q250", precioNum: 250, storage: "250 GB", instancias: "5", clientes: 0, ingresos: "Q0", estado: "Activo" },
   ]);
+
+  useEffect(() => {
+    listAdminUsers()
+      .then((users) => {
+        const clienteUsers = users.filter((u) => u.role === "CLIENTE" && u.status === "ACTIVO");
+        setPlanes((prev) =>
+          prev.map((plan) => {
+            const count = plan.nombre === "Productor" ? clienteUsers.length : 0;
+            const rev = count * plan.precioNum;
+            return {
+              ...plan,
+              clientes: count,
+              ingresos: `Q${rev}`,
+            };
+          })
+        );
+      })
+      .catch((err) => console.error("Error al cargar datos en AdminPlanes:", err));
+  }, []);
 
   // Form State
   const [nombre, setNombre] = useState("");
@@ -41,9 +62,11 @@ export function AdminPlanes() {
     e.preventDefault();
     if (!nombre || !precio) return;
 
+    const pNum = parseInt(precio.replace(/[^0-9]/g, "")) || 0;
     const newPlan: PlanItem = {
       nombre,
       precio: precio.startsWith("Q") ? precio : `Q${precio}`,
+      precioNum: pNum,
       storage: storage ? (storage.includes("GB") ? storage : `${storage} GB`) : "20 GB",
       instancias: instancias || "1",
       clientes: 0,
@@ -74,6 +97,12 @@ export function AdminPlanes() {
     setEditingPlan(null);
   };
 
+  const totalSubscripciones = planes.reduce((acc, p) => acc + p.clientes, 0);
+  const masContratadoObj = planes.reduce<PlanItem | null>((max, p) => {
+    if (!max || p.clientes > max.clientes) return p;
+    return max;
+  }, null);
+
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
       <div className="flex items-start justify-between mb-6 gap-4">
@@ -90,8 +119,8 @@ export function AdminPlanes() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { label: "PLANES ACTIVOS", value: String(planes.filter(p => p.estado === "Activo").length), sub: "Planes disponibles", color: "text-blue-500 bg-blue-50", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" },
-          { label: "SUSCRIPCIONES", value: "31", sub: "Activas en total", color: "text-lime-600 bg-lime-50", icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" },
-          { label: "MÁS CONTRATADO", value: "Productor", sub: "14 suscriptores", color: "text-purple-500 bg-purple-50", icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
+          { label: "SUSCRIPCIONES", value: String(totalSubscripciones), sub: "Activas en total", color: "text-lime-600 bg-lime-50", icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" },
+          { label: "MÁS CONTRATADO", value: masContratadoObj && masContratadoObj.clientes > 0 ? masContratadoObj.nombre : "-", sub: masContratadoObj && masContratadoObj.clientes > 0 ? `${masContratadoObj.clientes} suscriptores` : "0 suscriptores", color: "text-purple-500 bg-purple-50", icon: "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
           { label: "INGRESO MENSUAL", value: `Q${totalIngresosNum.toLocaleString()}`, sub: "Estimado total", color: "text-green-600 bg-green-50", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 13v-1m0 0c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
         ].map(k => (
           <div key={k.label} className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col items-start">
