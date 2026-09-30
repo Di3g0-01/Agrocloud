@@ -44,7 +44,7 @@ try {
         --mount 'type=volume,source=agrocloud-maven-test-cache,target=/root/.m2' `
         -w /workspace `
         -e RUN_DB_INTEGRATION_TESTS -e DB_URL -e DB_USERNAME -e DB_PASSWORD -e JWT_SECRET `
-        maven:3.9.9-eclipse-temurin-24 mvn -B -q test
+        maven:3.9.9-eclipse-temurin-24 mvn -B -q clean test
     if ($LASTEXITCODE -ne 0) { throw 'Fallaron las pruebas de integración.' }
     Write-Output 'Pruebas de integración completadas en agrocloud_test.'
 } finally {
