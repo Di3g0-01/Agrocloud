@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { StatusBadge } from "../../components/ui";
 import { CustomSelect } from "../../components/ui/CustomSelect";
-import { PLANTILLAS_ADMIN } from "../../data/admin";
-import { C_PLANTILLAS } from "../../data/cliente";
 import type { PlantillaAdmin } from "../../types/admin";
-import { getPlantillas, crearPlantillaApi } from "../../api/plantillasApi";
+import { getPlantillas, crearPlantillaApi, actualizarPlantillaApi, eliminarPlantillaApi } from "../../api/plantillasApi";
 
 export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
   const [search, setSearch] = useState("");
@@ -12,16 +10,17 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
   const [detalle, setDetalle] = useState<PlantillaAdmin | null>(null);
   const [tab, setTab] = useState("Resumen");
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [plantillasList, setPlantillasList] = useState<PlantillaAdmin[]>(PLANTILLAS_ADMIN);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [plantillasList, setPlantillasList] = useState<PlantillaAdmin[]>([]);
 
   useEffect(() => {
-    getPlantillas()
-      .then((data) => {
-        if (data && data.length > 0) {
-          setPlantillasList(data);
-        }
-      })
-      .catch((err) => console.error("Error al cargar plantillas desde API:", err));
+    const refresh = () => getPlantillas()
+      .then((data) => setPlantillasList(data))
+      .catch(() => setError("No se pudieron cargar las plantillas. Revisa la conexión e inténtalo de nuevo."));
+    refresh();
+    const timer = window.setInterval(refresh, 30000);
+    return () => window.clearInterval(timer);
   }, []);
 
   // Form State
@@ -37,6 +36,49 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
     setVersion("1.0");
     setTablasText("");
     setEstado("Activa");
+    setEditingId(null);
+  };
+
+  const openEdit = (p: PlantillaAdmin) => {
+    setEditingId(p.id);
+    setNombre(p.nombre);
+    setDescripcion(p.descripcion);
+    setVersion(p.version);
+    setEstado(p.estado as "Activa" | "Inactiva");
+    setTablasText(p.schema.join(", "));
+    setDetalle(null);
+    setCreateModalOpen(true);
+  };
+
+  const performAction = async (action: string, p: PlantillaAdmin) => {
+    setMenuOpen(null);
+    setError("");
+    if (action === "Ver estructura") { setDetalle(p); return; }
+    if (action === "Editar") { openEdit(p); return; }
+    if (action === "Descargar esquema básico") {
+      const sql = "-- Estructura inicial: la plantilla solo define nombres de tablas.\n" +
+        p.schema.map(t => `CREATE TABLE IF NOT EXISTS "${t.replace(/"/g, "")}" (id UUID PRIMARY KEY);`).join("\n");
+      const url = URL.createObjectURL(new Blob([sql], { type: "text/sql" }));
+      const link = document.createElement("a");
+      link.href = url; link.download = `${p.nombre.replace(/[^a-z0-9-]/gi, "_")}.sql`; link.click();
+      URL.revokeObjectURL(url);
+      return;
+    }
+    if (action === "Eliminar" && !window.confirm(`¿Eliminar la plantilla ${p.nombre}?`)) return;
+    try {
+      if (action === "Eliminar") {
+        await eliminarPlantillaApi(p.id);
+        setPlantillasList(prev => prev.filter(item => item.id !== p.id));
+        setDetalle(null);
+      } else if (action === "Duplicar") {
+        const created = await crearPlantillaApi({ nombre: `${p.nombre} (copia)`, descripcion: p.descripcion, version: p.version, estado: "Inactiva", schema: p.schema });
+        setPlantillasList(prev => [created, ...prev]);
+      } else if (action === "Desactivar" || action === "Activar") {
+        const updated = await actualizarPlantillaApi(p.id, { ...p, estado: action === "Activar" ? "Activa" : "Inactiva" });
+        setPlantillasList(prev => prev.map(item => item.id === p.id ? updated : item));
+        setDetalle(updated);
+      }
+    } catch { setError("No se pudo completar la acción. Revisa la conexión o si la plantilla está en uso."); }
   };
 
   const handleCreatePlantilla = async (e: React.FormEvent) => {
@@ -48,36 +90,21 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
       : ["registro", "datos", "reportes"];
 
     try {
-      const created = await crearPlantillaApi({
+      const payload = {
         nombre,
         descripcion,
         version: version || "1.0",
         estado,
-        schema: schemaArr,
-      });
-
-      setPlantillasList((prev) => {
-        const combined = [created, ...prev];
-        const uniqueMap = new Map();
-        combined.forEach((item) => uniqueMap.set(item.id, item));
-        return Array.from(uniqueMap.values());
-      });
-    } catch (err) {
-      console.warn("Fallback local para crear plantilla:", err);
-      const uniqueId = `TPL-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      const newTpl: PlantillaAdmin = {
-        id: uniqueId,
-        nombre,
-        descripcion,
-        tablas: schemaArr.length,
-        version: version || "1.0",
-        instancias: 0,
-        estado,
-        actualizada: "Hoy",
         schema: schemaArr,
       };
+      const created = editingId ? await actualizarPlantillaApi(editingId, payload) : await crearPlantillaApi(payload);
 
-      setPlantillasList((prev) => [newTpl, ...prev]);
+      setPlantillasList((prev) => {
+        return editingId ? prev.map(item => item.id === editingId ? created : item) : [created, ...prev];
+      });
+    } catch {
+      setError("No se pudo guardar la plantilla. Revisa la conexión e inténtalo de nuevo.");
+      return;
     }
 
     resetForm();
@@ -92,6 +119,7 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
     const tabs = ["Resumen", "Estructura", "Relaciones", "Versiones"];
     return (
       <div className={`flex-1 overflow-auto p-4 lg:p-8 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
+        {error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => setDetalle(null)} className={`flex items-center gap-1.5 text-sm transition-colors ${isDark ? "text-slate-400 hover:text-slate-200" : "text-gray-500 hover:text-gray-800"}`}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -126,10 +154,10 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
           <div className={`border rounded-xl p-6 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <h3 className={`text-sm font-semibold mb-3 ${isDark ? "text-slate-200" : "text-gray-800"}`}>Acciones</h3>
             <div className="space-y-2">
-              {["Editar plantilla", "Duplicar", "Descargar SQL"].map(a => (
-                <button key={a} className={`w-full py-2 border rounded-lg text-xs font-medium transition-colors text-left px-3 ${isDark ? "border-slate-800 text-slate-300 hover:bg-slate-800" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>{a}</button>
+              {["Editar plantilla", "Duplicar", "Descargar esquema básico"].map(a => (
+                <button key={a} onClick={() => performAction(a === "Editar plantilla" ? "Editar" : a, detalle)} className={`w-full py-2 border rounded-lg text-xs font-medium transition-colors text-left px-3 ${isDark ? "border-slate-800 text-slate-300 hover:bg-slate-800" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>{a}</button>
               ))}
-              <button className={`w-full py-2 border rounded-lg text-xs text-red-500 font-medium transition-colors text-left px-3 ${isDark ? "border-red-900/40 hover:bg-red-950/40" : "border-red-200 hover:bg-red-50"}`}>Desactivar</button>
+              <button onClick={() => performAction(detalle.estado === "Activa" ? "Desactivar" : "Activar", detalle)} className={`w-full py-2 border rounded-lg text-xs text-red-500 font-medium transition-colors text-left px-3 ${isDark ? "border-red-900/40 hover:bg-red-950/40" : "border-red-200 hover:bg-red-50"}`}>{detalle.estado === "Activa" ? "Desactivar" : "Activar"}</button>
             </div>
           </div>
         </div>
@@ -193,6 +221,7 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
           <span className="hidden sm:inline">Nueva plantilla</span>
         </button>
       </div>
+      {error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
@@ -222,8 +251,8 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filtered.map((p, idx) => (
-          <div key={`${p.id}-${idx}`} className={`border rounded-xl p-5 flex flex-col transition-all cursor-pointer ${isDark ? "bg-slate-900 border-slate-800 hover:border-lime-500/50" : "bg-white border-gray-100 hover:border-lime-200 hover:shadow-sm"}`} onClick={() => setDetalle(p)}>
+        {filtered.map((p) => (
+          <div key={p.id} className={`border rounded-xl p-5 flex flex-col transition-all cursor-pointer ${isDark ? "bg-slate-900 border-slate-800 hover:border-lime-500/50" : "bg-white border-gray-100 hover:border-lime-200 hover:shadow-sm"}`} onClick={() => setDetalle(p)}>
             <div className="flex items-start justify-between mb-3">
               <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-100"}`}>
                 <svg className={`w-5 h-5 ${isDark ? "text-slate-400" : "text-gray-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
@@ -238,8 +267,8 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
                       <div className={`absolute right-0 top-8 z-20 border rounded-xl shadow-lg py-1 w-40 text-xs ${isDark ? "bg-slate-900 border-slate-700 text-slate-200" : "bg-white border-gray-200 text-gray-700"}`}>
-                        {["Ver estructura", "Editar", "Duplicar", "Desactivar", "Eliminar"].map((a, i) => (
-                          <button key={a} onClick={() => { setMenuOpen(null); if (a === "Ver estructura") setDetalle(p); }} className={`w-full text-left px-4 py-2 transition-colors ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-50"} ${i >= 3 ? "text-red-400" : isDark ? "text-slate-200" : "text-gray-700"}`}>{a}</button>
+                        {["Ver estructura", "Editar", "Duplicar", p.estado === "Activa" ? "Desactivar" : "Activar", "Eliminar"].map((a, i) => (
+                          <button key={a} onClick={() => performAction(a, p)} className={`w-full text-left px-4 py-2 transition-colors ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-50"} ${i >= 3 ? "text-red-400" : isDark ? "text-slate-200" : "text-gray-700"}`}>{a}</button>
                         ))}
                       </div>
                     </>
@@ -261,8 +290,9 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
       {createModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <form onSubmit={handleCreatePlantilla} className={`rounded-2xl shadow-xl w-full max-w-md p-6 border ${isDark ? "bg-slate-900 border-slate-800 text-white" : "bg-white border-gray-100 text-gray-900"}`}>
+            {error && <p role="alert" className="mb-3 text-sm text-red-600">{error}</p>}
             <div className="flex items-center justify-between mb-5">
-              <h2 className={`text-base font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>Nueva plantilla DB</h2>
+              <h2 className={`text-base font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{editingId ? "Editar plantilla DB" : "Nueva plantilla DB"}</h2>
               <button type="button" onClick={() => setCreateModalOpen(false)} className={`text-xl leading-none ${isDark ? "text-slate-400 hover:text-slate-200" : "text-gray-400 hover:text-gray-600"}`}>×</button>
             </div>
             <div className="space-y-4">
@@ -296,12 +326,12 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
               <div>
                 <label className={`block text-xs font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-gray-700"}`}>Tablas del esquema (separadas por coma)</label>
                 <input type="text" value={tablasText} onChange={e => setTablasText(e.target.value)} placeholder="sensores, mediciones, alertas, parcelas" className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lime-400 font-mono text-xs ${isDark ? "bg-slate-800 border-slate-700 text-white placeholder-slate-500" : "bg-white border-gray-200"}`} />
-                <p className={`text-[10px] mt-1 ${isDark ? "text-slate-400" : "text-gray-400"}`}>Se crearán como tablas PostgreSQL de forma automática.</p>
+                <p className={`text-[10px] mt-1 ${isDark ? "text-slate-400" : "text-gray-400"}`}>Se guardará la definición de la plantilla.</p>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button type="button" onClick={() => setCreateModalOpen(false)} className={`flex-1 py-2.5 border rounded-lg text-sm font-medium transition-colors ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>Cancelar</button>
-              <button type="submit" className="flex-1 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg text-sm font-semibold transition-colors">Crear plantilla</button>
+              <button type="submit" className="flex-1 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg text-sm font-semibold transition-colors">{editingId ? "Guardar cambios" : "Crear plantilla"}</button>
             </div>
           </form>
         </div>

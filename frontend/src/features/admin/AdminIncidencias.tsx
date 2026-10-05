@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PriorityBadge, StatusBadge } from "../../components/ui";
-import { incidents } from "../../data/shared";
+import { getIncidencias, mapIncidenciaToIncident } from "../../api/incidenciasApi";
 import type { Incident } from "../../types/shared";
 
 export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
   const [selected, setSelected] = useState<Incident | null>(null);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    getIncidencias().then(data => setIncidents(data.map(mapIncidenciaToIncident)))
+      .catch(() => setError("No se pudieron cargar las incidencias."));
+  }, []);
   return (
     <div className={`flex-1 overflow-auto p-4 lg:p-8 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
       <div className="flex items-start justify-between mb-8">
@@ -13,6 +19,7 @@ export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
           <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}>Gestión global de incidencias de todos los clientes.</p>
         </div>
       </div>
+      {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</p>}
       <div className="flex gap-6">
         <div className={`flex-1 border rounded-xl overflow-hidden ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
           <table className="w-full text-sm">
@@ -50,7 +57,7 @@ export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
           <div className={`w-72 border rounded-xl p-5 self-start shrink-0 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <div className="flex justify-between mb-4"><span className={`font-mono font-semibold text-sm ${isDark ? "text-white" : "text-gray-900"}`}>{selected.id}</span><button onClick={() => setSelected(null)} className="text-gray-400">✕</button></div>
             <div className="space-y-3">
-              {[["Cliente", selected.cliente], ["Instancia", selected.instancia], ["Asunto", selected.asunto]].map(([k, v]) => (
+              {[["Cliente", selected.cliente], ["Instancia", selected.instancia], ["Plantilla", selected.plantilla], ["Asunto", selected.asunto]].map(([k, v]) => (
                 <div key={k}><p className={`text-xs mb-0.5 ${isDark ? "text-slate-400" : "text-gray-400"}`}>{k}</p><p className={`text-sm ${isDark ? "text-slate-200" : "text-gray-800"}`}>{v}</p></div>
               ))}
               <div><p className={`text-xs mb-0.5 ${isDark ? "text-slate-400" : "text-gray-400"}`}>Problema</p><p className={`text-sm leading-relaxed ${isDark ? "text-slate-300" : "text-gray-600"}`}>{selected.problema}</p></div>

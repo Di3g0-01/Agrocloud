@@ -19,11 +19,13 @@ export interface Plan {
   descripcion: string;
   instanciasPermitidas: number;
   popular?: boolean;
+  activo?: boolean;
 }
 
 export interface InstanciaDB {
   id: string;
   nombre: string;
+  plantilla: string;
   cliente: string;
   usuarioId: string;
   tipo: string;
@@ -60,10 +62,12 @@ export interface Incidencia {
   instanciaNombre: string;
   plantilla: string;
   asunto: string;
+  categoria: string;
   problema: string;
   prioridad: 'ALTA' | 'MEDIA' | 'BAJA';
   estado: 'ABIERTA' | 'EN_REVISION' | 'RESUELTA';
   fecha: string;
+  actualizado: string;
   guiaDiagnostico?: string;
 }
 

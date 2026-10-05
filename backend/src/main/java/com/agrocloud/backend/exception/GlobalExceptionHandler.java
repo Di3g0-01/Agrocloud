@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
     ResponseEntity<ApiError> handleConflict(RuntimeException exception, HttpServletRequest request) {
         String message = exception instanceof EmailAlreadyRegisteredException
                 ? exception.getMessage()
-                : "No fue posible guardar la cuenta porque sus datos ya existen";
+                : "La operación entra en conflicto con registros existentes";
         return build(HttpStatus.CONFLICT, message, request, Map.of());
     }
 
@@ -70,6 +70,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({ IllegalArgumentException.class, InstanceLimitExceededException.class })
     ResponseEntity<ApiError> handleBadRequest(RuntimeException exception, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, exception.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    ResponseEntity<ApiError> handleStateConflict(IllegalStateException exception, HttpServletRequest request) {
+        return build(HttpStatus.CONFLICT, exception.getMessage(), request, Map.of());
     }
 
     private ResponseEntity<ApiError> build(

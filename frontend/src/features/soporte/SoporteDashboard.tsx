@@ -1,8 +1,22 @@
+import { useEffect, useState } from "react";
 import type { SoportePage } from "../../types/soporte";
-import { incidents, instances } from "../../data/shared";
+import type { Incident, Instance } from "../../types/shared";
+import { getIncidencias, mapIncidenciaToIncident } from "../../api/incidenciasApi";
+import { getInstancias } from "../../api/instanciasApi";
 import { PriorityBadge, StatusBadge } from "../../components/ui";
 
 export function SoporteDashboard({ setPage, isDark }: { setPage: (p: SoportePage) => void; isDark?: boolean }) {
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+  const [instances, setInstances] = useState<Instance[]>([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    getIncidencias().then(data => setIncidents(data.map(mapIncidenciaToIncident))).catch(() => setError("No se pudieron cargar las incidencias."));
+    getInstancias().then(data => setInstances(data.map(i => ({
+      nombre: i.nombre, cliente: i.cliente, tipo: i.tipo,
+      estado: i.estado === 'active' ? 'Operativa' : i.estado === 'revision' ? 'En revisión' : 'Detenida',
+      version: i.version, uptime: i.uptime, cpu: i.cpu, memoria: i.memoria, region: i.region,
+    })))).catch(() => setError("No se pudieron cargar las instancias."));
+  }, []);
   return (
     <div className={`flex-1 overflow-auto p-4 lg:p-8 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
       <div className="flex items-start justify-between mb-6 lg:mb-8 gap-4">
@@ -12,12 +26,13 @@ export function SoporteDashboard({ setPage, isDark }: { setPage: (p: SoportePage
           <span className="hidden sm:inline">Nueva incidencia</span>
         </button>
       </div>
+      {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</p>}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Incidencias abiertas", value: "0", sub: "Pendientes de atención", icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z", color: isDark ? "text-blue-400 bg-blue-950/40" : "text-blue-500 bg-blue-50" },
-          { label: "En revisión", value: "0", sub: "Atención técnica activa", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-orange-400 bg-orange-950/40" : "text-orange-500 bg-orange-50" },
-          { label: "Resueltas", value: "0", sub: "Esta semana", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-lime-400 bg-lime-950/40" : "text-lime-600 bg-lime-50" },
-          { label: "Con incidencias", value: "0", sub: "Instancias afectadas", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: isDark ? "text-slate-400 bg-slate-800" : "text-gray-500 bg-gray-100" },
+          { label: "Incidencias abiertas", value: String(incidents.filter(i => i.estado === "Abierta").length), sub: "Pendientes de atención", icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z", color: isDark ? "text-blue-400 bg-blue-950/40" : "text-blue-500 bg-blue-50" },
+          { label: "En revisión", value: String(incidents.filter(i => i.estado === "En revisión").length), sub: "Atención técnica activa", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-orange-400 bg-orange-950/40" : "text-orange-500 bg-orange-50" },
+          { label: "Resueltas", value: String(incidents.filter(i => i.estado === "Resuelta").length), sub: "Total resueltas", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-lime-400 bg-lime-950/40" : "text-lime-600 bg-lime-50" },
+          { label: "Con incidencias", value: String(new Set(incidents.filter(i => i.estado !== "Resuelta").map(i => i.instancia)).size), sub: "Instancias afectadas", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: isDark ? "text-slate-400 bg-slate-800" : "text-gray-500 bg-gray-100" },
         ].map(k => (
           <div key={k.label} className={`border rounded-xl p-5 text-left flex flex-col items-start ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <div className="flex items-center justify-start gap-2 mb-3">
@@ -48,7 +63,7 @@ export function SoporteDashboard({ setPage, isDark }: { setPage: (p: SoportePage
               </tr>
             ))}</tbody>
           </table>
-          <div className={`px-5 py-3 text-center text-xs ${isDark ? "text-slate-400" : "text-gray-400"}`}>12 incidencias abiertas · 5 actualmente en revisión</div>
+          <div className={`px-5 py-3 text-center text-xs ${isDark ? "text-slate-400" : "text-gray-400"}`}>{incidents.filter(i => i.estado === "Abierta").length} incidencias abiertas · {incidents.filter(i => i.estado === "En revisión").length} en revisión</div>
         </div>
         <div className={`border rounded-xl ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
           <div className={`p-5 border-b flex items-center justify-between ${isDark ? "border-slate-800" : "border-gray-100"}`}>

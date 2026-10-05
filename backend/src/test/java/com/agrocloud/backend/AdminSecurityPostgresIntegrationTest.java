@@ -56,7 +56,7 @@ class AdminSecurityPostgresIntegrationTest {
             assertThat(get("/api/v1/usuarios", null).statusCode()).isEqualTo(401);
             assertThat(get("/api/v1/usuarios", "token-invalido").statusCode()).isEqualTo(401);
             assertThat(get("/api/v1/auth/me", null).statusCode()).isEqualTo(401);
-            assertThat(get("/api/v1/planes", null).statusCode()).isEqualTo(404);
+            assertThat(get("/api/v1/planes", null).statusCode()).isEqualTo(200);
             assertThat(post("/api/v1/planes", "{}", null).statusCode()).isEqualTo(401);
             assertThat(get("/api/v1/instancias", null).statusCode()).isEqualTo(401);
             assertThat(get("/api/v1/suscripciones", null).statusCode()).isEqualTo(401);

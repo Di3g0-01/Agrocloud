@@ -12,6 +12,8 @@ import com.agrocloud.backend.instance.repository.InstanceRepository;
 import com.agrocloud.backend.repository.UserRepository;
 import com.agrocloud.backend.subscription.entity.SubscriptionEntity;
 import com.agrocloud.backend.subscription.service.SubscriptionService;
+import com.agrocloud.backend.template.repository.TemplateRepository;
+import com.agrocloud.backend.template.entity.TemplateEntity;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +29,7 @@ public class InstanceServiceImpl implements InstanceService {
     private final InstanceRepository repository;
     private final UserRepository userRepository;
     private final SubscriptionService subscriptionService;
+    private final TemplateRepository templateRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -79,9 +82,16 @@ public class InstanceServiceImpl implements InstanceService {
         String databaseName = sanitizedName.replace("-", "_") + "_db";
         String dbUser = "agrouser_" + (owner.getOrganizationName() != null ? owner.getOrganizationName().toLowerCase().replaceAll("[^a-z0-9]", "") : "client");
 
+        String requestedTemplate = request.template() == null ? "Cultivos y parcelas" : request.template().trim();
+        TemplateEntity template = templateRepository.findByNombreIgnoreCase(requestedTemplate)
+                .orElseThrow(() -> new IllegalArgumentException("La plantilla seleccionada no existe"));
+        if (!"Activa".equals(template.getEstado())) {
+            throw new IllegalArgumentException("La plantilla seleccionada no está disponible");
+        }
+
         InstanceEntity entity = InstanceEntity.builder()
                 .name(request.name())
-                .template(request.template() != null ? request.template() : "Cultivos y parcelas")
+                .template(template.getNombre())
                 .owner(owner)
                 .status(InstanceStatus.active)
                 .version("PostgreSQL 16.2")
