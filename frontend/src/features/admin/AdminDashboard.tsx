@@ -1,24 +1,31 @@
 import { useState, useEffect } from "react";
 import { StatusBadge } from "../../components/ui";
-import { templates } from "../../data/shared";
 import { listAdminUsers } from "../../api/adminUsersApi";
 import { getInstancias } from "../../api/instanciasApi";
 import { getIncidencias } from "../../api/incidenciasApi";
+import { getTodasSuscripciones } from "../../api/suscripcionesApi";
+import { getPlantillas } from "../../api/plantillasApi";
 
 export function AdminDashboard({ onNavigate, isDark }: { onNavigate?: (page: any) => void; isDark?: boolean }) {
   const [clientesCount, setClientesCount] = useState(0);
   const [instanciasCount, setInstanciasCount] = useState(0);
   const [activeInstCount, setActiveInstCount] = useState(0);
   const [incidenciasCount, setIncidenciasCount] = useState(0);
+  const [subscriptionsCount, setSubscriptionsCount] = useState(0);
+  const [templates, setTemplates] = useState<string[]>([]);
   const [recentInstances, setRecentInstances] = useState<any[]>([]);
   const [activityList, setActivityList] = useState<{ dot: string; title: string; sub: string }[]>([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     Promise.all([
-      listAdminUsers().catch(() => []),
-      getInstancias().catch(() => []),
-      getIncidencias().catch(() => []),
-    ]).then(([users, insts, incs]) => {
+      listAdminUsers().catch(() => { setError("Algunos datos del panel no se pudieron cargar."); return []; }),
+      getInstancias().catch(() => { setError("Algunos datos del panel no se pudieron cargar."); return []; }),
+      getIncidencias().catch(() => { setError("Algunos datos del panel no se pudieron cargar."); return []; }),
+      getTodasSuscripciones().catch(() => { setError("Algunos datos del panel no se pudieron cargar."); return []; }),
+      getPlantillas().catch(() => { setError("Algunos datos del panel no se pudieron cargar."); return []; }),
+    ]).then(([users, insts, incs, subs, templateRows]) => {
+      setTemplates(templateRows.map(t => t.nombre));
       const clienteUsers = users.filter((u) => u.role === "CLIENTE");
       setClientesCount(clienteUsers.length);
 
@@ -28,12 +35,13 @@ export function AdminDashboard({ onNavigate, isDark }: { onNavigate?: (page: any
 
       const openIncs = incs.filter((i) => i.estado === "ABIERTA" || i.estado === "EN_REVISION");
       setIncidenciasCount(openIncs.length);
+      setSubscriptionsCount(subs.filter(s => s.estado === "active").length);
 
       const mappedRecent = insts.slice(0, 5).map((i) => ({
         nombre: i.nombre,
         cliente: i.cliente || "Cliente AgroCloud",
-        plantilla: (i as any).plantilla || "Gestión de Finca",
-        plan: "Productor",
+        plantilla: i.plantilla || "Sin plantilla",
+        plan: subs.find(s => s.usuarioId === i.usuarioId && s.estado === "active")?.planNombre || "Sin plan",
         estado: i.estado === "active" ? "Activa" : i.estado,
         fecha: i.fechaCreacion || "Reciente",
       }));
@@ -51,7 +59,7 @@ export function AdminDashboard({ onNavigate, isDark }: { onNavigate?: (page: any
         activities.push({
           dot: "bg-blue-400",
           title: `Nuevo cliente '${u.organizationName || u.contactName || u.email}'`,
-          sub: `Suscripción activa · ${u.createdAt ? new Date(u.createdAt).toLocaleDateString("es-GT") : "Reciente"}`,
+          sub: `Cuenta registrada · ${u.createdAt ? new Date(u.createdAt).toLocaleDateString("es-GT") : "Reciente"}`,
         });
       });
       incs.forEach((inc) => {
@@ -67,6 +75,7 @@ export function AdminDashboard({ onNavigate, isDark }: { onNavigate?: (page: any
 
   return (
     <div className={`flex-1 overflow-auto p-4 lg:p-8 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
+      {error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
       <div className="flex items-start justify-between mb-6 lg:mb-8 gap-4">
         <div>
           <h1 className={`text-xl lg:text-2xl font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>Panel administrativo</h1>
@@ -78,7 +87,7 @@ export function AdminDashboard({ onNavigate, isDark }: { onNavigate?: (page: any
         {[
           { label: "CLIENTES", value: String(clientesCount), sub: "Organizaciones registradas", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z", color: isDark ? "text-blue-400 bg-blue-950/60 border border-blue-800/40" : "text-blue-500 bg-blue-50" },
           { label: "INSTANCIAS", value: String(instanciasCount), sub: `${activeInstCount} activas`, icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50" },
-          { label: "SUSCRIPCIONES", value: String(clientesCount), sub: "Suscripciones activas", icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z", color: isDark ? "text-purple-400 bg-purple-950/60 border border-purple-800/40" : "text-purple-500 bg-purple-50" },
+          { label: "SUSCRIPCIONES", value: String(subscriptionsCount), sub: "Suscripciones activas", icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z", color: isDark ? "text-purple-400 bg-purple-950/60 border border-purple-800/40" : "text-purple-500 bg-purple-50" },
           { label: "INCIDENCIAS", value: String(incidenciasCount), sub: "Incidencias abiertas", icon: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z", color: isDark ? "text-orange-400 bg-orange-950/60 border border-orange-800/40" : "text-orange-500 bg-orange-50" },
         ].map((k) => (
           <div key={k.label} className={`border rounded-xl p-5 text-left flex flex-col items-start ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>

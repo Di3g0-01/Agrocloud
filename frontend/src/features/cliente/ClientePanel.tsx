@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import type { User } from "../../types";
-import { C_INSTANCIAS } from "../../data/cliente";
 import type { CInstancia, ClientePage } from "../../types/cliente";
 import { getInstancias, mapInstanciaDBToCInstancia } from "../../api/instanciasApi";
+import { getPlanes } from "../../api/planesApi";
+import { getMiSuscripcionActiva } from "../../api/suscripcionesApi";
+import { C_PLAN } from "../../data/cliente";
 import { LogoIcon } from "../../components/ui";
 import { SharedDocumentacion } from "../../components/shared/SharedDocumentacion";
 import { NotificationMenu } from "../../components/shared/NotificationMenu";
@@ -28,7 +30,9 @@ export const clienteNav = [
 
 export function ClientePanel({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [page, setPage] = useState<ClientePage>("dashboard");
-  const [instanciasList, setInstanciasList] = useState<CInstancia[]>(C_INSTANCIAS);
+  const [instanciasList, setInstanciasList] = useState<CInstancia[]>([]);
+  const [loadError, setLoadError] = useState("");
+  const [, setPlanRevision] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -37,7 +41,19 @@ export function ClientePanel({ user, onLogout }: { user: User; onLogout: () => v
       if (data && Array.isArray(data)) {
         setInstanciasList(data.map(mapInstanciaDBToCInstancia));
       }
-    });
+    }).catch(() => setLoadError("No se pudieron cargar tus instancias. Revisa la conexión."));
+  }, []);
+
+  useEffect(() => {
+    Promise.all([getMiSuscripcionActiva(), getPlanes()]).then(([subscription, plans]) => {
+      const plan = plans.find(p => p.id === subscription?.planId);
+      C_PLAN.nombre = plan?.nombre || "Sin plan";
+      C_PLAN.maxInstancias = plan?.instanciasPermitidas || 1;
+      C_PLAN.totalGB = plan?.almacenamientoGb || 10;
+      C_PLAN.precio = plan?.precioMensual || 0;
+      C_PLAN.estado = subscription ? "Activa" : "Sin suscripción";
+      setPlanRevision(n => n + 1);
+    }).catch(() => setLoadError("No se pudo cargar tu plan y suscripción."));
   }, []);
 
   const organizationName = user.empresa || user.nombre;
@@ -104,12 +120,13 @@ export function ClientePanel({ user, onLogout }: { user: User; onLogout: () => v
             <div><p className="text-xs font-medium text-gray-800 leading-none">{organizationName}</p><p className="text-[10px] text-gray-400">Cliente</p></div>
           </div>
         </header>
+        {loadError && <p role="alert" className="mx-4 mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{loadError}</p>}
         {page === "dashboard" && <ClienteDashboard onNavigate={navigate} instanciasList={instanciasList} />}
         {page === "instancias" && <ClienteInstancias onNavigate={navigate} instanciasList={instanciasList} setInstanciasList={setInstanciasList} />}
-        {page === "plantillas" && <ClientePlantillas onNavigate={navigate} />}
-        {page === "plan" && <ClientePlan organizationName={organizationName} instanciasList={instanciasList} />}
+        {page === "plantillas" && <ClientePlantillas onNavigate={navigate} currentCount={instanciasList.length} onCreateInstance={inst => setInstanciasList(prev => [inst, ...prev])} />}
+        {page === "plan" && <ClientePlan organizationName={organizationName} instanciasList={instanciasList} onPlanChanged={() => setPlanRevision(n => n + 1)} />}
         {page === "pagos" && <ClientePagos organizationName={organizationName} />}
-        {page === "soporte" && <ClienteSoporte organizationName={organizationName} initials={initials} />}
+        {page === "soporte" && <ClienteSoporte organizationName={organizationName} initials={initials} instanciasList={instanciasList} />}
         {page === "configuracion" && <ClienteConfiguracion user={user} organizationName={organizationName} initials={initials} />}
         {page === "documentacion" && <SharedDocumentacion userRole="cliente" />}
       </div>

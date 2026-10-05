@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Ticket, TicketEstado, TicketPrioridad } from "../../types/cliente";
-import { TICKETS_INIT, C_INSTANCIAS } from "../../data/cliente";
+import type { CInstancia } from "../../types/cliente";
+import { crearIncidencia, getIncidencias, mapIncidenciaToTicket } from "../../api/incidenciasApi";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 
-export function ClienteSoporte({ organizationName, initials }: { organizationName: string; initials: string }) {
-  const [tickets, setTickets] = useState<Ticket[]>(TICKETS_INIT);
+export function ClienteSoporte({ organizationName, initials, instanciasList }: { organizationName: string; initials: string; instanciasList: CInstancia[] }) {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    getIncidencias().then(data => setTickets(data.map(mapIncidenciaToTicket)))
+      .catch(() => setError("No se pudieron cargar tus incidencias."));
+  }, []);
   const [search, setSearch] = useState("");
   const [detalle, setDetalle] = useState<Ticket | null>(null);
   const [showNew, setShowNew] = useState(false);
@@ -35,15 +41,16 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
     return Object.keys(err).length === 0;
   }
 
-  function enviarTicket() {
+  async function enviarTicket() {
     if (!validar()) return;
-    const nuevo: Ticket = {
-      id: `INC-${String(Math.floor(Math.random() * 900) + 100)}`,
-      asunto: form.asunto, instancia: form.instancia, categoria: form.categoria,
-      prioridad: form.prioridad, estado: "Abierta",
-      descripcion: form.descripcion, creado: "2026-09-06", actualizado: "2026-09-06",
-      historial: [{ autor: "cliente", texto: form.descripcion, fecha: "2026-09-06 12:00" }],
-    };
+    const instance = instanciasList.find(i => i.nombre === form.instancia);
+    if (!instance?.id) { setError("Selecciona una instancia registrada."); return; }
+    let nuevo: Ticket;
+    try {
+      const created = await crearIncidencia({ instanciaId: instance.id, asunto: form.asunto, categoria: form.categoria,
+        problema: form.descripcion, prioridad: form.prioridad.toUpperCase() as 'ALTA' | 'MEDIA' | 'BAJA' });
+      nuevo = mapIncidenciaToTicket(created);
+    } catch { setError("No se pudo enviar la incidencia. Revisa la conexión e inténtalo de nuevo."); return; }
     setTickets(prev => [nuevo, ...prev]);
     setShowNew(false);
     setForm({ asunto: "", instancia: "", categoria: "", prioridad: "Media", descripcion: "" });
@@ -54,6 +61,7 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
 
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
+      {error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
       {/* Encabezado */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -279,7 +287,7 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
                 <CustomSelect
                   value={form.instancia}
                   onChange={(val) => setForm(f => ({ ...f, instancia: val }))}
-                  options={C_INSTANCIAS.map(i => ({ value: i.nombre, label: i.nombre }))}
+                  options={instanciasList.map(i => ({ value: i.nombre, label: i.nombre }))}
                   placeholder="Seleccionar instancia..."
                   className="w-full"
                 />
