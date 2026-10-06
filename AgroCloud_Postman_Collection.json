@@ -1,0 +1,636 @@
+{
+  "info": {
+    "name": "AgroCloud - API disponible en develop (E03)",
+    "description": "Colección local de los endpoints presentes en develop. Usa credenciales de prueba; no contiene secretos ni URL pública. Cambia el token al probar cada rol. Los módulos nuevos del E04 se agregarán en fases posteriores.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "planId",
+      "value": "plan-finca"
+    },
+    {
+      "key": "subscriptionId",
+      "value": ""
+    },
+    {
+      "key": "instanceId",
+      "value": ""
+    },
+    {
+      "key": "templateId",
+      "value": ""
+    },
+    {
+      "key": "incidentId",
+      "value": ""
+    },
+    {
+      "key": "plantillaNombre",
+      "value": "Cultivos y parcelas"
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Registrar cliente",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Público. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationName\": \"Finca Los Pinos\",\n  \"contactName\": \"Carlos Monterroso\",\n  \"email\": \"cliente@ejemplo.com\",\n  \"phone\": \"+502 4455 6677\",\n  \"password\": \"ClaveSegura123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Iniciar sesión",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Público. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@ejemplo.com\",\n  \"password\": \"ClaveSegura123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.token) pm.collectionVariables.set('token', result.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuario actual",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/usuarios"
+          }
+        },
+        {
+          "name": "Ver usuario",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/usuarios/{{userId}}"
+          }
+        },
+        {
+          "name": "Crear miembro de soporte",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/usuarios",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationName\": \"Equipo AgroCloud\",\n  \"contactName\": \"Ana Pérez\",\n  \"email\": \"soporte@ejemplo.com\",\n  \"phone\": \"+502 4455 6688\",\n  \"password\": \"ClaveSegura123\",\n  \"role\": \"SOPORTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('userId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar usuario",
+          "request": {
+            "method": "PUT",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/usuarios/{{userId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationName\": \"Equipo AgroCloud\",\n  \"contactName\": \"Ana Pérez\",\n  \"email\": \"soporte@ejemplo.com\",\n  \"phone\": \"+502 4455 6688\",\n  \"password\": \"ClaveSegura123\",\n  \"role\": \"SOPORTE\",\n  \"status\": \"ACTIVO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Planes",
+      "item": [
+        {
+          "name": "Listar planes",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Público. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/planes",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Ver plan",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/planes/{{planId}}"
+          }
+        },
+        {
+          "name": "Crear plan",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/planes",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Finca\",\n  \"almacenamientoGb\": 10,\n  \"precioMensual\": 25,\n  \"descripcion\": \"Plan de ejemplo\",\n  \"instanciasPermitidas\": 1,\n  \"popular\": false,\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('planId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar plan",
+          "request": {
+            "method": "PUT",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/planes/{{planId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Finca\",\n  \"almacenamientoGb\": 10,\n  \"precioMensual\": 25,\n  \"descripcion\": \"Plan de ejemplo\",\n  \"instanciasPermitidas\": 1,\n  \"popular\": false,\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar plan",
+          "request": {
+            "method": "DELETE",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/planes/{{planId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Suscripciones",
+      "item": [
+        {
+          "name": "Contratar plan",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Autenticado. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/suscripciones",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('subscriptionId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Suscripción activa",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/suscripciones/activa"
+          }
+        },
+        {
+          "name": "Mis suscripciones",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/suscripciones/me"
+          }
+        },
+        {
+          "name": "Suscripciones de usuario",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Propietario, Admin o Soporte. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/suscripciones/usuario/{{userId}}"
+          }
+        },
+        {
+          "name": "Listar suscripciones",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Admin o Soporte. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/suscripciones"
+          }
+        },
+        {
+          "name": "Cambiar estado de suscripción",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/suscripciones/{{subscriptionId}}/status?status=suspended"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Instancias",
+      "item": [
+        {
+          "name": "Listar instancias",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado; resultados según rol. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/instancias"
+          }
+        },
+        {
+          "name": "Instancias de usuario",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Propietario, Admin o Soporte. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/instancias/usuario/{{userId}}"
+          }
+        },
+        {
+          "name": "Ver instancia",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Propietario, Admin o Soporte. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/instancias/{{instanceId}}"
+          }
+        },
+        {
+          "name": "Crear instancia",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Autenticado. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/instancias",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"finca_demo\",\n  \"plantilla\": \"{{plantillaNombre}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('instanceId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reiniciar instancia",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Propietario, Admin o Soporte. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/instancias/{{instanceId}}/restart"
+          }
+        },
+        {
+          "name": "Cambiar estado de instancia",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Admin o Soporte. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/instancias/{{instanceId}}/status?status=revision"
+          }
+        },
+        {
+          "name": "Eliminar instancia",
+          "request": {
+            "method": "DELETE",
+            "description": "Rol: Propietario, Admin o Soporte. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/instancias/{{instanceId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plantillas",
+      "item": [
+        {
+          "name": "Listar plantillas",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/plantillas"
+          }
+        },
+        {
+          "name": "Crear plantilla",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/plantillas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cultivos y parcelas\",\n  \"descripcion\": \"Plantilla de ejemplo\",\n  \"version\": \"1.0\",\n  \"estado\": \"Activa\",\n  \"schema\": [\n    \"cultivos\",\n    \"parcelas\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('templateId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar plantilla",
+          "request": {
+            "method": "PUT",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/plantillas/{{templateId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cultivos y parcelas\",\n  \"descripcion\": \"Plantilla de ejemplo\",\n  \"version\": \"1.0\",\n  \"estado\": \"Activa\",\n  \"schema\": [\n    \"cultivos\",\n    \"parcelas\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar plantilla",
+          "request": {
+            "method": "DELETE",
+            "description": "Rol: Admin. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/plantillas/{{templateId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Incidencias existentes en develop",
+      "item": [
+        {
+          "name": "Listar incidencias",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado; resultados según rol. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/incidencias"
+          }
+        },
+        {
+          "name": "Crear incidencia",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Autenticado. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/incidencias",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instanciaId\": \"{{instanciaId}}\",\n  \"asunto\": \"No puedo conectar\",\n  \"categoria\": \"Conectividad\",\n  \"problema\": \"La conexión falla desde esta mañana\",\n  \"prioridad\": \"ALTA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('incidentId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar incidencia",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Admin o Soporte. Ruta comprobada contra los controladores de develop.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"EN_REVISION\",\n  \"guiaDiagnostico\": \"Revisar conexión\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+

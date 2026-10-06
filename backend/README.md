@@ -47,6 +47,16 @@ falta, toma las credenciales de `.env` y ejecuta Maven en un contenedor temporal
 Las pruebas se niegan a escribir si `DB_URL` no termina en `/agrocloud_test` y
 eliminan las cuentas temporales que crean. `agrocloud_db` no se modifica.
 
+### Colección de Postman
+
+Importa `AgroCloud_Postman_Collection.json` desde la raíz del repositorio. La
+variable `baseUrl` apunta al backend local (`http://localhost:8080/api/v1`).
+Ejecuta **Iniciar sesión** con una cuenta de prueba: la colección guarda el JWT en
+`token`. Cambia de cuenta según el rol indicado en cada solicitud. Las solicitudes
+de creación guardan los identificadores devueltos para las rutas siguientes.
+La colección cubre los 32 endpoints presentes en `develop` al inicio del E04;
+los endpoints nuevos se incorporarán al completar cada módulo.
+
 ### Endpoints
 
 - `POST /api/v1/auth/register`: crea una cuenta de cliente y devuelve un JWT.
