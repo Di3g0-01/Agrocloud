@@ -67,6 +67,7 @@ public class IncidentService {
             throw new IllegalArgumentException("Prioridad no válida");
 
         IncidentEntity incident = new IncidentEntity();
+        incident.ticketNumber = incidents.nextTicketNumber();
         incident.owner = instance.getOwner();
         incident.instance = instance;
         incident.subject = request.asunto().trim();

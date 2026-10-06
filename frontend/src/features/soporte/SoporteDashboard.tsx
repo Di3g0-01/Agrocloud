@@ -53,7 +53,7 @@ export function SoporteDashboard({ setPage, isDark }: { setPage: (p: SoportePage
             <thead><tr className={`border-b ${isDark ? "border-slate-800 bg-slate-900/60" : "border-gray-100 bg-gray-50"}`}>{["ID", "Cliente", "Instancia", "Plantilla", "Asunto", "Prior.", "Estado"].map(h => <th key={h} className={`px-5 py-3 text-left font-medium uppercase tracking-wide text-[10px] ${isDark ? "text-slate-400" : "text-gray-400"}`}>{h}</th>)}</tr></thead>
             <tbody>{incidents.slice(0, 3).map(inc => (
               <tr key={inc.id} className={`border-b transition-colors ${isDark ? "border-slate-800/60 hover:bg-slate-800/40" : "border-gray-50 hover:bg-gray-50"}`}>
-                <td className={`px-5 py-4 font-medium ${isDark ? "text-lime-400" : "text-gray-900"}`}>{inc.id}</td>
+                <td className={`px-5 py-4 font-medium ${isDark ? "text-lime-400" : "text-gray-900"}`}>{inc.codigo}</td>
                 <td className={`px-5 py-4 ${isDark ? "text-slate-300" : "text-gray-600"}`}>{inc.cliente}</td>
                 <td className={`px-5 py-4 font-mono text-[10px] ${isDark ? "text-slate-400" : "text-gray-500"}`}>{inc.instancia}</td>
                 <td className={`px-5 py-4 ${isDark ? "text-slate-300" : "text-gray-600"}`}>{inc.plantilla}</td>
@@ -76,7 +76,7 @@ export function SoporteDashboard({ setPage, isDark }: { setPage: (p: SoportePage
                 <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-0.5">
-                    <span className={`font-mono text-xs font-semibold ${isDark ? "text-lime-400" : "text-gray-900"}`}>{inc.id}</span>
+                    <span className={`font-mono text-xs font-semibold ${isDark ? "text-lime-400" : "text-gray-900"}`}>{inc.codigo}</span>
                     <StatusBadge s={inc.estado} />
                   </div>
                   <p className={`text-xs truncate ${isDark ? "text-slate-200" : "text-gray-700"}`}>{inc.asunto}</p>

@@ -57,6 +57,7 @@ export interface Suscripcion {
 
 export interface Incidencia {
   id: string;
+  codigo: string;
   cliente: string;
   instanciaId: string;
   instanciaNombre: string;
@@ -65,7 +66,7 @@ export interface Incidencia {
   categoria: string;
   problema: string;
   prioridad: 'ALTA' | 'MEDIA' | 'BAJA';
-  estado: 'ABIERTA' | 'EN_REVISION' | 'RESUELTA';
+  estado: 'ABIERTA' | 'EN_REVISION' | 'RESUELTA' | 'CERRADA';
   fecha: string;
   actualizado: string;
   guiaDiagnostico?: string;

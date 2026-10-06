@@ -10,6 +10,7 @@ import java.util.UUID;
 @Table(name = "incidents")
 public class IncidentEntity {
     @Id public UUID id;
+    @Column(name = "ticket_number", nullable = false, unique = true) public Long ticketNumber;
     @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "owner_id", nullable = false) public User owner;
     @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "instance_id", nullable = false) public InstanceEntity instance;
     @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "assigned_support_id") public User assignedSupport;

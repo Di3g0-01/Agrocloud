@@ -26,17 +26,17 @@ export const actualizarIncidencia = async (id: string, data: { estado?: Incidenc
 };
 
 export const mapIncidenciaToIncident = (inc: Incidencia): Incident => ({
-  id: inc.id, cliente: inc.cliente, instancia: inc.instanciaNombre, plantilla: inc.plantilla,
+  id: inc.id, codigo: inc.codigo, cliente: inc.cliente, instancia: inc.instanciaNombre, plantilla: inc.plantilla,
   asunto: inc.asunto, problema: inc.problema,
   prioridad: ({ ALTA: 'Alta', MEDIA: 'Media', BAJA: 'Baja' } as const)[inc.prioridad],
-  estado: ({ ABIERTA: 'Abierta', EN_REVISION: 'En revisión', RESUELTA: 'Resuelta' } as const)[inc.estado],
+  estado: ({ ABIERTA: 'Abierta', EN_REVISION: 'En revisión', RESUELTA: 'Resuelta', CERRADA: 'Cerrada' } as const)[inc.estado],
   fecha: new Date(inc.fecha).toLocaleDateString('es-GT'), guia: inc.guiaDiagnostico || 'Pendiente de diagnóstico',
 });
 
 export const mapIncidenciaToTicket = (inc: Incidencia): Ticket => ({
-  id: inc.id, asunto: inc.asunto, instancia: inc.instanciaNombre, categoria: inc.categoria,
+  id: inc.id, codigo: inc.codigo, asunto: inc.asunto, instancia: inc.instanciaNombre, categoria: inc.categoria,
   prioridad: ({ ALTA: 'Alta', MEDIA: 'Media', BAJA: 'Baja' } as const)[inc.prioridad],
-  estado: ({ ABIERTA: 'Abierta', EN_REVISION: 'En proceso', RESUELTA: 'Resuelta' } as const)[inc.estado],
+  estado: ({ ABIERTA: 'Abierta', EN_REVISION: 'En proceso', RESUELTA: 'Resuelta', CERRADA: 'Cerrada' } as const)[inc.estado],
   descripcion: inc.problema, creado: new Date(inc.fecha).toLocaleDateString('es-GT'),
   actualizado: new Date(inc.actualizado).toLocaleDateString('es-GT'),
   historial: [{ autor: 'cliente', texto: inc.problema, fecha: new Date(inc.fecha).toLocaleString('es-GT') }],

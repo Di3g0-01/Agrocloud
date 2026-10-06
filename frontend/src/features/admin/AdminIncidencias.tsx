@@ -41,7 +41,7 @@ export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
                       : isDark ? "hover:bg-slate-800/40" : "hover:bg-gray-50"
                   }`}
                 >
-                  <td className={`px-5 py-4 font-medium ${isDark ? "text-white" : "text-gray-900"}`}>{inc.id}</td>
+                  <td className={`px-5 py-4 font-medium ${isDark ? "text-white" : "text-gray-900"}`}>{inc.codigo}</td>
                   <td className={`px-5 py-4 ${isDark ? "text-slate-300" : "text-gray-700"}`}>{inc.cliente}</td>
                   <td className={`px-5 py-4 font-mono text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>{inc.instancia}</td>
                   <td className={`px-5 py-4 ${isDark ? "text-slate-300" : "text-gray-700"}`}>{inc.asunto}</td>
@@ -55,7 +55,7 @@ export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
         </div>
         {selected && (
           <div className={`w-72 border rounded-xl p-5 self-start shrink-0 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
-            <div className="flex justify-between mb-4"><span className={`font-mono font-semibold text-sm ${isDark ? "text-white" : "text-gray-900"}`}>{selected.id}</span><button onClick={() => setSelected(null)} className="text-gray-400">✕</button></div>
+            <div className="flex justify-between mb-4"><span className={`font-mono font-semibold text-sm ${isDark ? "text-white" : "text-gray-900"}`}>{selected.codigo}</span><button onClick={() => setSelected(null)} className="text-gray-400">✕</button></div>
             <div className="space-y-3">
               {[["Cliente", selected.cliente], ["Instancia", selected.instancia], ["Plantilla", selected.plantilla], ["Asunto", selected.asunto]].map(([k, v]) => (
                 <div key={k}><p className={`text-xs mb-0.5 ${isDark ? "text-slate-400" : "text-gray-400"}`}>{k}</p><p className={`text-sm ${isDark ? "text-slate-200" : "text-gray-800"}`}>{v}</p></div>

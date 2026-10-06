@@ -49,7 +49,7 @@ export interface Pago {
   estado: "Pagado";
 }
 
-export type TicketEstado = "Abierta" | "En proceso" | "Resuelta";
+export type TicketEstado = "Abierta" | "En proceso" | "Resuelta" | "Cerrada";
 export type TicketPrioridad = "Alta" | "Media" | "Baja";
 
 export interface TicketComentario {
@@ -60,6 +60,7 @@ export interface TicketComentario {
 
 export interface Ticket {
   id: string;
+  codigo: string;
   asunto: string;
   instancia: string;
   categoria: string;

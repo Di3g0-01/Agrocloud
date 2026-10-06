@@ -91,7 +91,7 @@ export const SoporteDashboard: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-[10px] font-mono text-slate-500">{inc.id}</span>
+                      <span className="text-[10px] font-mono text-slate-500">{inc.codigo}</span>
                       <span
                         className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
                           inc.prioridad === 'ALTA'
@@ -124,7 +124,7 @@ export const SoporteDashboard: React.FC = () => {
               <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 lg:p-8 space-y-6">
                 <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-4">
                   <div>
-                    <span className="text-xs font-mono text-sky-400 font-bold">{selectedIncidencia.id}</span>
+                    <span className="text-xs font-mono text-sky-400 font-bold">{selectedIncidencia.codigo}</span>
                     <h2 className="text-xl font-bold text-white mt-1">{selectedIncidencia.asunto}</h2>
                     <p className="text-xs text-slate-400 mt-1">Cliente: {selectedIncidencia.cliente}</p>
                   </div>

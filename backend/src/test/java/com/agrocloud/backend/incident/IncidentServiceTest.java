@@ -57,6 +57,30 @@ class IncidentServiceTest {
         verify(incidents, never()).saveAndFlush(any());
     }
 
+    @Test void newTicketGetsAUniqueReadableCodeWithoutReplacingItsUuid() {
+        UUID clientId = UUID.randomUUID();
+        UUID instanceId = UUID.randomUUID();
+        User owner = new User();
+        owner.setId(clientId);
+        InstanceEntity instance = new InstanceEntity();
+        instance.setId(instanceId);
+        instance.setOwner(owner);
+        when(instances.findById(instanceId)).thenReturn(Optional.of(instance));
+        when(incidents.nextTicketNumber()).thenReturn(12345L);
+        when(incidents.saveAndFlush(any(IncidentEntity.class))).thenAnswer(invocation -> {
+            IncidentEntity saved = invocation.getArgument(0);
+            saved.id = UUID.randomUUID();
+            return saved;
+        });
+
+        IncidentResponse result = service.create(principal(clientId, "CLIENTE"),
+                new IncidentRequest(instanceId, "Error", "Conectividad", "No conecta", "ALTA"));
+
+        assertEquals("INC-12345", result.codigo());
+        assertNotNull(result.id());
+        verify(incidents).nextTicketNumber();
+    }
+
     @Test void onlyAdminCanAssignAnActiveSupportAgent() {
         UUID ticketId = UUID.randomUUID();
         UUID agentId = UUID.randomUUID();
@@ -108,6 +132,7 @@ class IncidentServiceTest {
     private IncidentEntity incident(String status) {
         IncidentEntity incident = new IncidentEntity();
         incident.id = UUID.randomUUID();
+        incident.ticketNumber = 1L;
         incident.status = status;
         incident.owner = new User();
         InstanceEntity instance = new InstanceEntity();

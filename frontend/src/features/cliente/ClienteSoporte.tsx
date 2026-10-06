@@ -23,7 +23,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
 
   const filtered = tickets.filter(t => {
     const q = search.toLowerCase();
-    return t.id.toLowerCase().includes(q) || t.asunto.toLowerCase().includes(q);
+    return t.codigo.toLowerCase().includes(q) || t.asunto.toLowerCase().includes(q);
   });
 
   const estadoColor = (e: TicketEstado) =>
@@ -55,7 +55,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
     setShowNew(false);
     setForm({ asunto: "", instancia: "", categoria: "", prioridad: "Media", descripcion: "" });
     setFormErr({});
-    setConfirmacion(`Incidencia ${nuevo.id} registrada correctamente. El equipo de soporte la revisará a la brevedad.`);
+    setConfirmacion(`Incidencia ${nuevo.codigo} registrada correctamente. El equipo de soporte la revisará a la brevedad.`);
     setTimeout(() => setConfirmacion(""), 5000);
   }
 
@@ -101,7 +101,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-mono text-sm font-semibold text-gray-900">{reciente.id}</span>
+                    <span className="font-mono text-sm font-semibold text-gray-900">{reciente.codigo}</span>
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${estadoColor(reciente.estado)}`}>{reciente.estado}</span>
                   </div>
                   <p className="text-sm text-gray-700 mb-2 leading-snug">{reciente.asunto}</p>
@@ -160,7 +160,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
               <tbody>
                 {filtered.map(t => (
                   <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors text-center">
-                    <td className="px-4 py-3.5 font-mono text-xs font-semibold text-gray-900 whitespace-nowrap">{t.id}</td>
+                    <td className="px-4 py-3.5 font-mono text-xs font-semibold text-gray-900 whitespace-nowrap">{t.codigo}</td>
                     <td className="px-4 py-3.5 text-xs text-gray-400 whitespace-nowrap">{t.creado}</td>
                     <td className="px-4 py-3.5 text-xs text-gray-800 whitespace-nowrap max-w-[240px] truncate mx-auto">{t.asunto}</td>
                     <td className="px-4 py-3.5 text-xs text-gray-500 font-mono whitespace-nowrap">{t.instancia}</td>
@@ -192,7 +192,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
             role="dialog" aria-label="Detalle de incidencia">
             <div className="p-5 border-b border-gray-100 flex items-start justify-between shrink-0">
               <div className="min-w-0">
-                <p className="font-mono font-semibold text-gray-900">{detalle.id}</p>
+                <p className="font-mono font-semibold text-gray-900">{detalle.codigo}</p>
                 <p className="text-xs text-gray-500 mt-0.5 leading-snug truncate">{detalle.asunto}</p>
               </div>
               <button onClick={() => setDetalle(null)} aria-label="Cerrar panel"

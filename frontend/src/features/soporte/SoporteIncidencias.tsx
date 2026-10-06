@@ -67,7 +67,7 @@ export function SoporteIncidencias({ isDark }: { isDark?: boolean }) {
             <tbody className={`divide-y ${isDark ? "divide-slate-800" : "divide-gray-50"}`}>
               {filtered.map(inc => (
                 <tr key={inc.id} onClick={() => setSelected(selected?.id === inc.id ? null : inc)} className={`cursor-pointer transition-colors ${selected?.id === inc.id ? (isDark ? "bg-lime-950/40" : "bg-lime-50") : (isDark ? "hover:bg-slate-800/40" : "hover:bg-gray-50")}`}>
-                  <td className={`px-5 py-4 font-medium ${isDark ? "text-white" : "text-gray-900"}`}>{inc.id}</td>
+                  <td className={`px-5 py-4 font-medium ${isDark ? "text-white" : "text-gray-900"}`}>{inc.codigo}</td>
                   <td className={`px-5 py-4 ${isDark ? "text-slate-300" : "text-gray-700"}`}>{inc.cliente}</td>
                   <td className={`px-5 py-4 font-mono text-xs ${isDark ? "text-slate-400" : "text-gray-500"}`}>{inc.instancia}</td>
                   <td className={`px-5 py-4 ${isDark ? "text-slate-300" : "text-gray-700"}`}>{inc.asunto}</td>
@@ -81,7 +81,7 @@ export function SoporteIncidencias({ isDark }: { isDark?: boolean }) {
         </div>
         {selected && (
           <div className={`w-80 border rounded-xl p-6 self-start shrink-0 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
-            <div className="flex items-center justify-between mb-4"><span className={`font-mono text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{selected.id}</span><button onClick={() => setSelected(null)} className="text-gray-400">✕</button></div>
+            <div className="flex items-center justify-between mb-4"><span className={`font-mono text-sm font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{selected.codigo}</span><button onClick={() => setSelected(null)} className="text-gray-400">✕</button></div>
             <div className="space-y-4">
               {[["Cliente", selected.cliente], ["Instancia", selected.instancia], ["Plantilla", selected.plantilla], ["Asunto", selected.asunto]].map(([k, v]) => (
                 <div key={k}><p className={`text-xs mb-0.5 ${isDark ? "text-slate-400" : "text-gray-400"}`}>{k}</p><p className={`text-sm ${isDark ? "text-slate-200" : "text-gray-800"}`}>{v}</p></div>
