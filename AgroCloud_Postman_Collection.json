@@ -28,6 +28,14 @@
       "value": ""
     },
     {
+      "key": "clienteId",
+      "value": ""
+    },
+    {
+      "key": "agenteId",
+      "value": ""
+    },
+    {
       "key": "planId",
       "value": "plan-finca"
     },
@@ -559,7 +567,7 @@
       ]
     },
     {
-      "name": "Incidencias existentes en develop",
+      "name": "Incidencias E04",
       "item": [
         {
           "name": "Listar incidencias",
@@ -573,7 +581,7 @@
           "name": "Crear incidencia",
           "request": {
             "method": "POST",
-            "description": "Rol: Autenticado. Ruta comprobada contra los controladores de develop.",
+            "description": "Rol: Cliente propietario de la instancia. Crea el ticket abierto y sin agente.",
             "url": "{{baseUrl}}/incidencias",
             "header": [
               {
@@ -607,10 +615,10 @@
           ]
         },
         {
-          "name": "Actualizar incidencia",
+          "name": "Actualizar guía de diagnóstico",
           "request": {
             "method": "PATCH",
-            "description": "Rol: Admin o Soporte. Ruta comprobada contra los controladores de develop.",
+            "description": "Rol: Admin o agente de Soporte asignado. Ruta de compatibilidad del frontend.",
             "url": "{{baseUrl}}/incidencias/{{incidentId}}",
             "header": [
               {
@@ -620,12 +628,84 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"estado\": \"EN_REVISION\",\n  \"guiaDiagnostico\": \"Revisar conexión\"\n}",
+              "raw": "{\n  \"guiaDiagnostico\": \"Revisar conexión\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            }
+          }
+        },
+        {
+          "name": "Cliente - listar tickets propios",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Cliente con este clienteId o Admin. Otro cliente recibe 403.",
+            "url": "{{baseUrl}}/incidencias/cliente/{{clienteId}}"
+          }
+        },
+        {
+          "name": "Soporte - listar tickets asignados",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Agente con este agenteId o Admin. Otro agente recibe 403.",
+            "url": "{{baseUrl}}/incidencias/agente/{{agenteId}}"
+          }
+        },
+        {
+          "name": "Admin - asignar ticket",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Admin. El agente debe tener rol SOPORTE y estar activo.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/asignacion",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agenteId\": \"{{agenteId}}\"\n}",
+              "options": {"raw": {"language": "json"}}
+            }
+          }
+        },
+        {
+          "name": "Soporte - iniciar atención",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Agente asignado o Admin. Transición ABIERTA a EN_REVISION.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/estado",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"EN_REVISION\"\n}",
+              "options": {"raw": {"language": "json"}}
+            }
+          }
+        },
+        {
+          "name": "Soporte - resolver ticket",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Agente asignado o Admin. Transición EN_REVISION a RESUELTA.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/estado",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"RESUELTA\"\n}",
+              "options": {"raw": {"language": "json"}}
+            }
+          }
+        },
+        {
+          "name": "Cliente - cerrar ticket",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Cliente propietario o Admin. CERRADA es estado final; no se reabre.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/estado",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"CERRADA\"\n}",
+              "options": {"raw": {"language": "json"}}
             }
           }
         }

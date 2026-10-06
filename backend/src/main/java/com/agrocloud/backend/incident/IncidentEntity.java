@@ -12,6 +12,7 @@ public class IncidentEntity {
     @Id public UUID id;
     @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "owner_id", nullable = false) public User owner;
     @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "instance_id", nullable = false) public InstanceEntity instance;
+    @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "assigned_support_id") public User assignedSupport;
     @Column(name = "subject", nullable = false, length = 200) public String subject;
     @Column(nullable = false, length = 80) public String category;
     @Column(nullable = false, columnDefinition = "TEXT") public String problem;

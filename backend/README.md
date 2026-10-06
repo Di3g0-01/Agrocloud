@@ -54,8 +54,8 @@ variable `baseUrl` apunta al backend local (`http://localhost:8080/api/v1`).
 Ejecuta **Iniciar sesión** con una cuenta de prueba: la colección guarda el JWT en
 `token`. Cambia de cuenta según el rol indicado en cada solicitud. Las solicitudes
 de creación guardan los identificadores devueltos para las rutas siguientes.
-La colección cubre los 32 endpoints presentes en `develop` al inicio del E04;
-los endpoints nuevos se incorporarán al completar cada módulo.
+La colección partió de los 32 endpoints presentes en `develop` al inicio del
+E04 y se amplía al completar cada módulo.
 
 ### Endpoints
 
@@ -88,3 +88,30 @@ Ejemplo de registro (también se aceptan los alias del frontend `nombreEmpresa`,
 
 La selección y contratación de un plan corresponde al módulo de suscripciones; se realiza
 después de crear la cuenta y no forma parte del contrato de autenticación.
+
+### Flujo de incidencias E04
+
+El cliente crea el ticket con `POST /api/v1/incidencias`, enviando el ID de una
+instancia propia, asunto, categoría, problema y prioridad (`ALTA`, `MEDIA` o
+`BAJA`). El administrador asigna un usuario de Soporte activo mediante
+`PATCH /api/v1/incidencias/{id}/asignacion` con `{ "agenteId": "UUID" }`.
+
+Soporte consulta únicamente sus tickets asignados. El administrador ve todos
+los tickets y el cliente solo los propios. También existen las rutas
+`GET /api/v1/incidencias/cliente/{id}` y
+`GET /api/v1/incidencias/agente/{id}`; cada ID se comprueba contra el usuario
+autenticado, salvo para el administrador.
+
+El agente asignado o el administrador cambia el estado con
+`PATCH /api/v1/incidencias/{id}/estado` y un cuerpo como
+`{ "estado": "EN_REVISION" }`. El flujo de atención es `ABIERTA` →
+`EN_REVISION` → `RESUELTA`. El cliente propietario puede cambiarlo a `CERRADA`
+en cualquier momento si ya no necesita atención. El administrador también
+puede cerrarlo. `CERRADA` es final: nadie puede reabrirlo ni reasignarlo.
+La ruta anterior `PATCH /api/v1/incidencias/{id}` se conserva para el frontend
+actual; admite cambiar **un solo campo por solicitud** (`estado` o
+`guiaDiagnostico`).
+
+La interfaz de Admin aún debe incorporar la asignación y la del cliente el
+botón de cierre. Esas pantallas se integrarán en otra fase; los contratos de
+backend pueden probarse con la colección de Postman.

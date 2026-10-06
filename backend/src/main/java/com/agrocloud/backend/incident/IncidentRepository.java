@@ -6,5 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface IncidentRepository extends JpaRepository<IncidentEntity, UUID> {
     List<IncidentEntity> findByOwnerIdOrderByCreatedAtDesc(UUID ownerId);
+    List<IncidentEntity> findByAssignedSupportIdOrderByCreatedAtDesc(UUID supportId);
     List<IncidentEntity> findAllByOrderByCreatedAtDesc();
 }
