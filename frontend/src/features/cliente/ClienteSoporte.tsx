@@ -3,6 +3,7 @@ import type { Ticket, TicketEstado, TicketPrioridad } from "../../types/cliente"
 import type { CInstancia } from "../../types/cliente";
 import { actualizarIncidencia, crearIncidencia, getIncidencias, mapIncidenciaToTicket } from "../../api/incidenciasApi";
 import { CustomSelect } from "../../components/ui/CustomSelect";
+import { IncidentComments } from "../../components/shared/IncidentComments";
 
 export function ClienteSoporte({ organizationName, initials, instanciasList }: { organizationName: string; initials: string; instanciasList: CInstancia[] }) {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -283,6 +284,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
                   ))}
                 </div>
               </div>
+              <IncidentComments incidentId={detalle.id} closed={detalle.estado === "Cerrada"} />
             </div>
 
             <div className="p-5 border-t border-gray-100 shrink-0">

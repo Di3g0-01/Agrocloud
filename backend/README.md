@@ -132,3 +132,11 @@ reiniciarse, cambiar de estado o eliminarse. El aviso de eliminación conserva
 el nombre de la instancia y no enlaza a un recurso que ya no existe. Si se
 solicita el mismo estado actual, no se crea un aviso duplicado. Estos eventos
 usan las mismas rutas y el mismo flujo en tiempo real de la campana.
+
+`V11__incident_comments.sql` agrega comentarios persistentes a cada ticket.
+El cliente propietario, el agente asignado y el administrador pueden consultarlos
+con `GET /api/v1/incidencias/{id}/comentarios` y escribirlos con
+`POST /api/v1/incidencias/{id}/comentarios` y `{ "texto": "..." }` (1 a 2000
+caracteres). Los demás usuarios reciben 403. Un ticket cerrado conserva el
+historial para lectura, pero no acepta mensajes nuevos. Cada comentario avisa
+a los demás participantes mediante la campana.

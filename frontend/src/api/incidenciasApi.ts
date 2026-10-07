@@ -3,6 +3,21 @@ import type { Incidencia } from '../types';
 import type { Incident } from '../types/shared';
 import type { Ticket } from '../types/cliente';
 
+export interface IncidentComment {
+  id: string;
+  autorId: string;
+  autor: string;
+  rolAutor: 'CLIENTE' | 'SOPORTE' | 'ADMINISTRADOR';
+  texto: string;
+  fecha: string;
+}
+
+export const getComentarios = async (incidentId: string): Promise<IncidentComment[]> =>
+  (await axiosClient.get<IncidentComment[]>(`/incidencias/${incidentId}/comentarios`)).data;
+
+export const crearComentario = async (incidentId: string, texto: string): Promise<IncidentComment> =>
+  (await axiosClient.post<IncidentComment>(`/incidencias/${incidentId}/comentarios`, { texto })).data;
+
 export const getIncidencias = async (): Promise<Incidencia[]> => {
   const res = await axiosClient.get('/incidencias');
   return res.data?.data || res.data;

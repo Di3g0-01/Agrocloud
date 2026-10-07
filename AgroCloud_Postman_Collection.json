@@ -712,6 +712,28 @@
               "options": {"raw": {"language": "json"}}
             }
           }
+        },
+        {
+          "name": "Listar comentarios del ticket",
+          "request": {
+            "method": "GET",
+            "description": "Cliente propietario, soporte asignado o Admin. Otros usuarios reciben 403. También permite leer el historial de un ticket cerrado.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/comentarios"
+          }
+        },
+        {
+          "name": "Agregar comentario al ticket",
+          "request": {
+            "method": "POST",
+            "description": "Cliente propietario, soporte asignado o Admin. Máximo 2000 caracteres; un ticket cerrado no admite comentarios. Avisa a los otros participantes.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/comentarios",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Ya probé reiniciar la instancia y el problema continúa.\"\n}",
+              "options": {"raw": {"language": "json"}}
+            }
+          }
         }
       ]
     },

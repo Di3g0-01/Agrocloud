@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import type { Incident } from "../../types/shared";
 import { getIncidencias, mapIncidenciaToIncident, actualizarIncidencia } from "../../api/incidenciasApi";
 import { PriorityBadge, StatusBadge } from "../../components/ui";
+import { IncidentComments } from "../../components/shared/IncidentComments";
 
 export function SoporteIncidencias({ isDark }: { isDark?: boolean }) {
   const [filter, setFilter] = useState<"todas" | "Abierta" | "En revisión" | "Resuelta" | "Cerrada">("todas");
@@ -91,6 +92,7 @@ export function SoporteIncidencias({ isDark }: { isDark?: boolean }) {
                 <textarea id="resolution-message" value={resolutionMessage} onChange={e => setResolutionMessage(e.target.value)} maxLength={2000} rows={4} className="w-full rounded-lg border border-gray-300 p-2 text-sm text-gray-900" />
                 <button onClick={() => changeStatus('RESUELTA')} className="rounded-lg bg-lime-400 px-3 py-2 text-xs text-gray-900">Resolver y enviar mensaje</button>
               </div>}
+              <IncidentComments incidentId={selected.id} closed={selected.estado === "Cerrada"} isDark={isDark} />
             </div>
           </div>
         )}

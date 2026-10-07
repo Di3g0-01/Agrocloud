@@ -4,6 +4,7 @@ import { asignarIncidencia, getIncidencias, mapIncidenciaToIncident } from "../.
 import { listAdminUsers } from "../../api/adminUsersApi";
 import type { AdminUser } from "../../api/adminUsersApi";
 import type { Incident } from "../../types/shared";
+import { IncidentComments } from "../../components/shared/IncidentComments";
 
 export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
   const [selected, setSelected] = useState<Incident | null>(null);
@@ -98,6 +99,7 @@ export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
                 </select>
                 {selected.estado !== "Cerrada" && <button onClick={assign} disabled={!agentChoice || agentChoice === selected.agenteId} className="mt-2 rounded-lg bg-lime-400 px-3 py-2 text-xs font-semibold text-gray-900 disabled:opacity-50">Asignar a soporte</button>}
               </div>
+              <IncidentComments incidentId={selected.id} closed={selected.estado === "Cerrada"} isDark={isDark} />
             </div>
           </div>
         )}

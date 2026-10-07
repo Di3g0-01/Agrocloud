@@ -5,7 +5,7 @@
 Desde la rama `feature/e04-luis`, la receta `docker-compose.e04.yml` inicia la
 base existente, la API actual y la interfaz con un solo comando. Usa el volumen
 externo `agrocloud-postgres-data`; no crea una base vacía. Flyway conserva los
-datos e instala las migraciones V7 a V10. Mantén un respaldo antes de instalar
+datos e instala las migraciones V7 a V11. Mantén un respaldo antes de instalar
 una versión nueva.
 
 ```powershell

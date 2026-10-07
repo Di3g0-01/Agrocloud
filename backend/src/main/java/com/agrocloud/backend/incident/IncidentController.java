@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/incidencias")
 public class IncidentController {
     private final IncidentService service;
+    private final IncidentCommentService comments;
 
-    public IncidentController(IncidentService service) {
+    public IncidentController(IncidentService service, IncidentCommentService comments) {
         this.service = service;
+        this.comments = comments;
     }
 
     @GetMapping
@@ -69,4 +71,17 @@ public class IncidentController {
     public record AssignmentRequest(@NotNull UUID agenteId) {}
     public record StatusRequest(@NotBlank String estado, @Size(max = 2000) String mensajeResolucion) {}
     public record IncidentUpdateRequest(String estado, String guiaDiagnostico, String mensajeResolucion) {}
+    public record CommentRequest(@NotBlank @Size(max = 2000) String texto) {}
+
+    @GetMapping("/{id}/comentarios")
+    public List<IncidentCommentResponse> listComments(@PathVariable UUID id,
+                                                       @AuthenticationPrincipal UserPrincipal principal) {
+        return comments.list(id, principal);
+    }
+
+    @PostMapping("/{id}/comentarios")
+    public ResponseEntity<IncidentCommentResponse> addComment(@PathVariable UUID id,
+            @Valid @RequestBody CommentRequest request, @AuthenticationPrincipal UserPrincipal principal) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(comments.add(id, request.texto(), principal));
+    }
 }
