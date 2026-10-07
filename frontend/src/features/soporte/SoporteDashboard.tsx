@@ -5,6 +5,10 @@ import { getIncidencias, mapIncidenciaToIncident } from "../../api/incidenciasAp
 import { getInstancias } from "../../api/instanciasApi";
 import { PriorityBadge, StatusBadge } from "../../components/ui";
 
+const isActive = (incident: Incident) => incident.estado === "Abierta" || incident.estado === "En revisión";
+const wasResolved = (incident: Incident) => incident.estado === "Resuelta" ||
+  (incident.estado === "Cerrada" && Boolean(incident.mensajeResolucion));
+
 export function SoporteDashboard({ setPage, isDark }: { setPage: (p: SoportePage) => void; isDark?: boolean }) {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [instances, setInstances] = useState<Instance[]>([]);
@@ -31,8 +35,8 @@ export function SoporteDashboard({ setPage, isDark }: { setPage: (p: SoportePage
         {[
           { label: "Incidencias abiertas", value: String(incidents.filter(i => i.estado === "Abierta").length), sub: "Pendientes de atención", icon: "M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z", color: isDark ? "text-blue-400 bg-blue-950/40" : "text-blue-500 bg-blue-50" },
           { label: "En revisión", value: String(incidents.filter(i => i.estado === "En revisión").length), sub: "Atención técnica activa", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-orange-400 bg-orange-950/40" : "text-orange-500 bg-orange-50" },
-          { label: "Resueltas", value: String(incidents.filter(i => i.estado === "Resuelta").length), sub: "Total resueltas", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-lime-400 bg-lime-950/40" : "text-lime-600 bg-lime-50" },
-          { label: "Con incidencias", value: String(new Set(incidents.filter(i => i.estado !== "Resuelta").map(i => i.instancia)).size), sub: "Instancias afectadas", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: isDark ? "text-slate-400 bg-slate-800" : "text-gray-500 bg-gray-100" },
+          { label: "Resueltas", value: String(incidents.filter(wasResolved).length), sub: "Incluye las cerradas tras resolverse", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: isDark ? "text-lime-400 bg-lime-950/40" : "text-lime-600 bg-lime-50" },
+          { label: "Con incidencias", value: String(new Set(incidents.filter(isActive).map(i => i.instancia)).size), sub: "Instancias afectadas", icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: isDark ? "text-slate-400 bg-slate-800" : "text-gray-500 bg-gray-100" },
         ].map(k => (
           <div key={k.label} className={`border rounded-xl p-5 text-left flex flex-col items-start ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <div className="flex items-center justify-start gap-2 mb-3">
@@ -68,10 +72,10 @@ export function SoporteDashboard({ setPage, isDark }: { setPage: (p: SoportePage
         <div className={`border rounded-xl ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
           <div className={`p-5 border-b flex items-center justify-between ${isDark ? "border-slate-800" : "border-gray-100"}`}>
             <div><h2 className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>Prioridades</h2><p className={`text-xs mt-0.5 ${isDark ? "text-slate-400" : "text-gray-400"}`}>Incidencias críticas activas.</p></div>
-            <span className="w-5 h-5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold flex items-center justify-center">{incidents.filter(i => i.prioridad === "Alta" && i.estado !== "Resuelta").length}</span>
+            <span className="w-5 h-5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold flex items-center justify-center">{incidents.filter(i => i.prioridad === "Alta" && isActive(i)).length}</span>
           </div>
           <div className={`divide-y ${isDark ? "divide-slate-800" : "divide-gray-50"}`}>
-            {incidents.filter(i => i.prioridad === "Alta" && i.estado !== "Resuelta").map(inc => (
+            {incidents.filter(i => i.prioridad === "Alta" && isActive(i)).map(inc => (
               <div key={inc.id} className={`p-4 flex items-start gap-3 transition-colors ${isDark ? "hover:bg-red-950/20" : "hover:bg-red-50/40"}`}>
                 <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
                 <div className="flex-1 min-w-0">

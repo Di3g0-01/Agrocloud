@@ -50,7 +50,7 @@ export function SoporteActividad({ isDark }: { isDark?: boolean }) {
                   <div className={`flex-1 rounded-xl p-4 ${isDark ? "bg-slate-800/60" : "bg-gray-50"}`}>
                     <div className="flex items-start justify-between gap-4">
                       <div><p className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-gray-800"}`}>{historical ? "Incidencia resuelta (autor no registrado)" : resolved ? "Resolviste la incidencia" : "Tienes asignada la incidencia"}: {incident.asunto}</p><p className={`text-xs font-mono mt-1 ${isDark ? "text-lime-400" : "text-lime-600"}`}>{incident.codigo} · {incident.instanciaNombre} · {incident.cliente}</p></div>
-                      <time dateTime={date} className={`text-xs shrink-0 ${isDark ? "text-slate-400" : "text-gray-400"}`}>{new Date(date).toLocaleString("es-GT")}</time>
+                      <time dateTime={date} className={`text-xs shrink-0 ${isDark ? "text-slate-400" : "text-gray-400"}`}>{historical ? "Última actualización" : resolved ? "Resuelta" : "Actualizada"}: {new Date(date).toLocaleString("es-GT")}</time>
                     </div>
                     {resolved && incident.mensajeResolucion && <p className={`mt-2 text-sm whitespace-pre-wrap ${isDark ? "text-slate-300" : "text-gray-600"}`}>{incident.mensajeResolucion}</p>}
                     <div className="mt-2"><span className={`text-[10px] font-medium px-2 py-0.5 rounded capitalize ${resolved ? "bg-lime-500/20 text-lime-700 dark:text-lime-400 border border-lime-500/30" : "bg-blue-500/20 text-blue-700 dark:text-blue-400 border border-blue-500/30"}`}>{resolved ? "Resuelta" : incident.estado === "EN_REVISION" ? "En revisión" : "Asignada"}</span></div>

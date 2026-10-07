@@ -170,6 +170,23 @@ class IncidentServiceTest {
                 () -> service.activity(principal(UUID.randomUUID(), "CLIENTE"))).getStatusCode());
     }
 
+    @Test void supportActivityDoesNotAttributeAdminsResolutionToAssignedAgent() {
+        UUID supportId = UUID.randomUUID();
+        User agent = new User();
+        agent.setId(supportId);
+        User admin = new User();
+        admin.setId(UUID.randomUUID());
+        IncidentEntity resolvedByAdmin = incident("RESUELTA");
+        resolvedByAdmin.assignedSupport = agent;
+        resolvedByAdmin.resolvedBy = admin;
+        resolvedByAdmin.resolutionMessage = "Solucionado por administración";
+        when(incidents.findByAssignedSupportIdOrderByCreatedAtDesc(supportId))
+                .thenReturn(List.of(resolvedByAdmin));
+        when(incidents.findByResolvedByIdOrderByResolvedAtDesc(supportId)).thenReturn(List.of());
+
+        assertTrue(service.activity(principal(supportId, "SOPORTE")).isEmpty());
+    }
+
     private IncidentEntity incident(String status) {
         IncidentEntity incident = new IncidentEntity();
         incident.id = UUID.randomUUID();
