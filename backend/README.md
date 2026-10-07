@@ -147,3 +147,12 @@ sus tickets pendientes y las resoluciones que realizó, incluso si el cliente
 cerró el ticket después. Los tickets resueltos antes de V12 no tienen autor
 verificable; si siguen asignados al agente aparecen como históricos con el autor
 sin registrar.
+
+Para probar el flujo completo sin tocar la base de la aplicación, crea una base
+separada llamada `agrocloud_test` en el PostgreSQL local y ejecuta
+`docker compose --env-file <ruta-al-.env> -f docker-compose.e04-test.yml run --rm integration`.
+La prueba de incidencias crea usuarios e instancias temporales en esa base,
+recorre apertura, asignación, comentarios, atención, resolución y cierre,
+comprueba permisos por rol y recibe por SSE avisos de tickets e instancias.
+Al terminar elimina los datos temporales. El test verifica que `DB_URL` termine
+en `/agrocloud_test` antes de crear datos.

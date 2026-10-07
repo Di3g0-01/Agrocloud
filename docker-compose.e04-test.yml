@@ -1,0 +1,27 @@
+name: agrocloud-e04-tests
+
+services:
+  integration:
+    image: maven:3.9.9-eclipse-temurin-24
+    working_dir: /workspace
+    volumes:
+      - ./backend:/workspace
+      - maven_cache:/root/.m2
+    environment:
+      DB_URL: jdbc:postgresql://agrocloud-db:5432/agrocloud_test
+      DB_USERNAME: ${POSTGRES_USER:?Define POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      RUN_DB_INTEGRATION_TESTS: "true"
+    command: ["mvn", "-B", "test"]
+    networks:
+      - agrocloud
+
+volumes:
+  maven_cache:
+
+networks:
+  agrocloud:
+    external: true
+    name: agrocloud-net
