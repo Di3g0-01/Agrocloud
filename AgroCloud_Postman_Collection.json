@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "AgroCloud - API disponible en develop (E03)",
-    "description": "Colección local de los endpoints presentes en develop. Usa credenciales de prueba; no contiene secretos ni URL pública. Cambia el token al probar cada rol. Los módulos nuevos del E04 se agregarán en fases posteriores.",
+    "name": "AgroCloud - API E04",
+    "description": "Colección local para probar AgroCloud E04. Usa credenciales de prueba; no contiene secretos ni URL pública. Cambia el token al probar cada rol.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -53,6 +53,10 @@
     },
     {
       "key": "incidentId",
+      "value": ""
+    },
+    {
+      "key": "notificationId",
       "value": ""
     },
     {
@@ -707,6 +711,35 @@
               "raw": "{\n  \"estado\": \"CERRADA\"\n}",
               "options": {"raw": {"language": "json"}}
             }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notificaciones",
+      "item": [
+        {
+          "name": "Listar mis notificaciones",
+          "request": {
+            "method": "GET",
+            "description": "Rol: cualquier usuario autenticado. Solo devuelve sus notificaciones.",
+            "url": "{{baseUrl}}/notificaciones"
+          }
+        },
+        {
+          "name": "Marcar notificación como leída",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: destinatario de la notificación.",
+            "url": "{{baseUrl}}/notificaciones/{{notificationId}}/leida"
+          }
+        },
+        {
+          "name": "Escuchar avisos inmediatos",
+          "request": {
+            "method": "GET",
+            "description": "Flujo SSE autenticado con Bearer token; requiere un cliente que mantenga la conexión abierta.",
+            "url": "{{baseUrl}}/notificaciones/stream"
           }
         }
       ]

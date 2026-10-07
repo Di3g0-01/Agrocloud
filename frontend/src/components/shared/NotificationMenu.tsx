@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { API_BASE_URL, axiosClient } from "../../api/axiosClient";
 
 export type RoleType = "admin" | "soporte" | "cliente";
 
@@ -11,24 +12,97 @@ export interface NotificationItem {
   categoria: "pago" | "activacion" | "soporte" | "fallo" | "sistema" | "cliente" | "morosidad" | "cancelacion" | "ticket" | "critico" | "admin" | "resolucion";
 }
 
-const INITIAL_NOTIFICATIONS: Record<RoleType, NotificationItem[]> = {
-  cliente: [],
-  admin: [],
-  soporte: [],
-};
+interface ApiNotification {
+  id: string;
+  tipo: string;
+  titulo: string;
+  mensaje: string;
+  fecha: string;
+  leida: boolean;
+}
+
+const toItem = (notification: ApiNotification): NotificationItem => ({
+  id: notification.id,
+  titulo: notification.titulo,
+  descripcion: notification.mensaje,
+  tiempo: new Date(notification.fecha).toLocaleString("es-GT"),
+  leida: notification.leida,
+  categoria: notification.tipo === "TICKET_RESUELTO" ? "resolucion" : "ticket",
+});
 
 export function NotificationMenu({ role }: { role: RoleType }) {
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS[role] || []);
+  const [items, setItems] = useState<NotificationItem[]>([]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    let initialized = false;
+    let knownIds = new Set<string>();
+    const controller = new AbortController();
+    const refresh = async () => {
+      try {
+        const response = await axiosClient.get<ApiNotification[]>("/notificaciones");
+        if (active) {
+          if (initialized && response.data.some(item => !knownIds.has(item.id)))
+            window.dispatchEvent(new Event("agrocloud:incidents-updated"));
+          knownIds = new Set(response.data.map(item => item.id));
+          initialized = true;
+          setItems(response.data.map(toItem));
+          setError("");
+        }
+      } catch { if (active) setError("No se pudieron actualizar las notificaciones."); }
+    };
+    void refresh();
+    const fallback = window.setInterval(() => void refresh(), 10000);
+    const token = localStorage.getItem("agrocloud_token");
+    const listen = async () => {
+      if (!token) return;
+      while (active) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/notificaciones/stream`, {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          });
+          if (!response.ok || !response.body) throw new Error("Stream no disponible");
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          while (active) {
+            const chunk = await reader.read();
+            if (chunk.done) break;
+            buffer += decoder.decode(chunk.value, { stream: true });
+            if (buffer.includes("event:notification")) {
+              buffer = "";
+              void refresh();
+              window.dispatchEvent(new Event("agrocloud:incidents-updated"));
+            } else if (buffer.length > 4096) buffer = buffer.slice(-100);
+          }
+        } catch { if (!active) break; }
+        if (active) await new Promise(resolve => window.setTimeout(resolve, 3000));
+      }
+    };
+    void listen();
+    return () => { active = false; controller.abort(); window.clearInterval(fallback); };
+  }, [role]);
 
   const unreadCount = items.filter((i) => !i.leida).length;
 
-  const markAllRead = () => {
-    setItems((prev) => prev.map((i) => ({ ...i, leida: true })));
+  const markAllRead = async () => {
+    try {
+      const unread = items.filter(item => !item.leida);
+      await Promise.all(unread.map(item => axiosClient.patch(`/notificaciones/${item.id}/leida`)));
+      setItems(prev => prev.map(item => ({ ...item, leida: true })));
+      setError("");
+    } catch { setError("No se pudieron marcar como leídas."); }
   };
 
-  const markSingleRead = (id: string) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, leida: true } : i)));
+  const markSingleRead = async (id: string) => {
+    try {
+      await axiosClient.patch(`/notificaciones/${id}/leida`);
+      setItems(prev => prev.map(item => item.id === id ? { ...item, leida: true } : item));
+      setError("");
+    } catch { setError("No se pudo marcar como leída."); }
   };
 
   const getBadgeColor = (cat: NotificationItem["categoria"]) => {
@@ -85,7 +159,7 @@ export function NotificationMenu({ role }: { role: RoleType }) {
               </div>
               {unreadCount > 0 && (
                 <button
-                  onClick={markAllRead}
+                  onClick={() => void markAllRead()}
                   className="text-[11px] font-medium text-lime-700 hover:text-lime-800 transition-colors"
                 >
                   Marcar leídas
@@ -94,13 +168,14 @@ export function NotificationMenu({ role }: { role: RoleType }) {
             </div>
 
             <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+              {error && <p role="alert" className="p-3 text-xs text-red-600">{error}</p>}
               {items.length === 0 ? (
                 <p className="text-xs text-gray-400 p-6 text-center">No tienes notificaciones por el momento.</p>
               ) : (
                 items.map((item) => (
                   <div
                     key={item.id}
-                    onClick={() => markSingleRead(item.id)}
+                    onClick={() => void markSingleRead(item.id)}
                     className={`p-3.5 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3 items-start ${
                       !item.leida ? "bg-lime-50/30" : ""
                     }`}

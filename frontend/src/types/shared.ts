@@ -13,6 +13,7 @@ export interface Incident {
   fecha: string;
   guia: string;
   mensajeResolucion?: string | null;
+  agenteId?: string | null;
 }
 
 export interface Instance {

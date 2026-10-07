@@ -9,6 +9,7 @@ import com.agrocloud.backend.entity.Role;
 import com.agrocloud.backend.entity.User;
 import com.agrocloud.backend.instance.entity.InstanceEntity;
 import com.agrocloud.backend.instance.repository.InstanceRepository;
+import com.agrocloud.backend.notification.NotificationService;
 import com.agrocloud.backend.repository.UserRepository;
 import com.agrocloud.backend.security.UserPrincipal;
 import java.util.List;
@@ -28,10 +29,11 @@ class IncidentServiceTest {
     @Mock IncidentRepository incidents;
     @Mock InstanceRepository instances;
     @Mock UserRepository users;
+    @Mock NotificationService notifications;
     IncidentService service;
 
     @BeforeEach void setUp() {
-        service = new IncidentService(incidents, instances, users);
+        service = new IncidentService(incidents, instances, users, notifications);
     }
 
     @Test void supportListsOnlyAssignedTickets() {
@@ -67,6 +69,7 @@ class IncidentServiceTest {
         instance.setOwner(owner);
         when(instances.findById(instanceId)).thenReturn(Optional.of(instance));
         when(incidents.nextTicketNumber()).thenReturn(12345L);
+        when(users.findByRole_CodeAndStatus(Role.ADMINISTRADOR, AccountStatus.ACTIVO)).thenReturn(List.of());
         when(incidents.saveAndFlush(any(IncidentEntity.class))).thenAnswer(invocation -> {
             IncidentEntity saved = invocation.getArgument(0);
             saved.id = UUID.randomUUID();
@@ -106,6 +109,7 @@ class IncidentServiceTest {
         UUID agentId = UUID.randomUUID();
         IncidentEntity incident = incident("ABIERTA");
         incident.owner.setId(clientId);
+        incident.id = ticketId;
         User agent = new User();
         agent.setId(agentId);
         incident.assignedSupport = agent;
@@ -121,6 +125,8 @@ class IncidentServiceTest {
         IncidentResponse resolved = service.changeStatus(ticketId, "RESUELTA",
                 "  Se restauró la conexión y verificamos la instancia.  ", principal(agentId, "SOPORTE"));
         assertEquals("Se restauró la conexión y verificamos la instancia.", resolved.mensajeResolucion());
+        verify(notifications).create(eq(incident.owner), eq("TICKET_RESUELTO"),
+                eq("Incidencia resuelta INC-00001"), eq(resolved.mensajeResolucion()), eq(ticketId));
         IncidentResponse closed = service.changeStatus(ticketId, "CERRADA", null, principal(clientId, "CLIENTE"));
         assertEquals("CERRADA", closed.estado());
         assertEquals(resolved.mensajeResolucion(), closed.mensajeResolucion());

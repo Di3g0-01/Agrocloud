@@ -23,7 +23,7 @@ export function SoporteDashboard({ setPage, isDark }: { setPage: (p: SoportePage
         <div><h1 className={`text-xl lg:text-2xl font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>Panel de soporte</h1><p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}>Gestiona incidencias y revisa el estado técnico de las instancias.</p></div>
         <button onClick={() => setPage("incidencias")} className="flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-gray-900 font-medium px-3 lg:px-4 py-2.5 rounded-lg text-sm transition-colors shrink-0">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          <span className="hidden sm:inline">Nueva incidencia</span>
+          <span className="hidden sm:inline">Ver incidencias asignadas</span>
         </button>
       </div>
       {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</p>}

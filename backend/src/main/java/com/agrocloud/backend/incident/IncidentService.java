@@ -5,6 +5,7 @@ import com.agrocloud.backend.entity.Role;
 import com.agrocloud.backend.entity.User;
 import com.agrocloud.backend.instance.entity.InstanceEntity;
 import com.agrocloud.backend.instance.repository.InstanceRepository;
+import com.agrocloud.backend.notification.NotificationService;
 import com.agrocloud.backend.repository.UserRepository;
 import com.agrocloud.backend.security.UserPrincipal;
 import java.util.List;
@@ -20,11 +21,14 @@ public class IncidentService {
     private final IncidentRepository incidents;
     private final InstanceRepository instances;
     private final UserRepository users;
+    private final NotificationService notifications;
 
-    public IncidentService(IncidentRepository incidents, InstanceRepository instances, UserRepository users) {
+    public IncidentService(IncidentRepository incidents, InstanceRepository instances, UserRepository users,
+                           NotificationService notifications) {
         this.incidents = incidents;
         this.instances = instances;
         this.users = users;
+        this.notifications = notifications;
     }
 
     @Transactional(readOnly = true)
@@ -75,7 +79,11 @@ public class IncidentService {
         incident.problem = request.problema().trim();
         incident.priority = priority;
         incident.status = "ABIERTA";
-        return IncidentResponse.from(incidents.saveAndFlush(incident));
+        IncidentResponse result = IncidentResponse.from(incidents.saveAndFlush(incident));
+        for (User admin : users.findByRole_CodeAndStatus(Role.ADMINISTRADOR, AccountStatus.ACTIVO))
+            notifications.create(admin, "TICKET_CREADO", "Nueva incidencia " + result.codigo(),
+                    incident.subject, incident.id);
+        return result;
     }
 
     @Transactional
@@ -88,7 +96,12 @@ public class IncidentService {
         if (agent.getRole() != Role.SOPORTE || agent.getStatus() != AccountStatus.ACTIVO)
             throw new IllegalArgumentException("El agente debe tener rol Soporte y estar activo");
         incident.assignedSupport = agent;
-        return IncidentResponse.from(incidents.saveAndFlush(incident));
+        IncidentResponse result = IncidentResponse.from(incidents.saveAndFlush(incident));
+        notifications.create(agent, "TICKET_ASIGNADO", "Incidencia asignada " + result.codigo(),
+                incident.subject, incident.id);
+        notifications.create(incident.owner, "TICKET_ASIGNADO", "Incidencia asignada " + result.codigo(),
+                "Un agente de soporte atenderá tu incidencia.", incident.id);
+        return result;
     }
 
     @Transactional
@@ -119,7 +132,18 @@ public class IncidentService {
             incident.resolutionMessage = message;
         }
         incident.status = next;
-        return IncidentResponse.from(incidents.saveAndFlush(incident));
+        IncidentResponse result = IncidentResponse.from(incidents.saveAndFlush(incident));
+        if ("RESUELTA".equals(next)) {
+            notifications.create(incident.owner, "TICKET_RESUELTO", "Incidencia resuelta " + result.codigo(),
+                    incident.resolutionMessage, incident.id);
+        } else if ("EN_REVISION".equals(next)) {
+            notifications.create(incident.owner, "TICKET_EN_REVISION", "Incidencia en revisión " + result.codigo(),
+                    "Soporte comenzó a revisar tu incidencia.", incident.id);
+        } else if ("CERRADA".equals(next) && incident.assignedSupport != null) {
+            notifications.create(incident.assignedSupport, "TICKET_CERRADO", "Incidencia cerrada " + result.codigo(),
+                    "La incidencia se cerró.", incident.id);
+        }
+        return result;
     }
 
     @Transactional

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Ticket, TicketEstado, TicketPrioridad } from "../../types/cliente";
 import type { CInstancia } from "../../types/cliente";
-import { crearIncidencia, getIncidencias, mapIncidenciaToTicket } from "../../api/incidenciasApi";
+import { actualizarIncidencia, crearIncidencia, getIncidencias, mapIncidenciaToTicket } from "../../api/incidenciasApi";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 
 export function ClienteSoporte({ organizationName, initials, instanciasList }: { organizationName: string; initials: string; instanciasList: CInstancia[] }) {
@@ -9,6 +9,9 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
   const [error, setError] = useState("");
   useEffect(() => {
     void refreshTickets();
+    const onUpdate = () => { void refreshTickets(); };
+    window.addEventListener("agrocloud:incidents-updated", onUpdate);
+    return () => window.removeEventListener("agrocloud:incidents-updated", onUpdate);
   }, []);
   const [search, setSearch] = useState("");
   const [detalle, setDetalle] = useState<Ticket | null>(null);
@@ -66,6 +69,16 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
     setFormErr({});
     setConfirmacion(`Incidencia ${nuevo.codigo} registrada correctamente. El equipo de soporte la revisará a la brevedad.`);
     setTimeout(() => setConfirmacion(""), 5000);
+  }
+
+  async function cerrarTicket(ticket: Ticket) {
+    try {
+      const closed = mapIncidenciaToTicket(await actualizarIncidencia(ticket.id, { estado: "CERRADA" }));
+      setTickets(current => current.map(item => item.id === closed.id ? closed : item));
+      setDetalle(closed);
+      setError("");
+      setConfirmacion(`Incidencia ${closed.codigo} cerrada.`);
+    } catch { setError("No se pudo cerrar la incidencia."); }
   }
 
   return (
@@ -273,6 +286,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
             </div>
 
             <div className="p-5 border-t border-gray-100 shrink-0">
+              {detalle.estado !== "Cerrada" && <button onClick={() => void cerrarTicket(detalle)} className="mb-2 w-full py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-medium rounded-xl text-sm">Cerrar incidencia</button>}
               <button onClick={() => setDetalle(null)}
                 className="w-full py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl text-sm transition-colors">
                 Cerrar

@@ -118,8 +118,11 @@ La ruta anterior `PATCH /api/v1/incidencias/{id}` se conserva para el frontend
 actual; admite cambiar el estado (con `mensajeResolucion` al resolver) o la
 `guiaDiagnostico`, en solicitudes separadas.
 
-La interfaz de Admin aún debe incorporar la asignación y la del cliente el
-botón de cierre. Esas pantallas se integrarán en otra fase; los contratos de
-backend pueden probarse con la colección de Postman. El mensaje se muestra al
-cliente al actualizar sus incidencias; la entrega en tiempo real queda para la
-fase de notificaciones.
+El administrador asigna al agente desde la pantalla de incidencias; soporte
+solo ve las asignadas y escribe el mensaje antes de resolver. El cliente puede
+cerrar desde el detalle y no puede reabrir. El mensaje de resolución aparece en
+el detalle del ticket. `V10__incident_notifications.sql` crea la tabla de
+notificaciones; la campana usa `GET /api/v1/notificaciones`,
+`PATCH /api/v1/notificaciones/{id}/leida` y el flujo autenticado
+`GET /api/v1/notificaciones/stream` para recibir avisos al instante. La interfaz
+también consulta periódicamente si se corta la conexión.

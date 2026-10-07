@@ -71,6 +71,7 @@ export interface Incidencia {
   actualizado: string;
   guiaDiagnostico?: string;
   mensajeResolucion?: string | null;
+  agenteId?: string | null;
 }
 
 export interface AuthResponse {

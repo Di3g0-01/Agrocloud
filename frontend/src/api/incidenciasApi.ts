@@ -25,6 +25,11 @@ export const actualizarIncidencia = async (id: string, data: { estado?: Incidenc
   return res.data?.data || res.data;
 };
 
+export const asignarIncidencia = async (id: string, agenteId: string): Promise<Incidencia> => {
+  const res = await axiosClient.patch(`/incidencias/${id}/asignacion`, { agenteId });
+  return res.data?.data || res.data;
+};
+
 export const mapIncidenciaToIncident = (inc: Incidencia): Incident => ({
   id: inc.id, codigo: inc.codigo, cliente: inc.cliente, instancia: inc.instanciaNombre, plantilla: inc.plantilla,
   asunto: inc.asunto, problema: inc.problema,
@@ -32,6 +37,7 @@ export const mapIncidenciaToIncident = (inc: Incidencia): Incident => ({
   estado: ({ ABIERTA: 'Abierta', EN_REVISION: 'En revisión', RESUELTA: 'Resuelta', CERRADA: 'Cerrada' } as const)[inc.estado],
   fecha: new Date(inc.fecha).toLocaleDateString('es-GT'), guia: inc.guiaDiagnostico || 'Pendiente de diagnóstico',
   mensajeResolucion: inc.mensajeResolucion,
+  agenteId: inc.agenteId,
 });
 
 export const mapIncidenciaToTicket = (inc: Incidencia): Ticket => ({
