@@ -1,4 +1,6 @@
 import type { AdminPage } from "../../types/admin";
+import type { User } from "../../types";
+import { userInitials } from "../../utils/userDisplay";
 import { LogoIcon } from "../../components/ui";
 
 export const adminNav = [
@@ -15,7 +17,7 @@ export const adminNav = [
   { page: "documentacion" as AdminPage, label: "Documentación", section: null, icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
 ];
 
-export function AdminSidebar({ page, setPage, onLogout, open, onClose, isDark, userName }: { page: AdminPage; setPage: (p: AdminPage) => void; onLogout: () => void; open: boolean; onClose: () => void; isDark?: boolean; userName: string }) {
+export function AdminSidebar({ page, setPage, onLogout, open, onClose, isDark, user }: { page: AdminPage; setPage: (p: AdminPage) => void; onLogout: () => void; open: boolean; onClose: () => void; isDark?: boolean; user: User }) {
   const navigate = (p: AdminPage) => { setPage(p); onClose(); };
   return (
     <>
@@ -46,10 +48,10 @@ export function AdminSidebar({ page, setPage, onLogout, open, onClose, isDark, u
         {/* Bottom user card & Logout button */}
         <div className="p-2 border-t border-white/5 space-y-1.5 shrink-0">
           <div className="flex items-center gap-2 px-1">
-            <div className="w-6 h-6 rounded-full bg-green-700 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">DA</div>
+            <div className="w-6 h-6 rounded-full bg-green-700 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">{userInitials(user.nombre)}</div>
             <div className="min-w-0 flex-1">
-              <p className="text-white text-xs font-medium truncate leading-none">{userName}</p>
-              <p className="text-[9px] text-white/40 truncate mt-0.5">Plataforma operativa</p>
+              <p className="text-white text-xs font-medium truncate leading-none">{user.nombre}</p>
+              <p className="text-[9px] text-white/40 truncate mt-0.5" title={user.email}>{user.email}</p>
             </div>
           </div>
           <button

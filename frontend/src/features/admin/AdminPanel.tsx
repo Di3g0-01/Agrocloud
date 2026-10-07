@@ -15,6 +15,7 @@ import { AdminSuscripciones } from "./AdminSuscripciones";
 import { AdminConfiguracion } from "./AdminConfiguracion";
 import { AdminUsuarios } from "./AdminUsuarios";
 import type { User } from "../../types";
+import { userInitials } from "../../utils/userDisplay";
 
 export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: User }) {
   const [page, setPage] = useState<AdminPage>("dashboard");
@@ -30,7 +31,7 @@ export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: Use
 
   return (
     <div className={`flex h-full transition-colors duration-300 ${isDark ? "dark bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
-      <AdminSidebar page={page} setPage={navigate} onLogout={onLogout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} isDark={isDark} userName={user.nombre} />
+      <AdminSidebar page={page} setPage={navigate} onLogout={onLogout} open={sidebarOpen} onClose={() => setSidebarOpen(false)} isDark={isDark} user={user} />
       <div className="flex-1 flex flex-col min-w-0">
         <header className={`h-14 border-b flex items-center px-4 lg:px-8 gap-3 shrink-0 transition-colors duration-300 ${isDark ? "bg-slate-900 border-slate-800 text-slate-100" : "bg-white border-gray-100 text-gray-900"}`}>
           <button onClick={() => setSidebarOpen(true)} className={`lg:hidden w-8 h-8 flex items-center justify-center rounded-lg shrink-0 ${isDark ? "text-slate-400 hover:bg-slate-800" : "text-gray-500 hover:bg-gray-100"}`}>
@@ -46,9 +47,9 @@ export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: Use
             />
           </div>
           <NotificationMenu role="admin" />
-          <div className="hidden sm:flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-green-700 flex items-center justify-center text-white text-xs font-semibold">DA</div>
-            <div><p className={`text-xs font-medium leading-none ${isDark ? "text-slate-200" : "text-gray-800"}`}>{user.nombre}</p><p className={`text-[10px] ${isDark ? "text-slate-400" : "text-gray-400"}`}>Administrador</p></div>
+          <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-52">
+            <div className="w-7 h-7 rounded-full bg-green-700 flex items-center justify-center text-white text-xs font-semibold shrink-0">{userInitials(user.nombre)}</div>
+            <div className="min-w-0"><p className={`text-xs font-medium leading-none truncate ${isDark ? "text-slate-200" : "text-gray-800"}`}>{user.nombre}</p><p className={`text-[10px] truncate ${isDark ? "text-slate-400" : "text-gray-400"}`} title={user.email}>Administrador · {user.email}</p></div>
           </div>
         </header>
         <main className={`flex-1 overflow-auto ${isDark ? "bg-slate-950" : "bg-gray-50"}`}>

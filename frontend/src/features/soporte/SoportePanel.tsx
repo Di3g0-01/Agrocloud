@@ -1,5 +1,7 @@
 import { useState } from "react";
+import type { User } from "../../types";
 import type { SoportePage } from "../../types/soporte";
+import { userInitials } from "../../utils/userDisplay";
 import { LogoIcon } from "../../components/ui";
 import { SharedDocumentacion } from "../../components/shared/SharedDocumentacion";
 import { NotificationMenu } from "../../components/shared/NotificationMenu";
@@ -19,7 +21,7 @@ export const soporteNav = [
   { page: "configuracion" as SoportePage, label: "Configuración", section: "SISTEMA", icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z" },
 ];
 
-export function SoportePanel({ onLogout }: { onLogout: () => void }) {
+export function SoportePanel({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [page, setPage] = useState<SoportePage>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,6 +30,7 @@ export function SoportePanel({ onLogout }: { onLogout: () => void }) {
   const pageLabels: Record<SoportePage, string> = { dashboard: "Panel de Soporte", incidencias: "Incidencias", instancias: "Instancias", actividad: "Actividad", documentacion: "Documentación", configuracion: "Configuración" };
   const navigate = (p: SoportePage) => { setPage(p); setSidebarOpen(false); };
   const isDark = theme === "dark";
+  const initials = userInitials(user.nombre);
 
   return (
     <div className={`flex h-full transition-colors duration-300 ${isDark ? "dark bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
@@ -51,10 +54,10 @@ export function SoportePanel({ onLogout }: { onLogout: () => void }) {
         </nav>
         <div className="p-2 border-t border-white/5 space-y-1.5 shrink-0">
           <div className="flex items-center gap-2 px-1">
-            <div className="w-6 h-6 rounded-full bg-lime-600 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">LM</div>
+            <div className="w-6 h-6 rounded-full bg-lime-600 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">{initials}</div>
             <div className="min-w-0 flex-1">
-              <p className="text-white text-xs font-medium truncate leading-none">Lucía Méndez</p>
-              <p className="text-[9px] text-white/40 truncate mt-0.5">Disponible</p>
+              <p className="text-white text-xs font-medium truncate leading-none">{user.nombre}</p>
+              <p className="text-[9px] text-white/40 truncate mt-0.5" title={user.email}>{user.email}</p>
             </div>
           </div>
           <button
@@ -83,7 +86,7 @@ export function SoportePanel({ onLogout }: { onLogout: () => void }) {
             />
           </div>
           <NotificationMenu role="soporte" />
-          <div className="hidden sm:flex items-center gap-2"><div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold">LM</div><div><p className={`text-xs font-medium leading-none ${isDark ? "text-slate-200" : "text-gray-800"}`}>Lucía Méndez</p><p className={`text-[10px] ${isDark ? "text-slate-400" : "text-gray-400"}`}>Soporte</p></div></div>
+          <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-52"><div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials}</div><div className="min-w-0"><p className={`text-xs font-medium leading-none truncate ${isDark ? "text-slate-200" : "text-gray-800"}`}>{user.nombre}</p><p className={`text-[10px] truncate ${isDark ? "text-slate-400" : "text-gray-400"}`} title={user.email}>Soporte · {user.email}</p></div></div>
         </header>
         <main className={`flex-1 overflow-auto ${isDark ? "bg-slate-950" : "bg-gray-50"}`}>
           {page === "dashboard" && <SoporteDashboard setPage={setPage} isDark={isDark} />}

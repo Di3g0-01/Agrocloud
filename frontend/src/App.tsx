@@ -53,6 +53,6 @@ export default function App() {
   if (role === "login") return <Login initialMode={authMode} onAuthenticated={handleAuthenticated} />;
   if (role === "admin" && user) return <AdminPanel user={user} onLogout={handleLogout} />;
   if (role === "cliente" && user) return <ClientePanel user={user} onLogout={handleLogout} />;
-  if (role === "soporte" && user) return <SoportePanel onLogout={handleLogout} />;
+  if (role === "soporte" && user) return <SoportePanel user={user} onLogout={handleLogout} />;
   return <Landing onLogin={() => openAuth("login")} onRegister={() => openAuth("register")} />;
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { userInitials } from "../../utils/userDisplay";
 import type { User } from "../../types";
 import type { CInstancia, ClientePage } from "../../types/cliente";
 import { getInstancias, mapInstanciaDBToCInstancia } from "../../api/instanciasApi";
@@ -57,7 +58,7 @@ export function ClientePanel({ user, onLogout }: { user: User; onLogout: () => v
   }, []);
 
   const organizationName = user.empresa || user.nombre;
-  const initials = organizationName.trim().split(/\s+/).slice(-2).map((word) => word[0]?.toUpperCase() || "").join("");
+  const initials = userInitials(user.nombre);
   const pageLabels: Record<ClientePage, string> = { dashboard: "Panel de Control", instancias: "Instancias", plantillas: "Plantillas DB", plan: "Plan y suscripción", pagos: "Pagos", soporte: "Soporte", configuracion: "Configuración", documentacion: "Documentación" };
   const navigate = (p: ClientePage) => { setPage(p); setSidebarOpen(false); };
   return (
@@ -84,8 +85,8 @@ export function ClientePanel({ user, onLogout }: { user: User; onLogout: () => v
           <div className="flex items-center gap-2 px-1">
             <div className="w-6 h-6 rounded-full bg-lime-600 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">{initials}</div>
             <div className="min-w-0 flex-1">
-              <p className="text-white text-xs font-medium truncate leading-none">{organizationName}</p>
-              <p className="text-[9px] text-white/40 truncate mt-0.5">Cliente</p>
+              <p className="text-white text-xs font-medium truncate leading-none">{user.nombre}</p>
+              <p className="text-[9px] text-white/40 truncate mt-0.5" title={user.email}>{user.email}</p>
             </div>
           </div>
           <button
@@ -115,9 +116,9 @@ export function ClientePanel({ user, onLogout }: { user: User; onLogout: () => v
             />
           </div>
           <NotificationMenu role="cliente" />
-          <div className="hidden sm:flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold">{initials}</div>
-            <div><p className="text-xs font-medium text-gray-800 leading-none">{organizationName}</p><p className="text-[10px] text-gray-400">Cliente</p></div>
+          <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-52">
+            <div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials}</div>
+            <div className="min-w-0"><p className="text-xs font-medium text-gray-800 leading-none truncate">{user.nombre}</p><p className="text-[10px] text-gray-400 truncate" title={user.email}>Cliente · {user.email}</p></div>
           </div>
         </header>
         {loadError && <p role="alert" className="mx-4 mt-4 rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">{loadError}</p>}
