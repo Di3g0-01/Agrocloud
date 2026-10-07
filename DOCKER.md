@@ -1,5 +1,25 @@
 # AgroCloud con Docker local
 
+## Versión E04 con los datos existentes de esta computadora
+
+Desde la rama `feature/e04-luis`, la receta `docker-compose.e04.yml` inicia la
+base existente, la API actual y la interfaz con un solo comando. Usa el volumen
+externo `agrocloud-postgres-data`; no crea una base vacía. Flyway conserva los
+datos e instala las migraciones V7 a V10. Mantén un respaldo antes de instalar
+una versión nueva.
+
+```powershell
+docker compose --env-file 'C:\Users\david\Desktop\Proyectos\Agro_Cloud\.env' -f docker-compose.e04.yml up -d --build
+```
+
+La página queda en `http://localhost:5173` y la API en
+`http://localhost:8080`. Para comprobar el estado usa
+`docker compose --env-file 'C:\Users\david\Desktop\Proyectos\Agro_Cloud\.env' -f docker-compose.e04.yml ps`.
+No ejecutes `docker-compose.yml` desde el checkout antiguo mientras uses E04:
+intentaría reemplazar la API nueva con el JAR anterior. Para detener E04 usa
+`docker compose --env-file 'C:\Users\david\Desktop\Proyectos\Agro_Cloud\.env' -f docker-compose.e04.yml down`
+sin `-v`; la base y sus datos permanecen en el volumen externo.
+
 Los archivos de Compose y las migraciones se comparten por Git. Cada integrante
 ejecuta Docker en su propia computadora; la base de datos, las claves, las imagenes
 y los contenedores no se suben al repositorio ni se despliegan en Railway.
