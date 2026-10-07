@@ -57,7 +57,7 @@ export function SoportePanel({ user, onLogout }: { user: User; onLogout: () => v
             <div className="w-6 h-6 rounded-full bg-lime-600 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">{initials}</div>
             <div className="min-w-0 flex-1">
               <p className="text-white text-xs font-medium truncate leading-none">{user.nombre}</p>
-              <p className="text-[9px] text-white/40 truncate mt-0.5" title={user.email}>{user.email}</p>
+              <p className="text-[9px] text-white/40 truncate mt-0.5">Soporte</p>
             </div>
           </div>
           <button
@@ -86,7 +86,7 @@ export function SoportePanel({ user, onLogout }: { user: User; onLogout: () => v
             />
           </div>
           <NotificationMenu role="soporte" />
-          <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-52"><div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials}</div><div className="min-w-0"><p className={`text-xs font-medium leading-none truncate ${isDark ? "text-slate-200" : "text-gray-800"}`}>{user.nombre}</p><p className={`text-[10px] truncate ${isDark ? "text-slate-400" : "text-gray-400"}`} title={user.email}>Soporte · {user.email}</p></div></div>
+          <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-52"><div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials}</div><div className="min-w-0"><p className={`text-xs font-medium leading-none truncate ${isDark ? "text-slate-200" : "text-gray-800"}`}>{user.nombre}</p><p className={`text-[10px] ${isDark ? "text-slate-400" : "text-gray-400"}`}>Soporte</p></div></div>
         </header>
         <main className={`flex-1 overflow-auto ${isDark ? "bg-slate-950" : "bg-gray-50"}`}>
           {page === "dashboard" && <SoporteDashboard setPage={setPage} isDark={isDark} />}

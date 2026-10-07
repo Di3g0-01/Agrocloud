@@ -51,7 +51,7 @@ export function AdminSidebar({ page, setPage, onLogout, open, onClose, isDark, u
             <div className="w-6 h-6 rounded-full bg-green-700 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">{userInitials(user.nombre)}</div>
             <div className="min-w-0 flex-1">
               <p className="text-white text-xs font-medium truncate leading-none">{user.nombre}</p>
-              <p className="text-[9px] text-white/40 truncate mt-0.5" title={user.email}>{user.email}</p>
+              <p className="text-[9px] text-white/40 truncate mt-0.5">Administrador</p>
             </div>
           </div>
           <button
