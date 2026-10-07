@@ -27,7 +27,10 @@ const toItem = (notification: ApiNotification): NotificationItem => ({
   descripcion: notification.mensaje,
   tiempo: new Date(notification.fecha).toLocaleString("es-GT"),
   leida: notification.leida,
-  categoria: notification.tipo === "TICKET_RESUELTO" ? "resolucion" : "ticket",
+  categoria: notification.tipo === "TICKET_RESUELTO" ? "resolucion"
+    : notification.tipo === "INSTANCIA_CREADA" || notification.tipo === "INSTANCIA_REINICIADA" ? "activacion"
+    : notification.tipo === "INSTANCIA_ESTADO" || notification.tipo === "INSTANCIA_ELIMINADA" ? "sistema"
+    : "ticket",
 });
 
 export function NotificationMenu({ role }: { role: RoleType }) {

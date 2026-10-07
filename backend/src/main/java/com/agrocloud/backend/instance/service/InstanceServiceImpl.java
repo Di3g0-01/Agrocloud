@@ -9,6 +9,7 @@ import com.agrocloud.backend.instance.dto.InstanceResponse;
 import com.agrocloud.backend.instance.entity.InstanceEntity;
 import com.agrocloud.backend.instance.entity.InstanceStatus;
 import com.agrocloud.backend.instance.repository.InstanceRepository;
+import com.agrocloud.backend.notification.NotificationService;
 import com.agrocloud.backend.repository.UserRepository;
 import com.agrocloud.backend.subscription.entity.SubscriptionEntity;
 import com.agrocloud.backend.subscription.service.SubscriptionService;
@@ -30,6 +31,7 @@ public class InstanceServiceImpl implements InstanceService {
     private final UserRepository userRepository;
     private final SubscriptionService subscriptionService;
     private final TemplateRepository templateRepository;
+    private final NotificationService notifications;
 
     @Override
     @Transactional(readOnly = true)
@@ -109,6 +111,8 @@ public class InstanceServiceImpl implements InstanceService {
                 .build();
 
         InstanceEntity saved = repository.save(entity);
+        notifications.create(owner, "INSTANCIA_CREADA", "Instancia creada",
+                "La instancia " + saved.getName() + " está activa.", saved.getId());
         return InstanceResponse.from(saved);
     }
 
@@ -125,7 +129,10 @@ public class InstanceServiceImpl implements InstanceService {
 
         entity.setStatus(InstanceStatus.active);
         entity.setUptime("99.9%");
-        return InstanceResponse.from(repository.save(entity));
+        InstanceEntity saved = repository.save(entity);
+        notifications.create(saved.getOwner(), "INSTANCIA_REINICIADA", "Instancia reiniciada",
+                "La instancia " + saved.getName() + " se reinició y está activa.", saved.getId());
+        return InstanceResponse.from(saved);
     }
 
     @Override
@@ -133,8 +140,12 @@ public class InstanceServiceImpl implements InstanceService {
         InstanceEntity entity = repository.findById(id)
                 .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada"));
 
+        if (entity.getStatus() == newStatus) return InstanceResponse.from(entity);
         entity.setStatus(newStatus);
-        return InstanceResponse.from(repository.save(entity));
+        InstanceEntity saved = repository.save(entity);
+        notifications.create(saved.getOwner(), "INSTANCIA_ESTADO", "Estado de instancia actualizado",
+                "La instancia " + saved.getName() + " ahora está " + statusLabel(newStatus) + ".", saved.getId());
+        return InstanceResponse.from(saved);
     }
 
     @Override
@@ -149,5 +160,16 @@ public class InstanceServiceImpl implements InstanceService {
         }
 
         repository.delete(entity);
+        notifications.create(entity.getOwner(), "INSTANCIA_ELIMINADA", "Instancia eliminada",
+                "La instancia " + entity.getName() + " fue eliminada.", null);
+    }
+
+    private String statusLabel(InstanceStatus status) {
+        return switch (status) {
+            case active -> "activa";
+            case revision -> "en revisión";
+            case suspended -> "suspendida";
+            case terminated -> "terminada";
+        };
     }
 }

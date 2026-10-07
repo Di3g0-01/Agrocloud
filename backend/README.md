@@ -126,3 +126,9 @@ notificaciones; la campana usa `GET /api/v1/notificaciones`,
 `PATCH /api/v1/notificaciones/{id}/leida` y el flujo autenticado
 `GET /api/v1/notificaciones/stream` para recibir avisos al instante. La interfaz
 también consulta periódicamente si se corta la conexión.
+
+Las instancias también generan notificaciones para su propietario al crearse,
+reiniciarse, cambiar de estado o eliminarse. El aviso de eliminación conserva
+el nombre de la instancia y no enlaza a un recurso que ya no existe. Si se
+solicita el mismo estado actual, no se crea un aviso duplicado. Estos eventos
+usan las mismas rutas y el mismo flujo en tiempo real de la campana.
