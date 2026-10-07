@@ -125,11 +125,15 @@ class IncidentServiceTest {
         IncidentResponse resolved = service.changeStatus(ticketId, "RESUELTA",
                 "  Se restauró la conexión y verificamos la instancia.  ", principal(agentId, "SOPORTE"));
         assertEquals("Se restauró la conexión y verificamos la instancia.", resolved.mensajeResolucion());
+        assertEquals(agentId, resolved.resueltoPorId());
+        assertNotNull(resolved.fechaResolucion());
         verify(notifications).create(eq(incident.owner), eq("TICKET_RESUELTO"),
                 eq("Incidencia resuelta INC-00001"), eq(resolved.mensajeResolucion()), eq(ticketId));
         IncidentResponse closed = service.changeStatus(ticketId, "CERRADA", null, principal(clientId, "CLIENTE"));
         assertEquals("CERRADA", closed.estado());
         assertEquals(resolved.mensajeResolucion(), closed.mensajeResolucion());
+        assertEquals(agentId, closed.resueltoPorId());
+        assertEquals(resolved.fechaResolucion(), closed.fechaResolucion());
         assertThrows(IllegalStateException.class,
                 () -> service.changeStatus(ticketId, "ABIERTA", null, principal(clientId, "CLIENTE")));
     }
@@ -139,6 +143,31 @@ class IncidentServiceTest {
                 () -> service.listClient(UUID.randomUUID(), principal(UUID.randomUUID(), "CLIENTE")));
         assertEquals(HttpStatus.FORBIDDEN, error.getStatusCode());
         verifyNoInteractions(incidents);
+    }
+
+    @Test void supportActivityIncludesOwnClosedResolutionsAndCurrentPendingTickets() {
+        UUID supportId = UUID.randomUUID();
+        User agent = new User();
+        agent.setId(supportId);
+        IncidentEntity pending = incident("EN_REVISION");
+        pending.assignedSupport = agent;
+        IncidentEntity closed = incident("CERRADA");
+        closed.resolvedBy = agent;
+        IncidentEntity historical = incident("CERRADA");
+        historical.assignedSupport = agent;
+        historical.resolutionMessage = "Se restauró el servicio";
+        when(incidents.findByAssignedSupportIdOrderByCreatedAtDesc(supportId))
+                .thenReturn(List.of(pending, historical));
+        when(incidents.findByResolvedByIdOrderByResolvedAtDesc(supportId)).thenReturn(List.of(closed));
+
+        List<IncidentResponse> activity = service.activity(principal(supportId, "SOPORTE"));
+
+        assertEquals(List.of(pending.id, historical.id, closed.id),
+                activity.stream().map(IncidentResponse::id).toList());
+        assertNull(activity.get(1).resueltoPorId());
+        assertEquals(supportId, activity.get(2).resueltoPorId());
+        assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class,
+                () -> service.activity(principal(UUID.randomUUID(), "CLIENTE"))).getStatusCode());
     }
 
     private IncidentEntity incident(String status) {

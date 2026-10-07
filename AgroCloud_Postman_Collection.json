@@ -582,6 +582,14 @@
           }
         },
         {
+          "name": "Actividad del soporte autenticado",
+          "request": {
+            "method": "GET",
+            "description": "Solo rol Soporte. Muestra tickets pendientes asignados y tickets que resolvió, aunque después se cierren. Los históricos sin autor se identifican por separado.",
+            "url": "{{baseUrl}}/incidencias/actividad"
+          }
+        },
+        {
           "name": "Crear incidencia",
           "request": {
             "method": "POST",

@@ -140,3 +140,10 @@ con `GET /api/v1/incidencias/{id}/comentarios` y escribirlos con
 caracteres). Los demás usuarios reciben 403. Un ticket cerrado conserva el
 historial para lectura, pero no acepta mensajes nuevos. Cada comentario avisa
 a los demás participantes mediante la campana.
+
+`V12__incident_resolution_actor.sql` conserva quién resolvió el ticket y cuándo.
+`GET /api/v1/incidencias/actividad` devuelve al usuario de soporte autenticado
+sus tickets pendientes y las resoluciones que realizó, incluso si el cliente
+cerró el ticket después. Los tickets resueltos antes de V12 no tienen autor
+verificable; si siguen asignados al agente aparecen como históricos con el autor
+sin registrar.

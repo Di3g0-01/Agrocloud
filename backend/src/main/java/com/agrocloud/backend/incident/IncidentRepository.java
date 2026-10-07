@@ -10,5 +10,6 @@ public interface IncidentRepository extends JpaRepository<IncidentEntity, UUID> 
     Long nextTicketNumber();
     List<IncidentEntity> findByOwnerIdOrderByCreatedAtDesc(UUID ownerId);
     List<IncidentEntity> findByAssignedSupportIdOrderByCreatedAtDesc(UUID supportId);
+    List<IncidentEntity> findByResolvedByIdOrderByResolvedAtDesc(UUID supportId);
     List<IncidentEntity> findAllByOrderByCreatedAtDesc();
 }

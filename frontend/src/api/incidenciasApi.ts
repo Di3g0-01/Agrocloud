@@ -23,6 +23,11 @@ export const getIncidencias = async (): Promise<Incidencia[]> => {
   return res.data?.data || res.data;
 };
 
+export const getActividadSoporte = async (): Promise<Incidencia[]> => {
+  const res = await axiosClient.get<Incidencia[]>('/incidencias/actividad');
+  return res.data;
+};
+
 export const resolverIncidencia = async (id: string, mensajeResolucion: string): Promise<Incidencia> => {
   const res = await axiosClient.patch(`/incidencias/${id}/estado`, { estado: 'RESUELTA', mensajeResolucion });
   return res.data?.data || res.data;

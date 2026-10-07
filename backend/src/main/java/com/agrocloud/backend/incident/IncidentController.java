@@ -28,6 +28,11 @@ public class IncidentController {
         return service.list(principal);
     }
 
+    @GetMapping("/actividad")
+    public List<IncidentResponse> activity(@AuthenticationPrincipal UserPrincipal principal) {
+        return service.activity(principal);
+    }
+
     @GetMapping("/cliente/{id}")
     public List<IncidentResponse> listClient(@PathVariable UUID id, @AuthenticationPrincipal UserPrincipal principal) {
         return service.listClient(id, principal);

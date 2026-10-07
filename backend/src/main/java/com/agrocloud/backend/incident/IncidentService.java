@@ -11,6 +11,8 @@ import com.agrocloud.backend.security.UserPrincipal;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.time.Instant;
+import java.util.stream.Stream;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +41,18 @@ public class IncidentService {
                     ? incidents.findByAssignedSupportIdOrderByCreatedAtDesc(principal.id())
                     : incidents.findByOwnerIdOrderByCreatedAtDesc(principal.id());
         return rows.stream().map(IncidentResponse::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<IncidentResponse> activity(UserPrincipal principal) {
+        if (!principal.hasRole("SOPORTE")) throw forbidden("Solo soporte puede consultar su actividad");
+        return Stream.concat(
+                incidents.findByAssignedSupportIdOrderByCreatedAtDesc(principal.id()).stream()
+                        .filter(incident -> "ABIERTA".equals(incident.status) || "EN_REVISION".equals(incident.status)
+                                || (incident.resolvedBy == null && incident.resolutionMessage != null
+                                && ("RESUELTA".equals(incident.status) || "CERRADA".equals(incident.status)))),
+                incidents.findByResolvedByIdOrderByResolvedAtDesc(principal.id()).stream())
+                .map(IncidentResponse::from).toList();
     }
 
     @Transactional(readOnly = true)
@@ -130,6 +144,10 @@ public class IncidentService {
             if (message.isEmpty() || message.length() > 2000)
                 throw new IllegalArgumentException("Explica al cliente cómo se resolvió (máximo 2000 caracteres)");
             incident.resolutionMessage = message;
+            incident.resolvedBy = principal.hasRole("SOPORTE") ? incident.assignedSupport :
+                    users.findById(principal.id()).orElseThrow(() ->
+                            new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+            incident.resolvedAt = Instant.now();
         }
         incident.status = next;
         IncidentResponse result = IncidentResponse.from(incidents.saveAndFlush(incident));

@@ -21,6 +21,8 @@ public class IncidentEntity {
     @Column(nullable = false, length = 20) public String status;
     @Column(name = "diagnostic_guide", columnDefinition = "TEXT") public String diagnosticGuide;
     @Column(name = "resolution_message", length = 2000) public String resolutionMessage;
+    @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "resolved_by_id") public User resolvedBy;
+    @Column(name = "resolved_at") public Instant resolvedAt;
     @Column(name = "created_at", nullable = false) public Instant createdAt;
     @Column(name = "updated_at", nullable = false) public Instant updatedAt;
 
