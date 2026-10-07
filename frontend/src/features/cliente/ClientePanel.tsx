@@ -38,11 +38,20 @@ export function ClientePanel({ user, onLogout }: { user: User; onLogout: () => v
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    getInstancias().then((data) => {
-      if (data && Array.isArray(data)) {
-        setInstanciasList(data.map(mapInstanciaDBToCInstancia));
-      }
-    }).catch(() => setLoadError("No se pudieron cargar tus instancias. Revisa la conexión."));
+    let active = true;
+    const refreshInstances = () => {
+      getInstancias().then((data) => {
+        if (active && Array.isArray(data)) {
+          setInstanciasList(data.map(mapInstanciaDBToCInstancia));
+        }
+      }).catch(() => { if (active) setLoadError("No se pudieron cargar tus instancias. Revisa la conexión."); });
+    };
+    refreshInstances();
+    window.addEventListener("agrocloud:instances-updated", refreshInstances);
+    return () => {
+      active = false;
+      window.removeEventListener("agrocloud:instances-updated", refreshInstances);
+    };
   }, []);
 
   useEffect(() => {
