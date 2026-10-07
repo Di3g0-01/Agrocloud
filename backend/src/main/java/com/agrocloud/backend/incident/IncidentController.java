@@ -4,6 +4,7 @@ import com.agrocloud.backend.security.UserPrincipal;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -50,7 +51,7 @@ public class IncidentController {
     @PatchMapping("/{id}/estado")
     public IncidentResponse changeStatus(@PathVariable UUID id, @Valid @RequestBody StatusRequest request,
                                          @AuthenticationPrincipal UserPrincipal principal) {
-        return service.changeStatus(id, request.estado(), principal);
+        return service.changeStatus(id, request.estado(), request.mensajeResolucion(), principal);
     }
 
     // Compatibilidad temporal con el PATCH que consume el frontend actual.
@@ -59,12 +60,13 @@ public class IncidentController {
                                    @AuthenticationPrincipal UserPrincipal principal) {
         if (request.estado() != null && request.guiaDiagnostico() != null)
             throw new IllegalArgumentException("Actualiza el estado y la guía en solicitudes separadas");
-        if (request.estado() != null) return service.changeStatus(id, request.estado(), principal);
+        if (request.estado() != null)
+            return service.changeStatus(id, request.estado(), request.mensajeResolucion(), principal);
         if (request.guiaDiagnostico() != null) return service.updateGuide(id, request.guiaDiagnostico(), principal);
         throw new IllegalArgumentException("No se enviaron cambios");
     }
 
     public record AssignmentRequest(@NotNull UUID agenteId) {}
-    public record StatusRequest(@NotBlank String estado) {}
-    public record IncidentUpdateRequest(String estado, String guiaDiagnostico) {}
+    public record StatusRequest(@NotBlank String estado, @Size(max = 2000) String mensajeResolucion) {}
+    public record IncidentUpdateRequest(String estado, String guiaDiagnostico, String mensajeResolucion) {}
 }

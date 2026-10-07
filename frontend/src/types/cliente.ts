@@ -70,5 +70,6 @@ export interface Ticket {
   creado: string;
   actualizado: string;
   historial: TicketComentario[];
+  mensajeResolucion?: string | null;
 }
 

@@ -95,6 +95,8 @@ El cliente crea el ticket con `POST /api/v1/incidencias`, enviando el ID de una
 instancia propia, asunto, categoría, problema y prioridad (`ALTA`, `MEDIA` o
 `BAJA`). El administrador asigna un usuario de Soporte activo mediante
 `PATCH /api/v1/incidencias/{id}/asignacion` con `{ "agenteId": "UUID" }`.
+Cada ticket conserva su UUID para las rutas y recibe un código público único
+como `INC-00001`. Los tickets anteriores obtienen un código al aplicar V8.
 
 Soporte consulta únicamente sus tickets asignados. El administrador ve todos
 los tickets y el cliente solo los propios. También existen las rutas
@@ -105,13 +107,19 @@ autenticado, salvo para el administrador.
 El agente asignado o el administrador cambia el estado con
 `PATCH /api/v1/incidencias/{id}/estado` y un cuerpo como
 `{ "estado": "EN_REVISION" }`. El flujo de atención es `ABIERTA` →
-`EN_REVISION` → `RESUELTA`. El cliente propietario puede cambiarlo a `CERRADA`
+`EN_REVISION` → `RESUELTA`. Al resolver se debe enviar también
+`mensajeResolucion` (1 a 2000 caracteres) para explicar al cliente qué se hizo;
+el mensaje queda guardado y se devuelve al consultar el ticket. Por ejemplo:
+`{ "estado": "RESUELTA", "mensajeResolucion": "Se restauró la conexión y se verificó el servicio." }`.
+El cliente propietario puede cambiarlo a `CERRADA`
 en cualquier momento si ya no necesita atención. El administrador también
 puede cerrarlo. `CERRADA` es final: nadie puede reabrirlo ni reasignarlo.
 La ruta anterior `PATCH /api/v1/incidencias/{id}` se conserva para el frontend
-actual; admite cambiar **un solo campo por solicitud** (`estado` o
-`guiaDiagnostico`).
+actual; admite cambiar el estado (con `mensajeResolucion` al resolver) o la
+`guiaDiagnostico`, en solicitudes separadas.
 
 La interfaz de Admin aún debe incorporar la asignación y la del cliente el
 botón de cierre. Esas pantallas se integrarán en otra fase; los contratos de
-backend pueden probarse con la colección de Postman.
+backend pueden probarse con la colección de Postman. El mensaje se muestra al
+cliente al actualizar sus incidencias; la entrega en tiempo real queda para la
+fase de notificaciones.

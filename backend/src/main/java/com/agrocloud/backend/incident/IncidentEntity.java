@@ -20,6 +20,7 @@ public class IncidentEntity {
     @Column(nullable = false, length = 10) public String priority;
     @Column(nullable = false, length = 20) public String status;
     @Column(name = "diagnostic_guide", columnDefinition = "TEXT") public String diagnosticGuide;
+    @Column(name = "resolution_message", length = 2000) public String resolutionMessage;
     @Column(name = "created_at", nullable = false) public Instant createdAt;
     @Column(name = "updated_at", nullable = false) public Instant updatedAt;
 

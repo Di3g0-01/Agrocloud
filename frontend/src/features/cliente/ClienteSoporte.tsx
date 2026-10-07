@@ -8,8 +8,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [error, setError] = useState("");
   useEffect(() => {
-    getIncidencias().then(data => setTickets(data.map(mapIncidenciaToTicket)))
-      .catch(() => setError("No se pudieron cargar tus incidencias."));
+    void refreshTickets();
   }, []);
   const [search, setSearch] = useState("");
   const [detalle, setDetalle] = useState<Ticket | null>(null);
@@ -18,6 +17,15 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
 
   const [form, setForm] = useState({ asunto: "", instancia: "", categoria: "", prioridad: "Media" as TicketPrioridad, descripcion: "" });
   const [formErr, setFormErr] = useState<Partial<typeof form>>({});
+
+  function refreshTickets() {
+    return getIncidencias().then(data => {
+      const updated = data.map(mapIncidenciaToTicket);
+      setTickets(updated);
+      setDetalle(current => current ? updated.find(ticket => ticket.id === current.id) ?? null : null);
+      setError("");
+    }).catch(() => setError("No se pudieron cargar tus incidencias."));
+  }
 
   const reciente = tickets[0] ?? null;
 
@@ -28,6 +36,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
 
   const estadoColor = (e: TicketEstado) =>
     e === "Resuelta"   ? "bg-lime-100 text-lime-700 border border-lime-300"
+    : e === "Cerrada" ? "bg-gray-100 text-gray-600 border border-gray-200"
     : e === "En proceso" ? "bg-amber-50 text-amber-700 border border-amber-200"
     : "bg-blue-50 text-blue-600 border border-blue-200";
 
@@ -68,6 +77,8 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
           <h1 className="text-2xl font-semibold text-gray-900">Soporte</h1>
           <p className="text-sm text-gray-500 mt-1">Reporta un problema técnico o consulta el estado de tus incidencias.</p>
         </div>
+        <div className="flex gap-2">
+        <button onClick={() => void refreshTickets()} className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 hover:bg-white">Actualizar estado</button>
         <button onClick={() => setShowNew(true)}
           className="flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-gray-900 font-medium px-4 py-2.5 rounded-lg text-sm transition-colors">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -75,6 +86,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
           </svg>
           Nueva incidencia
         </button>
+        </div>
       </div>
 
       {/* Confirmación de envío */}
@@ -105,6 +117,7 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${estadoColor(reciente.estado)}`}>{reciente.estado}</span>
                   </div>
                   <p className="text-sm text-gray-700 mb-2 leading-snug">{reciente.asunto}</p>
+                  {reciente.mensajeResolucion && <p className="mb-2 rounded-lg border border-lime-200 bg-lime-50 p-2 text-sm text-lime-900 whitespace-pre-wrap"><strong>Resuelta:</strong> {reciente.mensajeResolucion}</p>}
                   <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-400">
                     <span>Instancia: <span className="font-mono text-gray-600">{reciente.instancia}</span></span>
                     <span>Última actualización: <span className="text-gray-600">{reciente.actualizado}</span></span>
@@ -228,6 +241,11 @@ export function ClienteSoporte({ organizationName, initials, instanciasList }: {
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-2">Descripción</p>
                 <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 border border-gray-100 rounded-xl p-3">{detalle.descripcion}</p>
               </div>
+
+              {detalle.mensajeResolucion && <div className="rounded-xl border border-lime-200 bg-lime-50 p-4">
+                <p className="text-xs font-semibold text-lime-800 mb-2">Mensaje de resolución de soporte</p>
+                <p className="text-sm text-lime-900 whitespace-pre-wrap">{detalle.mensajeResolucion}</p>
+              </div>}
 
               {/* Cronología */}
               <div>

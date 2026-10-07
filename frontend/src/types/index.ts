@@ -70,6 +70,7 @@ export interface Incidencia {
   fecha: string;
   actualizado: string;
   guiaDiagnostico?: string;
+  mensajeResolucion?: string | null;
 }
 
 export interface AuthResponse {

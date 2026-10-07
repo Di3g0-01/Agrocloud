@@ -113,13 +113,19 @@ class IncidentServiceTest {
         when(incidents.saveAndFlush(incident)).thenReturn(incident);
 
         ResponseStatusException denied = assertThrows(ResponseStatusException.class,
-                () -> service.changeStatus(ticketId, "EN_REVISION", principal(UUID.randomUUID(), "SOPORTE")));
+                () -> service.changeStatus(ticketId, "EN_REVISION", null, principal(UUID.randomUUID(), "SOPORTE")));
         assertEquals(HttpStatus.FORBIDDEN, denied.getStatusCode());
-        assertEquals("EN_REVISION", service.changeStatus(ticketId, "EN_REVISION", principal(agentId, "SOPORTE")).estado());
-        assertEquals("RESUELTA", service.changeStatus(ticketId, "RESUELTA", principal(agentId, "SOPORTE")).estado());
-        assertEquals("CERRADA", service.changeStatus(ticketId, "CERRADA", principal(clientId, "CLIENTE")).estado());
+        assertEquals("EN_REVISION", service.changeStatus(ticketId, "EN_REVISION", null, principal(agentId, "SOPORTE")).estado());
+        assertThrows(IllegalArgumentException.class,
+                () -> service.changeStatus(ticketId, "RESUELTA", "  ", principal(agentId, "SOPORTE")));
+        IncidentResponse resolved = service.changeStatus(ticketId, "RESUELTA",
+                "  Se restauró la conexión y verificamos la instancia.  ", principal(agentId, "SOPORTE"));
+        assertEquals("Se restauró la conexión y verificamos la instancia.", resolved.mensajeResolucion());
+        IncidentResponse closed = service.changeStatus(ticketId, "CERRADA", null, principal(clientId, "CLIENTE"));
+        assertEquals("CERRADA", closed.estado());
+        assertEquals(resolved.mensajeResolucion(), closed.mensajeResolucion());
         assertThrows(IllegalStateException.class,
-                () -> service.changeStatus(ticketId, "ABIERTA", principal(clientId, "CLIENTE")));
+                () -> service.changeStatus(ticketId, "ABIERTA", null, principal(clientId, "CLIENTE")));
     }
 
     @Test void clientCannotListAnotherClientsTickets() {

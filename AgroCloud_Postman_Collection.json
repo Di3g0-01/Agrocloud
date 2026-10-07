@@ -685,12 +685,12 @@
           "name": "Soporte - resolver ticket",
           "request": {
             "method": "PATCH",
-            "description": "Rol: Agente asignado o Admin. Transición EN_REVISION a RESUELTA.",
+            "description": "Rol: Agente asignado o Admin. Transición EN_REVISION a RESUELTA; el mensaje al cliente es obligatorio.",
             "url": "{{baseUrl}}/incidencias/{{incidentId}}/estado",
             "header": [{"key": "Content-Type", "value": "application/json"}],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"estado\": \"RESUELTA\"\n}",
+              "raw": "{\n  \"estado\": \"RESUELTA\",\n  \"mensajeResolucion\": \"Se restauró la conexión y se verificó que la instancia funciona correctamente.\"\n}",
               "options": {"raw": {"language": "json"}}
             }
           }

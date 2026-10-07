@@ -92,10 +92,13 @@ public class IncidentService {
     }
 
     @Transactional
-    public IncidentResponse changeStatus(UUID id, String requestedStatus, UserPrincipal principal) {
+    public IncidentResponse changeStatus(UUID id, String requestedStatus, String resolutionMessage,
+                                         UserPrincipal principal) {
         IncidentEntity incident = find(id);
         String next = requestedStatus == null ? "" : requestedStatus.trim().toUpperCase(Locale.ROOT);
         if ("CERRADA".equals(incident.status)) throw new IllegalStateException("Un ticket cerrado no se puede reabrir");
+        if (resolutionMessage != null && !"RESUELTA".equals(next))
+            throw new IllegalArgumentException("El mensaje de resolución solo se envía al resolver");
 
         if ("CERRADA".equals(next)) {
             if (!principal.hasRole("ADMINISTRADOR") &&
@@ -108,6 +111,12 @@ public class IncidentService {
             boolean valid = ("ABIERTA".equals(incident.status) && "EN_REVISION".equals(next))
                     || ("EN_REVISION".equals(incident.status) && "RESUELTA".equals(next));
             if (!valid) throw new IllegalStateException("Transición de estado no permitida");
+        }
+        if ("RESUELTA".equals(next)) {
+            String message = resolutionMessage == null ? "" : resolutionMessage.trim();
+            if (message.isEmpty() || message.length() > 2000)
+                throw new IllegalArgumentException("Explica al cliente cómo se resolvió (máximo 2000 caracteres)");
+            incident.resolutionMessage = message;
         }
         incident.status = next;
         return IncidentResponse.from(incidents.saveAndFlush(incident));

@@ -12,6 +12,8 @@ export const SoporteDashboard: React.FC = () => {
   const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedIncidencia, setSelectedIncidencia] = useState<Incidencia | null>(null);
+  const [resolutionMessage, setResolutionMessage] = useState('');
+  const [resolutionError, setResolutionError] = useState('');
 
   const fetchIncidencias = async () => {
     setLoading(true);
@@ -30,11 +32,14 @@ export const SoporteDashboard: React.FC = () => {
   }, []);
 
   const handleResolve = async (id: string) => {
-    await resolverIncidencia(id);
-    setIncidencias(incidencias.map((inc) => (inc.id === id ? { ...inc, estado: 'RESUELTA' } : inc)));
-    if (selectedIncidencia?.id === id) {
-      setSelectedIncidencia({ ...selectedIncidencia, estado: 'RESUELTA' });
-    }
+    if (!resolutionMessage.trim()) { setResolutionError('Explica al cliente cómo se resolvió.'); return; }
+    try {
+      const resolved = await resolverIncidencia(id, resolutionMessage.trim());
+      setIncidencias(current => current.map(inc => inc.id === id ? resolved : inc));
+      setSelectedIncidencia(resolved);
+      setResolutionMessage('');
+      setResolutionError('');
+    } catch { setResolutionError('No se pudo resolver la incidencia.'); }
   };
 
   return (
@@ -83,7 +88,7 @@ export const SoporteDashboard: React.FC = () => {
                 {incidencias.map((inc) => (
                   <div
                     key={inc.id}
-                    onClick={() => setSelectedIncidencia(inc)}
+                    onClick={() => { setSelectedIncidencia(inc); setResolutionMessage(''); setResolutionError(''); }}
                     className={`p-4 rounded-2xl border transition-all cursor-pointer ${
                       selectedIncidencia?.id === inc.id
                         ? 'bg-slate-900 border-sky-500 shadow-lg shadow-sky-500/10'
@@ -169,8 +174,16 @@ export const SoporteDashboard: React.FC = () => {
                   )}
                 </div>
 
-                {selectedIncidencia.estado !== 'RESUELTA' && (
-                  <div className="pt-4 border-t border-slate-800 flex justify-end">
+                {selectedIncidencia.mensajeResolucion && (
+                  <div className="rounded-xl border border-emerald-700/40 bg-emerald-950/20 p-4 text-sm whitespace-pre-wrap">
+                    <p className="font-semibold mb-2">Mensaje enviado al cliente</p>{selectedIncidencia.mensajeResolucion}
+                  </div>
+                )}
+                {selectedIncidencia.estado === 'EN_REVISION' && (
+                  <div className="pt-4 border-t border-slate-800 space-y-3">
+                    <label htmlFor="resolution-message-legacy" className="block text-sm">Explica al cliente cómo se resolvió</label>
+                    <textarea id="resolution-message-legacy" value={resolutionMessage} onChange={event => setResolutionMessage(event.target.value)} maxLength={2000} rows={4} className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-sm" />
+                    {resolutionError && <p role="alert" className="text-sm text-rose-400">{resolutionError}</p>}
                     <button
                       onClick={() => handleResolve(selectedIncidencia.id)}
                       className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-lime-400 text-slate-950 font-bold text-xs uppercase tracking-wider hover:brightness-110 transition-all shadow-lg shadow-emerald-500/20 cursor-pointer flex items-center gap-2"

@@ -12,6 +12,7 @@ export interface Incident {
   estado: "Abierta" | "En revisión" | "Resuelta" | "Cerrada";
   fecha: string;
   guia: string;
+  mensajeResolucion?: string | null;
 }
 
 export interface Instance {

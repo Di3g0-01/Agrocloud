@@ -8,9 +8,9 @@ export const getIncidencias = async (): Promise<Incidencia[]> => {
   return res.data?.data || res.data;
 };
 
-export const resolverIncidencia = async (id: string): Promise<boolean> => {
-  await axiosClient.patch(`/incidencias/${id}`, { estado: 'RESUELTA' });
-  return true;
+export const resolverIncidencia = async (id: string, mensajeResolucion: string): Promise<Incidencia> => {
+  const res = await axiosClient.patch(`/incidencias/${id}/estado`, { estado: 'RESUELTA', mensajeResolucion });
+  return res.data?.data || res.data;
 };
 
 export const crearIncidencia = async (data: {
@@ -20,7 +20,7 @@ export const crearIncidencia = async (data: {
   return res.data?.data || res.data;
 };
 
-export const actualizarIncidencia = async (id: string, data: { estado?: Incidencia['estado']; guiaDiagnostico?: string }): Promise<Incidencia> => {
+export const actualizarIncidencia = async (id: string, data: { estado?: Incidencia['estado']; guiaDiagnostico?: string; mensajeResolucion?: string }): Promise<Incidencia> => {
   const res = await axiosClient.patch(`/incidencias/${id}`, data);
   return res.data?.data || res.data;
 };
@@ -31,6 +31,7 @@ export const mapIncidenciaToIncident = (inc: Incidencia): Incident => ({
   prioridad: ({ ALTA: 'Alta', MEDIA: 'Media', BAJA: 'Baja' } as const)[inc.prioridad],
   estado: ({ ABIERTA: 'Abierta', EN_REVISION: 'En revisión', RESUELTA: 'Resuelta', CERRADA: 'Cerrada' } as const)[inc.estado],
   fecha: new Date(inc.fecha).toLocaleDateString('es-GT'), guia: inc.guiaDiagnostico || 'Pendiente de diagnóstico',
+  mensajeResolucion: inc.mensajeResolucion,
 });
 
 export const mapIncidenciaToTicket = (inc: Incidencia): Ticket => ({
@@ -40,4 +41,5 @@ export const mapIncidenciaToTicket = (inc: Incidencia): Ticket => ({
   descripcion: inc.problema, creado: new Date(inc.fecha).toLocaleDateString('es-GT'),
   actualizado: new Date(inc.actualizado).toLocaleDateString('es-GT'),
   historial: [{ autor: 'cliente', texto: inc.problema, fecha: new Date(inc.fecha).toLocaleString('es-GT') }],
+  mensajeResolucion: inc.mensajeResolucion,
 });
