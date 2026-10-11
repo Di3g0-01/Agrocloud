@@ -69,10 +69,11 @@ public class InstanceServiceImpl implements InstanceService {
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
         long currentCount = repository.countByOwnerId(ownerId);
-        Optional<SubscriptionEntity> activeSub = subscriptionService.findActiveSubscriptionEntity(ownerId);
+        SubscriptionEntity activeSub = subscriptionService.findActiveSubscriptionEntity(ownerId)
+                .orElseThrow(() -> new IllegalArgumentException("Debes contratar una suscripción activa para poder crear instancias."));
 
-        int maxAllowedInstances = activeSub.map(sub -> sub.getPlan().getMaxInstances()).orElse(1);
-        double maxStorageGb = activeSub.map(sub -> sub.getPlan().getStorageGb()).orElse(10.0);
+        int maxAllowedInstances = activeSub.getPlan().getMaxInstances();
+        double maxStorageGb = activeSub.getPlan().getStorageGb();
 
         if (currentCount >= maxAllowedInstances) {
             throw new InstanceLimitExceededException(

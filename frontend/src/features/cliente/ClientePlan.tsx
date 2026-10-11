@@ -81,9 +81,10 @@ export function ClientePlan({
       setModalChangeOpen(false);
       setNotificationMsg(`¡Plan actualizado con éxito al ${plan.nombre}! Tu límite ahora es de ${plan.maxInstancias} instancia(s) y ${plan.storage}.`);
       setTimeout(() => setNotificationMsg(null), 5000);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setLoadError("No se pudo cambiar el plan. Revisa la conexión.");
+      const apiMsg = err?.response?.data?.message || err?.message;
+      setLoadError(apiMsg || "No se pudo cambiar el plan. Revisa la conexión.");
     } finally {
       setLoadingSub(false);
     }

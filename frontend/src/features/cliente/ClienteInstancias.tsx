@@ -175,8 +175,9 @@ export function ClienteInstancias({
       const res = await crearInstancia({ nombre: newInst.nombre, plantilla: newInst.plantilla });
       const mapped = mapInstanciaDBToCInstancia(res);
       setInstanciasList((prev) => [mapped, ...prev]);
-    } catch {
-      setActionError("No se pudo crear la instancia. Revisa la conexión o el límite del plan.");
+    } catch (err: any) {
+      const apiMsg = err?.response?.data?.message || err?.message;
+      setActionError(apiMsg || "No se pudo crear la instancia. Revisa la conexión o el límite del plan.");
       return;
     }
     setShowCreate(false);
