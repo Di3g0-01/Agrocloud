@@ -156,3 +156,21 @@ recorre apertura, asignación, comentarios, atención, resolución y cierre,
 comprueba permisos por rol y recibe por SSE avisos de tickets e instancias.
 Al terminar elimina los datos temporales. El test verifica que `DB_URL` termine
 en `/agrocloud_test` antes de crear datos.
+
+### Módulo de Pagos, Facturación y Ciclo de Vida de Suscripciones (Javier)
+
+`V13__create_payments_and_invoices.sql` agrega la persistencia en las tablas `payments` e `invoices` para el historial de transacciones y comprobantes de facturación.
+
+#### Ciclo de Vida de Suscripciones
+- `POST /api/v1/suscripciones`: Contrata un nuevo plan. Valida que el usuario no tenga previamente una suscripción activa (`active`).
+- `POST /api/v1/suscripciones/{id}/renovar` (o `POST /api/v1/suscripciones/renovar?id={id}`): Renueva la suscripción activa o suspendida extendiendo su fecha de facturación e impactando automáticamente el historial con un nuevo pago (`COMPLETADO`) y su correspondiente comprobante fiscal. No permite renovar suscripciones canceladas.
+- `POST /api/v1/suscripciones/{id}/suspender` (o `POST /api/v1/suscripciones/suspender?id={id}`): Cambia el estado a `suspended`. No permite suspender suscripciones ya suspendidas o canceladas.
+- `POST /api/v1/suscripciones/{id}/cancelar` (o `POST /api/v1/suscripciones/cancelar?id={id}`): Cancela la suscripción cambiando su estado a `cancelled`. No permite cancelar suscripciones ya canceladas.
+
+#### Historial de Pagos y Comprobantes de Factura
+- `POST /api/v1/pagos`: Registra un pago manual o por pasarela, generando automáticamente su factura asociada.
+- `GET /api/v1/pagos/suscripcion/{subscriptionId}`: Consulta el historial de pagos asociados a una suscripción específica.
+- `GET /api/v1/pagos/me`: Consulta el historial de pagos del usuario autenticado.
+- `GET /api/v1/pagos`: Consulta general de todos los pagos registrados (Administrador y Soporte Técnico).
+- `GET /api/v1/facturas/{pagoId}` (o `GET /api/v1/facturas/pago/{pagoId}`): Genera y consulta el comprobante fiscal estructurado en JSON con desglose de subtotal, impuesto (IVA 12%) y total.
+

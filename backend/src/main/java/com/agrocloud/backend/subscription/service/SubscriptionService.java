@@ -14,5 +14,8 @@ public interface SubscriptionService {
     List<SubscriptionResponse> getUserSubscriptions(UUID userId);
     List<SubscriptionResponse> getAllSubscriptions();
     SubscriptionResponse updateSubscriptionStatus(UUID subscriptionId, SubscriptionStatus status);
+    SubscriptionResponse renovarSubscription(UUID subscriptionId);
+    SubscriptionResponse suspenderSubscription(UUID subscriptionId);
+    SubscriptionResponse cancelarSubscription(UUID subscriptionId);
     Optional<SubscriptionEntity> findActiveSubscriptionEntity(UUID userId);
 }

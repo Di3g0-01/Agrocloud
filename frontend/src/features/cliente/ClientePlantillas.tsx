@@ -27,7 +27,10 @@ export function ClientePlantillas({ onNavigate, onCreateInstance, currentCount =
       onCreateInstance?.(mapInstanciaDBToCInstancia(created));
       setCreateModal(null);
       onNavigate?.("instancias");
-    } catch { setError("No se pudo crear la instancia. Revisa la conexión o el límite de tu plan."); }
+    } catch (err: any) {
+      const apiMsg = err?.response?.data?.message || err?.message;
+      setError(apiMsg || "No se pudo crear la instancia. Revisa la conexión o el límite de tu plan.");
+    }
   };
 
   const categorias = ["Todas", ...Array.from(new Set(plantillas.map(p => p.categoria)))];

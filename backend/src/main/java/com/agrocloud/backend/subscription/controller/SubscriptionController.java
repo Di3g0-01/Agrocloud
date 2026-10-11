@@ -77,4 +77,34 @@ public class SubscriptionController {
     ) {
         return ResponseEntity.ok(service.updateSubscriptionStatus(id, status));
     }
+
+    @PostMapping("/{id}/renovar")
+    public ResponseEntity<SubscriptionResponse> renovarPath(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.renovarSubscription(id));
+    }
+
+    @PostMapping("/renovar")
+    public ResponseEntity<SubscriptionResponse> renovarParam(@RequestParam UUID id) {
+        return ResponseEntity.ok(service.renovarSubscription(id));
+    }
+
+    @PostMapping("/{id}/suspender")
+    public ResponseEntity<SubscriptionResponse> suspenderPath(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.suspenderSubscription(id));
+    }
+
+    @PostMapping("/suspender")
+    public ResponseEntity<SubscriptionResponse> suspenderParam(@RequestParam UUID id) {
+        return ResponseEntity.ok(service.suspenderSubscription(id));
+    }
+
+    @PostMapping("/{id}/cancelar")
+    public ResponseEntity<SubscriptionResponse> cancelarPath(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.cancelarSubscription(id));
+    }
+
+    @PostMapping("/cancelar")
+    public ResponseEntity<SubscriptionResponse> cancelarParam(@RequestParam UUID id) {
+        return ResponseEntity.ok(service.cancelarSubscription(id));
+    }
 }

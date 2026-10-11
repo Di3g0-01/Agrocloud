@@ -3,6 +3,8 @@ package com.agrocloud.backend.subscription.service;
 import com.agrocloud.backend.entity.User;
 import com.agrocloud.backend.exception.SubscriptionNotFoundException;
 import com.agrocloud.backend.exception.UserNotFoundException;
+import com.agrocloud.backend.instance.repository.InstanceRepository;
+import com.agrocloud.backend.payment.service.PaymentService;
 import com.agrocloud.backend.plan.entity.PlanEntity;
 import com.agrocloud.backend.plan.service.PlanService;
 import com.agrocloud.backend.repository.UserRepository;
@@ -27,6 +29,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionRepository repository;
     private final UserRepository userRepository;
     private final PlanService planService;
+    private final PaymentService paymentService;
+    private final InstanceRepository instanceRepository;
 
     @Override
     public SubscriptionResponse createSubscription(UUID userId, CreateSubscriptionRequest request) {
@@ -38,7 +42,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             throw new IllegalArgumentException("Este plan no está disponible para contratar");
         }
 
-        // Cancel previous active subscription if exists
+        long currentInstancesCount = instanceRepository.countByOwnerId(userId);
+        if (currentInstancesCount > plan.getMaxInstances()) {
+            throw new IllegalArgumentException("Para cambiar a este plan debes eliminar las instancias restantes. Actualmente tienes " + currentInstancesCount + " instancia" + (currentInstancesCount > 1 ? "s" : "") + " y el plan '" + plan.getName() + "' solo permite " + plan.getMaxInstances() + ".");
+        }
+
+        // Cancel previous active subscription if changing plans
         repository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, SubscriptionStatus.active)
                 .ifPresent(previousSub -> {
                     previousSub.setStatus(SubscriptionStatus.cancelled);
@@ -55,6 +64,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .build();
 
         SubscriptionEntity saved = repository.save(newSubscription);
+        paymentService.registerAutomaticPayment(saved.getId(), "Contratación de plan - " + plan.getName());
+
         return SubscriptionResponse.from(saved);
     }
 
@@ -88,6 +99,58 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .orElseThrow(() -> new SubscriptionNotFoundException("Suscripción no encontrada"));
         subscription.setStatus(status);
         return SubscriptionResponse.from(repository.save(subscription));
+    }
+
+    @Override
+    public SubscriptionResponse renovarSubscription(UUID subscriptionId) {
+        SubscriptionEntity subscription = repository.findById(subscriptionId)
+                .orElseThrow(() -> new SubscriptionNotFoundException("Suscripción no encontrada con ID: " + subscriptionId));
+
+        if (subscription.getStatus() == SubscriptionStatus.cancelled) {
+            throw new IllegalStateException("No se puede renovar una suscripción cancelada");
+        }
+
+        subscription.setStatus(SubscriptionStatus.active);
+        LocalDate baseDate = subscription.getNextBillingDate() != null ? subscription.getNextBillingDate() : LocalDate.now();
+        subscription.setNextBillingDate(baseDate.plusMonths(1));
+
+        SubscriptionEntity saved = repository.save(subscription);
+        paymentService.registerAutomaticPayment(saved.getId(), "Renovación de suscripción - " + saved.getPlan().getName());
+
+        return SubscriptionResponse.from(saved);
+    }
+
+    @Override
+    public SubscriptionResponse suspenderSubscription(UUID subscriptionId) {
+        SubscriptionEntity subscription = repository.findById(subscriptionId)
+                .orElseThrow(() -> new SubscriptionNotFoundException("Suscripción no encontrada con ID: " + subscriptionId));
+
+        if (subscription.getStatus() == SubscriptionStatus.suspended) {
+            throw new IllegalStateException("La suscripción ya se encuentra suspendida");
+        }
+        if (subscription.getStatus() == SubscriptionStatus.cancelled) {
+            throw new IllegalStateException("No se puede suspender una suscripción cancelada");
+        }
+
+        subscription.setStatus(SubscriptionStatus.suspended);
+        SubscriptionEntity saved = repository.save(subscription);
+
+        return SubscriptionResponse.from(saved);
+    }
+
+    @Override
+    public SubscriptionResponse cancelarSubscription(UUID subscriptionId) {
+        SubscriptionEntity subscription = repository.findById(subscriptionId)
+                .orElseThrow(() -> new SubscriptionNotFoundException("Suscripción no encontrada con ID: " + subscriptionId));
+
+        if (subscription.getStatus() == SubscriptionStatus.cancelled) {
+            throw new IllegalStateException("La suscripción ya se encuentra cancelada");
+        }
+
+        subscription.setStatus(SubscriptionStatus.cancelled);
+        SubscriptionEntity saved = repository.save(subscription);
+
+        return SubscriptionResponse.from(saved);
     }
 
     @Override
