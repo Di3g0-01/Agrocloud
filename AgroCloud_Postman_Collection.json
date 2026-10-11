@@ -1,0 +1,1025 @@
+{
+  "info": {
+    "name": "AgroCloud - API E04",
+    "description": "Colección local para probar AgroCloud E04. Usa credenciales de prueba; no contiene secretos ni URL pública. Los ejemplos de respuesta usan IDs y fechas ilustrativos. Cambia el token al probar cada rol.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "clienteId",
+      "value": ""
+    },
+    {
+      "key": "agenteId",
+      "value": ""
+    },
+    {
+      "key": "planId",
+      "value": "plan-finca"
+    },
+    {
+      "key": "subscriptionId",
+      "value": ""
+    },
+    {
+      "key": "instanceId",
+      "value": ""
+    },
+    {
+      "key": "templateId",
+      "value": ""
+    },
+    {
+      "key": "incidentId",
+      "value": ""
+    },
+    {
+      "key": "notificationId",
+      "value": ""
+    },
+    {
+      "key": "plantillaNombre",
+      "value": "Cultivos y parcelas"
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Registrar cliente",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Público. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/auth/register",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationName\": \"Finca Los Pinos\",\n  \"contactName\": \"Carlos Monterroso\",\n  \"email\": \"cliente@ejemplo.com\",\n  \"phone\": \"+502 4455 6677\",\n  \"password\": \"ClaveSegura123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Iniciar sesión",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Público. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/auth/login",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@ejemplo.com\",\n  \"password\": \"ClaveSegura123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.token) pm.collectionVariables.set('token', result.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuario actual",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuarios",
+      "item": [
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/usuarios"
+          }
+        },
+        {
+          "name": "Ver usuario",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/usuarios/{{userId}}"
+          }
+        },
+        {
+          "name": "Crear miembro de soporte",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/usuarios",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationName\": \"Equipo AgroCloud\",\n  \"contactName\": \"Ana Pérez\",\n  \"email\": \"soporte@ejemplo.com\",\n  \"phone\": \"+502 4455 6688\",\n  \"password\": \"ClaveSegura123\",\n  \"role\": \"SOPORTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('userId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar usuario",
+          "request": {
+            "method": "PUT",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/usuarios/{{userId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizationName\": \"Equipo AgroCloud\",\n  \"contactName\": \"Ana Pérez\",\n  \"email\": \"soporte@ejemplo.com\",\n  \"phone\": \"+502 4455 6688\",\n  \"password\": \"ClaveSegura123\",\n  \"role\": \"SOPORTE\",\n  \"status\": \"ACTIVO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Planes",
+      "item": [
+        {
+          "name": "Listar planes",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Público. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/planes",
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Ver plan",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/planes/{{planId}}"
+          }
+        },
+        {
+          "name": "Crear plan",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/planes",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Finca\",\n  \"almacenamientoGb\": 10,\n  \"precioMensual\": 25,\n  \"descripcion\": \"Plan de ejemplo\",\n  \"instanciasPermitidas\": 1,\n  \"popular\": false,\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('planId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar plan",
+          "request": {
+            "method": "PUT",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/planes/{{planId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Finca\",\n  \"almacenamientoGb\": 10,\n  \"precioMensual\": 25,\n  \"descripcion\": \"Plan de ejemplo\",\n  \"instanciasPermitidas\": 1,\n  \"popular\": false,\n  \"activo\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar plan",
+          "request": {
+            "method": "DELETE",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/planes/{{planId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Suscripciones",
+      "item": [
+        {
+          "name": "Contratar plan",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Autenticado. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/suscripciones",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{planId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('subscriptionId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Suscripción activa",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/suscripciones/activa"
+          }
+        },
+        {
+          "name": "Mis suscripciones",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/suscripciones/me"
+          }
+        },
+        {
+          "name": "Suscripciones de usuario",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Propietario, Admin o Soporte. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/suscripciones/usuario/{{userId}}"
+          }
+        },
+        {
+          "name": "Listar suscripciones",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Admin o Soporte. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/suscripciones"
+          }
+        },
+        {
+          "name": "Cambiar estado de suscripción",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/suscripciones/{{subscriptionId}}/status?status=suspended"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Instancias",
+      "item": [
+        {
+          "name": "Listar instancias",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado; resultados según rol. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/instancias"
+          }
+        },
+        {
+          "name": "Instancias de usuario",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Propietario, Admin o Soporte. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/instancias/usuario/{{userId}}"
+          }
+        },
+        {
+          "name": "Ver instancia",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Propietario, Admin o Soporte. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/instancias/{{instanceId}}"
+          }
+        },
+        {
+          "name": "Crear instancia",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Autenticado. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/instancias",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"finca_demo\",\n  \"plantilla\": \"{{plantillaNombre}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('instanceId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reiniciar instancia",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Propietario, Admin o Soporte. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/instancias/{{instanceId}}/restart"
+          }
+        },
+        {
+          "name": "Cambiar estado de instancia",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Admin o Soporte. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/instancias/{{instanceId}}/status?status=revision"
+          }
+        },
+        {
+          "name": "Eliminar instancia",
+          "request": {
+            "method": "DELETE",
+            "description": "Rol: Propietario, Admin o Soporte. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/instancias/{{instanceId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Plantillas",
+      "item": [
+        {
+          "name": "Listar plantillas",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/plantillas"
+          }
+        },
+        {
+          "name": "Crear plantilla",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/plantillas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cultivos y parcelas\",\n  \"descripcion\": \"Plantilla de ejemplo\",\n  \"version\": \"1.0\",\n  \"estado\": \"Activa\",\n  \"schema\": [\n    \"cultivos\",\n    \"parcelas\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('templateId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar plantilla",
+          "request": {
+            "method": "PUT",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/plantillas/{{templateId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cultivos y parcelas\",\n  \"descripcion\": \"Plantilla de ejemplo\",\n  \"version\": \"1.0\",\n  \"estado\": \"Activa\",\n  \"schema\": [\n    \"cultivos\",\n    \"parcelas\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar plantilla",
+          "request": {
+            "method": "DELETE",
+            "description": "Rol: Admin. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/plantillas/{{templateId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Incidencias E04",
+      "item": [
+        {
+          "name": "Listar incidencias",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Autenticado; resultados según rol. La lista se limita según el rol del token autenticado.",
+            "url": "{{baseUrl}}/incidencias"
+          },
+          "response": [
+            {
+              "name": "200 Tickets visibles para el rol",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"44444444-4444-4444-8444-444444444444\",\n    \"codigo\": \"INC-12345\",\n    \"cliente\": \"Finca Ejemplo\",\n    \"instanciaId\": \"33333333-3333-4333-8333-333333333333\",\n    \"instanciaNombre\": \"instancia-ejemplo\",\n    \"plantilla\": \"Cultivos y parcelas\",\n    \"asunto\": \"No puedo conectar\",\n    \"categoria\": \"Conectividad\",\n    \"problema\": \"La conexión falla desde esta mañana\",\n    \"prioridad\": \"ALTA\",\n    \"estado\": \"ABIERTA\",\n    \"fecha\": \"2026-10-07T19:00:00Z\",\n    \"actualizado\": \"2026-10-07T19:00:00Z\",\n    \"guiaDiagnostico\": null,\n    \"agenteId\": \"22222222-2222-4222-8222-222222222222\",\n    \"mensajeResolucion\": null,\n    \"resueltoPorId\": null,\n    \"fechaResolucion\": null\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Actividad del soporte autenticado",
+          "request": {
+            "method": "GET",
+            "description": "Solo rol Soporte. Muestra tickets pendientes asignados y tickets que resolvió, aunque después se cierren. Los históricos sin autor se identifican por separado.",
+            "url": "{{baseUrl}}/incidencias/actividad"
+          },
+          "response": [
+            {
+              "name": "200 Actividad del agente",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"44444444-4444-4444-8444-444444444444\",\n    \"codigo\": \"INC-12345\",\n    \"cliente\": \"Finca Ejemplo\",\n    \"instanciaId\": \"33333333-3333-4333-8333-333333333333\",\n    \"instanciaNombre\": \"instancia-ejemplo\",\n    \"plantilla\": \"Cultivos y parcelas\",\n    \"asunto\": \"No puedo conectar\",\n    \"categoria\": \"Conectividad\",\n    \"problema\": \"La conexión falla desde esta mañana\",\n    \"prioridad\": \"ALTA\",\n    \"estado\": \"RESUELTA\",\n    \"fecha\": \"2026-10-07T19:00:00Z\",\n    \"actualizado\": \"2026-10-07T19:00:00Z\",\n    \"guiaDiagnostico\": null,\n    \"agenteId\": \"22222222-2222-4222-8222-222222222222\",\n    \"mensajeResolucion\": \"Se restauró la conexión y se verificó el servicio.\",\n    \"resueltoPorId\": \"22222222-2222-4222-8222-222222222222\",\n    \"fechaResolucion\": \"2026-10-07T19:00:00Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Crear incidencia",
+          "request": {
+            "method": "POST",
+            "description": "Rol: Cliente propietario de la instancia. Crea el ticket abierto y sin agente.",
+            "url": "{{baseUrl}}/incidencias",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"instanciaId\": \"{{instanciaId}}\",\n  \"asunto\": \"No puedo conectar\",\n  \"categoria\": \"Conectividad\",\n  \"problema\": \"La conexión falla desde esta mañana\",\n  \"prioridad\": \"ALTA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.id) pm.collectionVariables.set('incidentId', result.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": [
+            {
+              "name": "201 Ticket creado",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"44444444-4444-4444-8444-444444444444\",\n  \"codigo\": \"INC-12345\",\n  \"cliente\": \"Finca Ejemplo\",\n  \"instanciaId\": \"33333333-3333-4333-8333-333333333333\",\n  \"instanciaNombre\": \"instancia-ejemplo\",\n  \"plantilla\": \"Cultivos y parcelas\",\n  \"asunto\": \"No puedo conectar\",\n  \"categoria\": \"Conectividad\",\n  \"problema\": \"La conexión falla desde esta mañana\",\n  \"prioridad\": \"ALTA\",\n  \"estado\": \"ABIERTA\",\n  \"fecha\": \"2026-10-07T19:00:00Z\",\n  \"actualizado\": \"2026-10-07T19:00:00Z\",\n  \"guiaDiagnostico\": null,\n  \"agenteId\": null,\n  \"mensajeResolucion\": null,\n  \"resueltoPorId\": null,\n  \"fechaResolucion\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Actualizar guía de diagnóstico",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Admin o agente de Soporte asignado. Ruta de compatibilidad del frontend.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guiaDiagnostico\": \"Revisar conexión\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "200 Guía actualizada",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"44444444-4444-4444-8444-444444444444\",\n  \"codigo\": \"INC-12345\",\n  \"cliente\": \"Finca Ejemplo\",\n  \"instanciaId\": \"33333333-3333-4333-8333-333333333333\",\n  \"instanciaNombre\": \"instancia-ejemplo\",\n  \"plantilla\": \"Cultivos y parcelas\",\n  \"asunto\": \"No puedo conectar\",\n  \"categoria\": \"Conectividad\",\n  \"problema\": \"La conexión falla desde esta mañana\",\n  \"prioridad\": \"ALTA\",\n  \"estado\": \"EN_REVISION\",\n  \"fecha\": \"2026-10-07T19:00:00Z\",\n  \"actualizado\": \"2026-10-07T19:00:00Z\",\n  \"guiaDiagnostico\": \"Revisar conexión\",\n  \"agenteId\": \"22222222-2222-4222-8222-222222222222\",\n  \"mensajeResolucion\": null,\n  \"resueltoPorId\": null,\n  \"fechaResolucion\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Cliente - listar tickets propios",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Cliente con este clienteId o Admin. Otro cliente recibe 403.",
+            "url": "{{baseUrl}}/incidencias/cliente/{{clienteId}}"
+          },
+          "response": [
+            {
+              "name": "200 Tickets del cliente",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"44444444-4444-4444-8444-444444444444\",\n    \"codigo\": \"INC-12345\",\n    \"cliente\": \"Finca Ejemplo\",\n    \"instanciaId\": \"33333333-3333-4333-8333-333333333333\",\n    \"instanciaNombre\": \"instancia-ejemplo\",\n    \"plantilla\": \"Cultivos y parcelas\",\n    \"asunto\": \"No puedo conectar\",\n    \"categoria\": \"Conectividad\",\n    \"problema\": \"La conexión falla desde esta mañana\",\n    \"prioridad\": \"ALTA\",\n    \"estado\": \"ABIERTA\",\n    \"fecha\": \"2026-10-07T19:00:00Z\",\n    \"actualizado\": \"2026-10-07T19:00:00Z\",\n    \"guiaDiagnostico\": null,\n    \"agenteId\": null,\n    \"mensajeResolucion\": null,\n    \"resueltoPorId\": null,\n    \"fechaResolucion\": null\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Soporte - listar tickets asignados",
+          "request": {
+            "method": "GET",
+            "description": "Rol: Agente con este agenteId o Admin. Otro agente recibe 403.",
+            "url": "{{baseUrl}}/incidencias/agente/{{agenteId}}"
+          },
+          "response": [
+            {
+              "name": "200 Tickets asignados",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"44444444-4444-4444-8444-444444444444\",\n    \"codigo\": \"INC-12345\",\n    \"cliente\": \"Finca Ejemplo\",\n    \"instanciaId\": \"33333333-3333-4333-8333-333333333333\",\n    \"instanciaNombre\": \"instancia-ejemplo\",\n    \"plantilla\": \"Cultivos y parcelas\",\n    \"asunto\": \"No puedo conectar\",\n    \"categoria\": \"Conectividad\",\n    \"problema\": \"La conexión falla desde esta mañana\",\n    \"prioridad\": \"ALTA\",\n    \"estado\": \"ABIERTA\",\n    \"fecha\": \"2026-10-07T19:00:00Z\",\n    \"actualizado\": \"2026-10-07T19:00:00Z\",\n    \"guiaDiagnostico\": null,\n    \"agenteId\": \"22222222-2222-4222-8222-222222222222\",\n    \"mensajeResolucion\": null,\n    \"resueltoPorId\": null,\n    \"fechaResolucion\": null\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Admin - asignar ticket",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Admin. El agente debe tener rol SOPORTE y estar activo.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/asignacion",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agenteId\": \"{{agenteId}}\"\n}",
+              "options": {"raw": {"language": "json"}}
+            }
+          },
+          "response": [
+            {
+              "name": "200 Ticket asignado",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"44444444-4444-4444-8444-444444444444\",\n  \"codigo\": \"INC-12345\",\n  \"cliente\": \"Finca Ejemplo\",\n  \"instanciaId\": \"33333333-3333-4333-8333-333333333333\",\n  \"instanciaNombre\": \"instancia-ejemplo\",\n  \"plantilla\": \"Cultivos y parcelas\",\n  \"asunto\": \"No puedo conectar\",\n  \"categoria\": \"Conectividad\",\n  \"problema\": \"La conexión falla desde esta mañana\",\n  \"prioridad\": \"ALTA\",\n  \"estado\": \"ABIERTA\",\n  \"fecha\": \"2026-10-07T19:00:00Z\",\n  \"actualizado\": \"2026-10-07T19:00:00Z\",\n  \"guiaDiagnostico\": null,\n  \"agenteId\": \"22222222-2222-4222-8222-222222222222\",\n  \"mensajeResolucion\": null,\n  \"resueltoPorId\": null,\n  \"fechaResolucion\": null\n}"
+            },
+            {
+              "name": "403 Sin acceso",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"timestamp\": \"2026-10-07T19:00:00Z\",\n  \"status\": 403,\n  \"error\": \"Forbidden\",\n  \"message\": \"Solo Admin puede asignar tickets\",\n  \"path\": \"/api/v1/incidencias/44444444-4444-4444-8444-444444444444/asignacion\",\n  \"fieldErrors\": {}\n}"
+            }
+          ]
+        },
+        {
+          "name": "Soporte - iniciar atención",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Agente asignado o Admin. Transición ABIERTA a EN_REVISION.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/estado",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"EN_REVISION\"\n}",
+              "options": {"raw": {"language": "json"}}
+            }
+          },
+          "response": [
+            {
+              "name": "200 En revisión",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"44444444-4444-4444-8444-444444444444\",\n  \"codigo\": \"INC-12345\",\n  \"cliente\": \"Finca Ejemplo\",\n  \"instanciaId\": \"33333333-3333-4333-8333-333333333333\",\n  \"instanciaNombre\": \"instancia-ejemplo\",\n  \"plantilla\": \"Cultivos y parcelas\",\n  \"asunto\": \"No puedo conectar\",\n  \"categoria\": \"Conectividad\",\n  \"problema\": \"La conexión falla desde esta mañana\",\n  \"prioridad\": \"ALTA\",\n  \"estado\": \"EN_REVISION\",\n  \"fecha\": \"2026-10-07T19:00:00Z\",\n  \"actualizado\": \"2026-10-07T19:00:00Z\",\n  \"guiaDiagnostico\": null,\n  \"agenteId\": \"22222222-2222-4222-8222-222222222222\",\n  \"mensajeResolucion\": null,\n  \"resueltoPorId\": null,\n  \"fechaResolucion\": null\n}"
+            }
+          ]
+        },
+        {
+          "name": "Soporte - resolver ticket",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Agente asignado o Admin. Transición EN_REVISION a RESUELTA; el mensaje al cliente es obligatorio.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/estado",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"RESUELTA\",\n  \"mensajeResolucion\": \"Se restauró la conexión y se verificó que la instancia funciona correctamente.\"\n}",
+              "options": {"raw": {"language": "json"}}
+            }
+          },
+          "response": [
+            {
+              "name": "200 Resuelto con mensaje",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"44444444-4444-4444-8444-444444444444\",\n  \"codigo\": \"INC-12345\",\n  \"cliente\": \"Finca Ejemplo\",\n  \"instanciaId\": \"33333333-3333-4333-8333-333333333333\",\n  \"instanciaNombre\": \"instancia-ejemplo\",\n  \"plantilla\": \"Cultivos y parcelas\",\n  \"asunto\": \"No puedo conectar\",\n  \"categoria\": \"Conectividad\",\n  \"problema\": \"La conexión falla desde esta mañana\",\n  \"prioridad\": \"ALTA\",\n  \"estado\": \"RESUELTA\",\n  \"fecha\": \"2026-10-07T19:00:00Z\",\n  \"actualizado\": \"2026-10-07T19:00:00Z\",\n  \"guiaDiagnostico\": null,\n  \"agenteId\": \"22222222-2222-4222-8222-222222222222\",\n  \"mensajeResolucion\": \"Se restauró la conexión y se verificó el servicio.\",\n  \"resueltoPorId\": \"22222222-2222-4222-8222-222222222222\",\n  \"fechaResolucion\": \"2026-10-07T19:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Cliente - cerrar ticket",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: Cliente propietario o Admin. CERRADA es estado final; no se reabre.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/estado",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"CERRADA\"\n}",
+              "options": {"raw": {"language": "json"}}
+            }
+          },
+          "response": [
+            {
+              "name": "200 Ticket cerrado",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"44444444-4444-4444-8444-444444444444\",\n  \"codigo\": \"INC-12345\",\n  \"cliente\": \"Finca Ejemplo\",\n  \"instanciaId\": \"33333333-3333-4333-8333-333333333333\",\n  \"instanciaNombre\": \"instancia-ejemplo\",\n  \"plantilla\": \"Cultivos y parcelas\",\n  \"asunto\": \"No puedo conectar\",\n  \"categoria\": \"Conectividad\",\n  \"problema\": \"La conexión falla desde esta mañana\",\n  \"prioridad\": \"ALTA\",\n  \"estado\": \"CERRADA\",\n  \"fecha\": \"2026-10-07T19:00:00Z\",\n  \"actualizado\": \"2026-10-07T19:00:00Z\",\n  \"guiaDiagnostico\": null,\n  \"agenteId\": \"22222222-2222-4222-8222-222222222222\",\n  \"mensajeResolucion\": \"Se restauró la conexión y se verificó el servicio.\",\n  \"resueltoPorId\": \"22222222-2222-4222-8222-222222222222\",\n  \"fechaResolucion\": \"2026-10-07T19:00:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Listar comentarios del ticket",
+          "request": {
+            "method": "GET",
+            "description": "Cliente propietario, soporte asignado o Admin. Otros usuarios reciben 403. También permite leer el historial de un ticket cerrado.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/comentarios"
+          },
+          "response": [
+            {
+              "name": "200 Comentarios",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"55555555-5555-4555-8555-555555555555\",\n    \"autorId\": \"11111111-1111-4111-8111-111111111111\",\n    \"autor\": \"Cliente Ejemplo\",\n    \"rolAutor\": \"CLIENTE\",\n    \"texto\": \"Ya probé reiniciar la instancia.\",\n    \"fecha\": \"2026-10-07T19:00:00Z\"\n  }\n]"
+            },
+            {
+              "name": "403 Sin acceso",
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"timestamp\": \"2026-10-07T19:00:00Z\",\n  \"status\": 403,\n  \"error\": \"Forbidden\",\n  \"message\": \"No tienes acceso a esta incidencia\",\n  \"path\": \"/api/v1/incidencias/44444444-4444-4444-8444-444444444444/comentarios\",\n  \"fieldErrors\": {}\n}"
+            }
+          ]
+        },
+        {
+          "name": "Agregar comentario al ticket",
+          "request": {
+            "method": "POST",
+            "description": "Cliente propietario, soporte asignado o Admin. Máximo 2000 caracteres; un ticket cerrado no admite comentarios. Avisa a los otros participantes.",
+            "url": "{{baseUrl}}/incidencias/{{incidentId}}/comentarios",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Ya probé reiniciar la instancia y el problema continúa.\"\n}",
+              "options": {"raw": {"language": "json"}}
+            }
+          },
+          "response": [
+            {
+              "name": "201 Comentario creado",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"55555555-5555-4555-8555-555555555555\",\n  \"autorId\": \"11111111-1111-4111-8111-111111111111\",\n  \"autor\": \"Cliente Ejemplo\",\n  \"rolAutor\": \"CLIENTE\",\n  \"texto\": \"Ya probé reiniciar la instancia.\",\n  \"fecha\": \"2026-10-07T19:00:00Z\"\n}"
+            },
+            {
+              "name": "409 Ticket cerrado",
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"timestamp\": \"2026-10-07T19:00:00Z\",\n  \"status\": 409,\n  \"error\": \"Conflict\",\n  \"message\": \"Un ticket cerrado no admite comentarios\",\n  \"path\": \"/api/v1/incidencias/44444444-4444-4444-8444-444444444444/comentarios\",\n  \"fieldErrors\": {}\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Notificaciones",
+      "item": [
+        {
+          "name": "Listar mis notificaciones",
+          "request": {
+            "method": "GET",
+            "description": "Rol: cualquier usuario autenticado. Solo devuelve sus notificaciones.",
+            "url": "{{baseUrl}}/notificaciones"
+          },
+          "response": [
+            {
+              "name": "200 Avisos del usuario",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": \"66666666-6666-4666-8666-666666666666\",\n    \"tipo\": \"TICKET_RESUELTO\",\n    \"titulo\": \"Incidencia resuelta INC-12345\",\n    \"mensaje\": \"Se restauró la conexión y se verificó el servicio.\",\n    \"recursoId\": \"44444444-4444-4444-8444-444444444444\",\n    \"fecha\": \"2026-10-07T19:00:00Z\",\n    \"leida\": false\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Marcar notificación como leída",
+          "request": {
+            "method": "PATCH",
+            "description": "Rol: destinatario de la notificación.",
+            "url": "{{baseUrl}}/notificaciones/{{notificationId}}/leida"
+          },
+          "response": [
+            {
+              "name": "200 Aviso leído",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"66666666-6666-4666-8666-666666666666\",\n  \"tipo\": \"TICKET_RESUELTO\",\n  \"titulo\": \"Incidencia resuelta INC-12345\",\n  \"mensaje\": \"Se restauró la conexión y se verificó el servicio.\",\n  \"recursoId\": \"44444444-4444-4444-8444-444444444444\",\n  \"fecha\": \"2026-10-07T19:00:00Z\",\n  \"leida\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Escuchar avisos inmediatos",
+          "request": {
+            "method": "GET",
+            "description": "Flujo SSE autenticado con Bearer token; requiere un cliente que mantenga la conexión abierta.",
+            "url": "{{baseUrl}}/notificaciones/stream"
+          },
+          "response": [
+            {
+              "name": "200 Flujo SSE",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "text/event-stream"
+                }
+              ],
+              "body": "event: ready\ndata: connected\n\nid: 66666666-6666-4666-8666-666666666666\nevent: notification\ndata: {\"id\": \"66666666-6666-4666-8666-666666666666\", \"tipo\": \"TICKET_RESUELTO\", \"titulo\": \"Incidencia resuelta INC-12345\", \"mensaje\": \"Se restauró la conexión y se verificó el servicio.\", \"recursoId\": \"44444444-4444-4444-8444-444444444444\", \"fecha\": \"2026-10-07T19:00:00Z\", \"leida\": false}\n\n"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+

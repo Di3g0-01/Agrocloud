@@ -5,7 +5,7 @@ const roles: Record<ApiRole, string> = { ADMINISTRADOR: 'Administrador', CLIENTE
 const statuses: Record<ApiStatus, string> = { ACTIVO: 'Activo', PENDIENTE: 'Pendiente', SUSPENDIDO: 'Suspendido' };
 const blank = { organizationName: 'AgroCloud', contactName: '', email: '', phone: '', password: '', role: 'SOPORTE' as ApiRole, status: 'ACTIVO' as ApiStatus };
 
-export function AdminUsuarios({ currentUserId }: { currentUserId: string }) {
+export function AdminUsuarios({ currentUserId, initialUserId }: { currentUserId: string; initialUserId?: string | null }) {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,6 +40,16 @@ export function AdminUsuarios({ currentUserId }: { currentUserId: string }) {
       setMode(nextMode);
     } catch (e) { setError(adminUserError(e)); }
   };
+
+  useEffect(() => {
+    if (!initialUserId) return;
+    getAdminUser(initialUserId).then(fresh => {
+      setSelected(fresh);
+      setForm({ organizationName: fresh.organizationName, contactName: fresh.contactName || '', email: fresh.email,
+        phone: fresh.phone || '', password: '', role: fresh.role, status: fresh.status });
+      setMode('edit');
+    }).catch(e => setError(adminUserError(e)));
+  }, [initialUserId]);
 
   const save = async (event: React.FormEvent) => {
     event.preventDefault(); setSaving(true); setError(''); setNotice('');

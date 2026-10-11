@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CopyBtn, ProgressBar } from "../../components/ui";
 import { CustomSelect } from "../../components/ui/CustomSelect";
-import { C_INSTANCIAS, C_PLAN, C_PLANTILLAS } from "../../data/cliente";
+import { C_PLAN } from "../../data/cliente";
 import type { CInstancia } from "../../types/cliente";
 import { crearInstancia, reiniciarInstancia, eliminarInstancia, mapInstanciaDBToCInstancia } from "../../api/instanciasApi";
+import { getPlantillas } from "../../api/plantillasApi";
 
 export function CInstanciaStatusBadge({ s }: { s: CInstancia["estado"] | string }) {
   const label =
@@ -46,6 +47,12 @@ export function CreateInstanciaModal({
 }) {
   const [nombre, setNombre] = useState("");
   const [plantilla, setPlantilla] = useState(plantillaInicial);
+  const [plantillas, setPlantillas] = useState<string[]>([]);
+  const [loadError, setLoadError] = useState("");
+  useEffect(() => {
+    getPlantillas().then(data => setPlantillas(data.filter(p => p.estado === "Activa").map(p => p.nombre)))
+      .catch(() => setLoadError("No se pudieron cargar las plantillas disponibles."));
+  }, []);
   const atLimit = currentCount >= maxInstancias;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -64,12 +71,12 @@ export function CreateInstanciaModal({
       puerto: "5432",
       baseDatos: nombre.replace(/-/g, "_"),
       usuario: "client_admin",
-      password: "P@ssw0rd!" + Math.floor(Math.random() * 899 + 100),
+      password: "",
       cpu: 5,
       memoria: 12,
       actividad: [
-        { desc: "Instancia aprovisionada con éxito", tiempo: "Hace un momento", tipo: "info" },
-        { desc: "Schema de plantilla " + plantilla + " aplicado", tiempo: "Hace un momento", tipo: "ok" },
+        { desc: "Registro de instancia creado", tiempo: "Hace un momento", tipo: "info" },
+        { desc: "Plantilla " + plantilla + " asociada", tiempo: "Hace un momento", tipo: "ok" },
       ],
     };
 
@@ -103,6 +110,7 @@ export function CreateInstanciaModal({
             </div>
           </div>
         )}
+        {loadError && <p role="alert" className="mx-6 mt-4 text-sm text-red-700">{loadError}</p>}
 
         <div className={`p-6 space-y-4 ${atLimit ? "opacity-50 pointer-events-none select-none" : ""}`}>
           <div>
@@ -117,7 +125,7 @@ export function CreateInstanciaModal({
             <CustomSelect
               value={plantilla}
               onChange={(val) => setPlantilla(val)}
-              options={C_PLANTILLAS.map((p) => ({ value: p.nombre, label: p.nombre }))}
+              options={plantillas.map((p) => ({ value: p, label: p }))}
               placeholder="Seleccionar plantilla..."
               className="w-full"
             />
@@ -160,65 +168,33 @@ export function ClienteInstancias({
   const [credModal, setCredModal] = useState<CInstancia | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<CInstancia | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [showPass, setShowPass] = useState(false);
+  const [actionError, setActionError] = useState("");
 
   const handleAddInstance = async (newInst: CInstancia) => {
     try {
       const res = await crearInstancia({ nombre: newInst.nombre, plantilla: newInst.plantilla });
       const mapped = mapInstanciaDBToCInstancia(res);
       setInstanciasList((prev) => [mapped, ...prev]);
-    } catch (err) {
-      console.error("Error al crear instancia en backend:", err);
-      setInstanciasList((prev) => [newInst, ...prev]);
+    } catch {
+      setActionError("No se pudo crear la instancia. Revisa la conexión o el límite del plan.");
+      return;
     }
     setShowCreate(false);
   };
 
   const handleRestart = async (nombre: string, id?: string) => {
-    if (id) {
-      reiniciarInstancia(id).catch((err) => console.error(err));
-    }
-    setInstanciasList((prev) =>
-      prev.map((inst) => {
-        if (inst.nombre === nombre) {
-          return {
-            ...inst,
-            estado: "Reiniciando",
-            actividad: [
-              { desc: "Reinicio solicitado por el usuario", tiempo: "Hace un momento", tipo: "warn" },
-              ...inst.actividad,
-            ],
-          };
-        }
-        return inst;
-      })
-    );
-    setTimeout(() => {
-      setInstanciasList((prev) =>
-        prev.map((inst) => {
-          if (inst.nombre === nombre) {
-            return {
-              ...inst,
-              estado: "Activa",
-              actividad: [
-                { desc: "Reinicio completado con éxito", tiempo: "Hace un momento", tipo: "ok" },
-                ...inst.actividad,
-              ],
-            };
-          }
-          return inst;
-        })
-      );
-    }, 3000);
+    if (!id) return;
+    try {
+      await reiniciarInstancia(id);
+      setInstanciasList(prev => prev.map(inst => inst.id === id ? { ...inst, estado: "Activa" } : inst));
+    } catch { setActionError(`No se pudo reiniciar ${nombre}.`); }
   };
 
   const handleDelete = async (nombre: string, id?: string) => {
-    if (id) {
-      eliminarInstancia(id).catch((err) => console.error(err));
-    }
+    if (!id) return;
+    try { await eliminarInstancia(id); }
+    catch { setActionError(`No se pudo eliminar ${nombre}.`); return; }
     setInstanciasList((prev) => prev.filter((inst) => inst.nombre !== nombre));
-    const idx = C_INSTANCIAS.findIndex((i) => i.nombre === nombre);
-    if (idx !== -1) C_INSTANCIAS.splice(idx, 1);
     setDeleteConfirm(null);
     if (drawer?.nombre === nombre) setDrawer(null);
   };
@@ -234,6 +210,7 @@ export function ClienteInstancias({
 
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
+      {actionError && <p role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{actionError}</p>}
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -250,7 +227,7 @@ export function ClienteInstancias({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Total instancias", value: `${instanciasList.length} / ${C_PLAN.maxInstancias}`, sub: "Plan " + C_PLAN.nombre, icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: "text-lime-600 bg-lime-50" },
-          { label: "Activas", value: String(activas), sub: `${instanciasList.length - activas} con incidencias`, icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-lime-600 bg-lime-50" },
+          { label: "Activas", value: String(activas), sub: `${instanciasList.length - activas} no activas`, icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-lime-600 bg-lime-50" },
           { label: "Almacenamiento usado", value: `${totalUsado} GB`, sub: `de ${C_PLAN.totalGB} GB del plan`, icon: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4", color: "text-blue-500 bg-blue-50" },
           { label: "Almacenamiento disponible", value: `${C_PLAN.totalGB - totalUsado} GB`, sub: "Disponible para nuevas instancias", icon: "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", color: "text-gray-500 bg-gray-100" },
         ].map(k => (
@@ -338,7 +315,7 @@ export function ClienteInstancias({
                   <td className="px-4 py-3.5">
                     <div className="flex items-center justify-center gap-1 whitespace-nowrap">
                       <button onClick={() => setDrawer(inst)} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Detalles</button>
-                      <button onClick={() => { setShowPass(false); setCredModal(inst); }} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Credenciales</button>
+                      <button onClick={() => setCredModal(inst)} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Credenciales</button>
                       <button onClick={() => handleRestart(inst.nombre, (inst as any).id)} className="px-2 py-1 text-xs text-amber-600 hover:bg-amber-50 rounded transition-colors">Reiniciar</button>
                       <button onClick={() => setDeleteConfirm(inst)} className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded transition-colors">Eliminar</button>
                     </div>
@@ -377,7 +354,7 @@ export function ClienteInstancias({
               </div>
               <div className="border-t border-gray-100 pt-3 grid grid-cols-2 gap-2">
                 <button onClick={() => setDrawer(inst)} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Detalles</button>
-                <button onClick={() => { setShowPass(false); setCredModal(inst); }} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Credenciales</button>
+                <button onClick={() => setCredModal(inst)} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Credenciales</button>
                 <button onClick={() => handleRestart(inst.nombre, (inst as any).id)} className="py-1.5 text-xs font-medium text-amber-600 border border-amber-100 rounded-lg hover:bg-amber-50 transition-colors">Reiniciar</button>
                 <button onClick={() => setDeleteConfirm(inst)} className="py-1.5 text-xs font-medium text-red-500 border border-red-100 rounded-lg hover:bg-red-50 transition-colors">Eliminar</button>
               </div>
@@ -448,7 +425,7 @@ export function ClienteInstancias({
             </div>
 
             <div className="p-5 border-t border-gray-100 shrink-0 flex gap-2">
-              <button onClick={() => { setShowPass(false); setCredModal(drawer); setDrawer(null); }} className="flex-1 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors">Credenciales</button>
+              <button onClick={() => { setCredModal(drawer); setDrawer(null); }} className="flex-1 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors">Credenciales</button>
               <button onClick={() => setDrawer(null)} className="flex-1 py-2 text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg font-medium transition-colors">Cerrar</button>
             </div>
           </aside>
@@ -477,16 +454,7 @@ export function ClienteInstancias({
                   </div>
                 </div>
               ))}
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Contraseña</label>
-                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                  <span className="flex-1 text-sm text-gray-800 font-mono">{showPass ? credModal.password : "••••••••••••"}</span>
-                  <button onClick={() => setShowPass(p => !p)} aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"} className="p-1.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors">
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={showPass ? "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" : "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"} /></svg>
-                  </button>
-                  <CopyBtn text={credModal.password} />
-                </div>
-              </div>
+              <p className="text-xs text-amber-700">La contraseña de conexión no está disponible en esta versión.</p>
             </div>
             <div className="p-6 border-t border-gray-100 flex justify-end">
               <button onClick={() => setCredModal(null)} className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg text-sm transition-colors">Cerrar</button>

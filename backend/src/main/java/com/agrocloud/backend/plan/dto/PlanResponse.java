@@ -11,7 +11,8 @@ public record PlanResponse(
         @JsonProperty("precioMensual") BigDecimal monthlyPrice,
         @JsonProperty("descripcion") String description,
         @JsonProperty("instanciasPermitidas") Integer maxInstances,
-        @JsonProperty("popular") Boolean popular
+        @JsonProperty("popular") Boolean popular,
+        @JsonProperty("activo") Boolean active
 ) {
     public static PlanResponse from(PlanEntity plan) {
         return new PlanResponse(
@@ -21,7 +22,8 @@ public record PlanResponse(
                 plan.getMonthlyPrice(),
                 plan.getDescription(),
                 plan.getMaxInstances(),
-                plan.getPopular()
+                plan.getPopular(),
+                plan.getActive()
         );
     }
 }

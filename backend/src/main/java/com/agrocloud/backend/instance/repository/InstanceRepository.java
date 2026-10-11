@@ -9,4 +9,5 @@ public interface InstanceRepository extends JpaRepository<InstanceEntity, UUID> 
     List<InstanceEntity> findByOwnerId(UUID ownerId);
     Optional<InstanceEntity> findByIdAndOwnerId(UUID id, UUID ownerId);
     long countByOwnerId(UUID ownerId);
+    long countByTemplateIgnoreCase(String template);
 }

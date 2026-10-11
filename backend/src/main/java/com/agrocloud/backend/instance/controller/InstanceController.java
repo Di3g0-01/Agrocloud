@@ -75,7 +75,7 @@ public class InstanceController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'SOPORTE_TECNICO')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'SOPORTE')")
     public ResponseEntity<InstanceResponse> updateStatus(
             @PathVariable UUID id,
             @RequestParam InstanceStatus status

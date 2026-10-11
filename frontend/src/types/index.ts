@@ -19,11 +19,13 @@ export interface Plan {
   descripcion: string;
   instanciasPermitidas: number;
   popular?: boolean;
+  activo?: boolean;
 }
 
 export interface InstanciaDB {
   id: string;
   nombre: string;
+  plantilla: string;
   cliente: string;
   usuarioId: string;
   tipo: string;
@@ -55,16 +57,23 @@ export interface Suscripcion {
 
 export interface Incidencia {
   id: string;
+  codigo: string;
   cliente: string;
   instanciaId: string;
   instanciaNombre: string;
   plantilla: string;
   asunto: string;
+  categoria: string;
   problema: string;
   prioridad: 'ALTA' | 'MEDIA' | 'BAJA';
-  estado: 'ABIERTA' | 'EN_REVISION' | 'RESUELTA';
+  estado: 'ABIERTA' | 'EN_REVISION' | 'RESUELTA' | 'CERRADA';
   fecha: string;
+  actualizado: string;
   guiaDiagnostico?: string;
+  mensajeResolucion?: string | null;
+  agenteId?: string | null;
+  resueltoPorId?: string | null;
+  fechaResolucion?: string | null;
 }
 
 export interface AuthResponse {

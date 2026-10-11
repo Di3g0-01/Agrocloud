@@ -1,14 +1,8 @@
-import type { CInstancia, CPlantillaDB, Pago, Ticket } from "../types/cliente";
+import type { Pago } from "../types/cliente";
 
-export const C_PLAN = { nombre: "Productor", maxInstancias: 2, totalGB: 50 };
-
-export const C_INSTANCIAS: CInstancia[] = [];
-
-export const C_PLANTILLAS: CPlantillaDB[] = [];
+export const C_PLAN = { nombre: "Sin plan", maxInstancias: 1, totalGB: 10, precio: 0, estado: "Sin suscripción" };
 
 export const PAGOS_MOCK: Pago[] = [];
-
-export const TICKETS_INIT: Ticket[] = [];
 
 
 

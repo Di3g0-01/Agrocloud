@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { ProgressBar, StatusBadge } from "../../components/ui";
 import { C_PLAN } from "../../data/cliente";
 import { contratarPlan, getMiSuscripcionActiva } from "../../api/suscripcionesApi";
+import { getPlanes } from "../../api/planesApi";
 import type { CInstancia } from "../../types/cliente";
+import type { Suscripcion } from "../../types";
 
 interface PlanAvailable {
   id: string;
@@ -17,79 +19,47 @@ interface PlanAvailable {
   caracteristicas: string[];
 }
 
-const PLANES_DISPONIBLES: PlanAvailable[] = [
-  {
-    id: "plan-finca",
-    nombre: "Finca",
-    precio: "Q 25.00",
-    precioNum: 25,
-    storage: "10 GB",
-    storageGB: 10,
-    instancias: "1",
-    maxInstancias: 1,
-    caracteristicas: ["1 Instancia PostgreSQL", "10 GB almacenamiento", "Soporte estándar por tickets", "Backups automáticos"],
-  },
-  {
-    id: "plan-productor",
-    nombre: "Productor",
-    precio: "Q 60.00",
-    precioNum: 60,
-    storage: "50 GB",
-    storageGB: 50,
-    instancias: "2",
-    maxInstancias: 2,
-    popular: true,
-    caracteristicas: ["Hasta 2 Instancias PostgreSQL", "50 GB almacenamiento total", "Plantillas DB especializadas", "Soporte prioritario 24/7"],
-  },
-  {
-    id: "plan-agro-pro",
-    nombre: "Agro Pro",
-    precio: "Q 120.00",
-    precioNum: 120,
-    storage: "100 GB",
-    storageGB: 100,
-    instancias: "3",
-    maxInstancias: 3,
-    caracteristicas: ["Hasta 3 Instancias PostgreSQL", "100 GB almacenamiento total", "Acceso a todas las plantillas", "Monitoreo avanzado de CPU y RAM"],
-  },
-  {
-    id: "plan-enterprise",
-    nombre: "Agro Enterprise",
-    precio: "Q 250.00",
-    precioNum: 250,
-    storage: "250 GB",
-    storageGB: 250,
-    instancias: "5",
-    maxInstancias: 5,
-    caracteristicas: ["Hasta 5 Instancias PostgreSQL", "250 GB almacenamiento total", "Infraestructura dedicada", "Gerente de cuenta asignado"],
-  },
-];
-
 export function ClientePlan({
   organizationName,
   instanciasList = [],
+  onPlanChanged,
 }: {
   organizationName: string;
   instanciasList?: CInstancia[];
+  onPlanChanged?: () => void;
 }) {
-  const [currentPlan, setCurrentPlan] = useState<PlanAvailable>(PLANES_DISPONIBLES[1]); // Productor default
+  const [currentPlan, setCurrentPlan] = useState<PlanAvailable>({ id: "", nombre: "Sin plan", precio: "Q 0.00", precioNum: 0, storage: "10 GB", storageGB: 10, instancias: "1", maxInstancias: 1, caracteristicas: [] });
+  const [availablePlans, setAvailablePlans] = useState<PlanAvailable[]>([]);
+  const [loadError, setLoadError] = useState("");
   const [modalChangeOpen, setModalChangeOpen] = useState(false);
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<PlanAvailable | null>(null);
   const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
   const [loadingSub, setLoadingSub] = useState(false);
+  const [subscription, setSubscription] = useState<Suscripcion | null>(null);
 
   useEffect(() => {
-    getMiSuscripcionActiva().then((sub) => {
+    Promise.all([getMiSuscripcionActiva(), getPlanes()]).then(([sub, catalog]) => {
+      setSubscription(sub);
+      const plans = catalog.map(p => ({
+        id: p.id, nombre: p.nombre, precio: `Q ${p.precioMensual.toFixed(2)}`, precioNum: p.precioMensual,
+        storage: `${p.almacenamientoGb} GB`, storageGB: p.almacenamientoGb,
+        instancias: String(p.instanciasPermitidas), maxInstancias: p.instanciasPermitidas,
+        popular: p.popular, caracteristicas: [`Hasta ${p.instanciasPermitidas} instancias PostgreSQL`, `${p.almacenamientoGb} GB de almacenamiento`, p.descripcion],
+      }));
+      const activePlanIds = new Set(catalog.filter(p => p.activo !== false).map(p => p.id));
+      setAvailablePlans(plans.filter(plan => activePlanIds.has(plan.id)));
       if (sub && sub.planId) {
-        const found = PLANES_DISPONIBLES.find((p) => p.id === sub.planId);
+        const found = plans.find((p) => p.id === sub.planId);
         if (found) {
           setCurrentPlan(found);
           C_PLAN.nombre = found.nombre;
           C_PLAN.maxInstancias = found.maxInstancias;
           C_PLAN.totalGB = found.storageGB;
+          C_PLAN.precio = found.precioNum;
+          C_PLAN.estado = "Activa";
         }
       }
-    });
+    }).catch(() => setLoadError("No se pudieron cargar los planes o la suscripción."));
   }, []);
 
   const storageUsed = instanciasList.reduce((acc, inst) => acc + (inst.usadoGB || 0), 0);
@@ -98,17 +68,22 @@ export function ClientePlan({
   const handleConfirmPlanChange = async (plan: PlanAvailable) => {
     setLoadingSub(true);
     try {
-      await contratarPlan(plan.id, plan.nombre, plan.precioNum);
+      const saved = await contratarPlan(plan.id, plan.nombre, plan.precioNum);
+      setSubscription(saved);
       setCurrentPlan(plan);
       C_PLAN.nombre = plan.nombre;
       C_PLAN.maxInstancias = plan.maxInstancias;
       C_PLAN.totalGB = plan.storageGB;
+      C_PLAN.precio = plan.precioNum;
+      C_PLAN.estado = "Activa";
+      onPlanChanged?.();
       setSelectedPlanForUpgrade(null);
       setModalChangeOpen(false);
       setNotificationMsg(`¡Plan actualizado con éxito al ${plan.nombre}! Tu límite ahora es de ${plan.maxInstancias} instancia(s) y ${plan.storage}.`);
       setTimeout(() => setNotificationMsg(null), 5000);
     } catch (err) {
       console.error(err);
+      setLoadError("No se pudo cambiar el plan. Revisa la conexión.");
     } finally {
       setLoadingSub(false);
     }
@@ -116,6 +91,7 @@ export function ClientePlan({
 
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
+      {loadError && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</p>}
       <div className="flex items-start justify-between mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Plan y suscripción</h1>
@@ -157,20 +133,20 @@ export function ClientePlan({
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="font-semibold text-gray-900 text-xl">Plan {currentPlan.nombre}</h2>
-                  <span className="bg-lime-100 text-lime-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Activo</span>
+                  <span className="bg-lime-100 text-lime-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">{subscription ? "Activo" : "Sin suscripción"}</span>
                 </div>
                 <p className="text-xs text-gray-400 mt-0.5">{organizationName} · Suscripción AgroCloud</p>
               </div>
             </div>
-            <StatusBadge s="Activa" />
+            <StatusBadge s={subscription ? "Activa" : "Inactiva"} />
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             {[
               { label: "Precio mensual", value: currentPlan.precio },
               { label: "Ciclo de facturación", value: "Mensual" },
-              { label: "Inicio del plan", value: "01 ago 2026" },
-              { label: "Próximo cobro", value: "01 oct 2026" },
+              { label: "Inicio del plan", value: subscription?.fechaInicio || "—" },
+              { label: "Próximo cobro", value: subscription?.fechaProximoPago || "—" },
             ].map(({ label, value }) => (
               <div key={label} className="bg-gray-50 border border-gray-100 rounded-xl p-4">
                 <p className="text-[10px] text-gray-400 uppercase tracking-wide font-medium mb-1">{label}</p>
@@ -233,47 +209,8 @@ export function ClientePlan({
             </button>
           </div>
 
-          {/* Payment method */}
-          <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              <h3 className="font-semibold text-gray-900 text-sm">Método de pago</h3>
-            </div>
-
-            <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-3">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-7 rounded bg-white border border-gray-200 flex items-center justify-center shrink-0">
-                  <span className="text-[10px] font-bold text-blue-700 leading-none">VISA</span>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">•••• •••• •••• 4242</p>
-                  <p className="text-[10px] text-gray-400">Tarjeta de crédito</p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                {[["Titular", organizationName], ["Vencimiento", "08/28"]].map(([label, value]) => (
-                  <div key={label} className="flex flex-col gap-0.5">
-                    <span className="text-[10px] text-gray-400 uppercase tracking-wide">{label}</span>
-                    <span className="text-xs text-gray-700 font-medium">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <p className="text-[10px] text-gray-400 leading-relaxed">El método de pago solo puede modificarse contactando al soporte de AgroCloud.</p>
-          </div>
-
-          {/* Auto-renewal notice */}
-          <div className="bg-lime-50 border border-lime-200 rounded-2xl p-4 flex gap-3">
-            <svg className="w-4 h-4 text-lime-700 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <div>
-              <p className="text-xs font-semibold text-lime-800 mb-0.5">Renovación automática activa</p>
-              <p className="text-[10px] text-lime-700 leading-relaxed">Tu suscripción se renueva automáticamente cada mes con el precio de tu plan activo ({currentPlan.precio}).</p>
-            </div>
+          <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-xs text-gray-500">
+            No hay un método de pago registrado en el sistema.
           </div>
         </div>
       </div>
@@ -290,7 +227,7 @@ export function ClientePlan({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {PLANES_DISPONIBLES.map((plan) => {
+              {availablePlans.map((plan) => {
                 const isCurrent = currentPlan.nombre === plan.nombre;
                 return (
                   <div

@@ -1,35 +1,12 @@
 import { useState } from "react";
-
-export type RoleType = "admin" | "soporte" | "cliente";
-
-export interface NotificationItem {
-  id: string;
-  titulo: string;
-  descripcion: string;
-  tiempo: string;
-  leida: boolean;
-  categoria: "pago" | "activacion" | "soporte" | "fallo" | "sistema" | "cliente" | "morosidad" | "cancelacion" | "ticket" | "critico" | "admin" | "resolucion";
-}
-
-const INITIAL_NOTIFICATIONS: Record<RoleType, NotificationItem[]> = {
-  cliente: [],
-  admin: [],
-  soporte: [],
-};
+import { useNotifications } from "./useNotifications";
+import type { NotificationItem, RoleType } from "./useNotifications";
 
 export function NotificationMenu({ role }: { role: RoleType }) {
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS[role] || []);
+  const { items, error, markAllRead, markSingleRead } = useNotifications(role);
 
   const unreadCount = items.filter((i) => !i.leida).length;
-
-  const markAllRead = () => {
-    setItems((prev) => prev.map((i) => ({ ...i, leida: true })));
-  };
-
-  const markSingleRead = (id: string) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, leida: true } : i)));
-  };
 
   const getBadgeColor = (cat: NotificationItem["categoria"]) => {
     switch (cat) {
@@ -85,7 +62,7 @@ export function NotificationMenu({ role }: { role: RoleType }) {
               </div>
               {unreadCount > 0 && (
                 <button
-                  onClick={markAllRead}
+                  onClick={() => void markAllRead()}
                   className="text-[11px] font-medium text-lime-700 hover:text-lime-800 transition-colors"
                 >
                   Marcar leídas
@@ -94,13 +71,14 @@ export function NotificationMenu({ role }: { role: RoleType }) {
             </div>
 
             <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+              {error && <p role="alert" className="p-3 text-xs text-red-600">{error}</p>}
               {items.length === 0 ? (
                 <p className="text-xs text-gray-400 p-6 text-center">No tienes notificaciones por el momento.</p>
               ) : (
                 items.map((item) => (
                   <div
                     key={item.id}
-                    onClick={() => markSingleRead(item.id)}
+                    onClick={() => void markSingleRead(item.id)}
                     className={`p-3.5 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3 items-start ${
                       !item.leida ? "bg-lime-50/30" : ""
                     }`}

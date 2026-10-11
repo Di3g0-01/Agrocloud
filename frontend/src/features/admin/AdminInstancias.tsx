@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { CustomSelect, ProgressBar, StatusBadge } from "../../components/ui";
-import { getInstancias } from "../../api/instanciasApi";
+import { getInstancias, actualizarEstadoInstancia, reiniciarInstancia, eliminarInstancia } from "../../api/instanciasApi";
+import { getTodasSuscripciones } from "../../api/suscripcionesApi";
 import type { InstanciaAdmin } from "../../types/admin";
 
 export function AdminInstancias({ isDark }: { isDark?: boolean }) {
@@ -9,10 +10,36 @@ export function AdminInstancias({ isDark }: { isDark?: boolean }) {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<InstanciaAdmin | null>(null);
   const [instanciasList, setInstanciasList] = useState<InstanciaAdmin[]>([]);
+  const [error, setError] = useState("");
+
+  const statusMap: Record<string, string> = { active: "Activa", revision: "En mantenimiento", suspended: "Suspendida", terminated: "Detenida" };
+  const performAction = async (action: string, inst: InstanciaAdmin) => {
+    setMenuOpen(null);
+    setError("");
+    if (action === "Ver detalles" || action === "Ver métricas") { setDetalle(inst); return; }
+    if (action === "Eliminar" && !window.confirm(`¿Eliminar la instancia ${inst.nombre}?`)) return;
+    try {
+      if (action === "Eliminar") {
+        await eliminarInstancia(inst.id);
+        setInstanciasList(prev => prev.filter(item => item.id !== inst.id));
+        setDetalle(null);
+        return;
+      }
+      if (action === "Reiniciar") await reiniciarInstancia(inst.id);
+      else await actualizarEstadoInstancia(inst.id, ({ Detener: "terminated", Iniciar: "active", Suspender: "suspended" } as const)[action as "Detener" | "Iniciar" | "Suspender"]);
+      const status = action === "Reiniciar" ? "Activa" : statusMap[({ Detener: "terminated", Iniciar: "active", Suspender: "suspended" } as const)[action as "Detener" | "Iniciar" | "Suspender"]];
+      setInstanciasList(prev => prev.map(item => item.id === inst.id ? { ...item, estado: status } : item));
+      setDetalle(prev => prev?.id === inst.id ? { ...prev, estado: status } : prev);
+    } catch { setError(`No se pudo ${action.toLowerCase()} la instancia ${inst.nombre}.`); }
+  };
 
   useEffect(() => {
-    getInstancias()
-      .then((dbInsts) => {
+    Promise.allSettled([getInstancias(), getTodasSuscripciones()])
+      .then(([instancesResult, subscriptionsResult]) => {
+        if (instancesResult.status !== "fulfilled") throw new Error("instances unavailable");
+        const dbInsts = instancesResult.value;
+        const subscriptions = subscriptionsResult.status === "fulfilled" ? subscriptionsResult.value : [];
+        if (subscriptionsResult.status === "rejected") setError("Las instancias se cargaron, pero no se pudo consultar su plan.");
         const mapped: InstanciaAdmin[] = dbInsts.map((inst) => {
           const estadoMap: Record<string, "Activa" | "Detenida" | "En mantenimiento" | "Suspendida"> = {
             active: "Activa",
@@ -28,19 +55,19 @@ export function AdminInstancias({ isDark }: { isDark?: boolean }) {
             id: inst.id,
             nombre: inst.nombre,
             cliente: inst.cliente || "Cliente AgroCloud",
-            plantilla: (inst as any).plantilla || "Gestión de Finca",
-            plan: "Productor",
+            plantilla: inst.plantilla || "Sin plantilla",
+            plan: subscriptions.find(s => s.usuarioId === inst.usuarioId && s.estado === "active")?.planNombre || "Sin plan",
             almacenamiento: `${inst.almacenamientoUsadoGb || 0.1} GB / ${inst.almacenamientoTotalGb || 10} GB`,
             estado: estadoMap[inst.estado] || "Activa",
             creada: inst.fechaCreacion || new Date().toISOString().split("T")[0],
-            cpu: inst.cpu || 5,
-            ram: inst.memoria || 12,
+            cpu: inst.cpu ?? 0,
+            ram: inst.memoria ?? 0,
             conexiones: 3,
           };
         });
         setInstanciasList(mapped);
       })
-      .catch((err) => console.error("Error al obtener instancias en admin:", err));
+      .catch(() => setError("No se pudieron cargar las instancias."));
   }, []);
 
   const filtered = instanciasList.filter(i =>
@@ -51,6 +78,7 @@ export function AdminInstancias({ isDark }: { isDark?: boolean }) {
   if (detalle) {
     return (
       <div className={`flex-1 overflow-auto p-4 lg:p-8 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
+        {error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
         <div className="flex items-center gap-3 mb-6">
           <button onClick={() => setDetalle(null)} className={`flex items-center gap-1.5 text-sm transition-colors cursor-pointer ${isDark ? "text-slate-400 hover:text-white" : "text-gray-500 hover:text-gray-800"}`}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
@@ -132,6 +160,7 @@ export function AdminInstancias({ isDark }: { isDark?: boolean }) {
           <p className={`text-sm mt-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}>Gestión y monitoreo de instancias PostgreSQL de AgroCloud. (Creación reservada únicamente para clientes contratantes)</p>
         </div>
       </div>
+      {error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
@@ -169,7 +198,7 @@ export function AdminInstancias({ isDark }: { isDark?: boolean }) {
         <table className="w-full min-w-max text-sm">
           <thead>
             <tr className={`border-b ${isDark ? "bg-slate-800/60 border-slate-800 text-slate-400" : "bg-gray-50 border-gray-100 text-gray-400"}`}>
-              {["Instancia", "Cliente", "Plantilla", "Plan", "Almacenamiento", "Estado", "Creada", ""].map(h => (
+              {["Instancia", "Cliente", "Plantilla", "Plan", "Almacenamiento", "Estado", "Creada", "Acciones"].map(h => (
                 <th key={h} className="px-5 py-3 text-left font-medium text-xs uppercase tracking-wide whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -193,7 +222,7 @@ export function AdminInstancias({ isDark }: { isDark?: boolean }) {
                       <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
                       <div className={`absolute right-4 top-10 z-20 border rounded-xl shadow-lg py-1 w-40 text-xs ${isDark ? "bg-slate-900 border-slate-800 text-slate-200" : "bg-white border-gray-200 text-gray-700"}`}>
                         {["Ver detalles", "Ver métricas", "Reiniciar", "Detener", "Iniciar", "Suspender", "Eliminar"].map((a, i) => (
-                          <button key={a} onClick={() => { setMenuOpen(null); if (a === "Ver detalles") setDetalle(inst); }} className={`w-full text-left px-4 py-2 transition-colors ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-50"} ${i >= 5 ? "text-red-500" : ""}`}>{a}</button>
+                          <button key={a} onClick={() => performAction(a, inst)} className={`w-full text-left px-4 py-2 transition-colors ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-50"} ${i >= 5 ? "text-red-500" : ""}`}>{a}</button>
                         ))}
                       </div>
                     </>

@@ -2,15 +2,18 @@ export type Role = "landing" | "login" | "admin" | "cliente" | "soporte";
 
 export interface Incident {
   id: string;
+  codigo: string;
   cliente: string;
   instancia: string;
   plantilla: string;
   asunto: string;
   problema: string;
   prioridad: "Alta" | "Media" | "Baja";
-  estado: "Abierta" | "En revisión" | "Resuelta";
+  estado: "Abierta" | "En revisión" | "Resuelta" | "Cerrada";
   fecha: string;
   guia: string;
+  mensajeResolucion?: string | null;
+  agenteId?: string | null;
 }
 
 export interface Instance {

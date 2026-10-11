@@ -56,6 +56,6 @@ public record UserPrincipal(
     }
 
     public boolean isAdminOrSupport() {
-        return hasRole("ADMINISTRADOR") || hasRole("SOPORTE_TECNICO");
+        return hasRole("ADMINISTRADOR") || hasRole("SOPORTE");
     }
 }

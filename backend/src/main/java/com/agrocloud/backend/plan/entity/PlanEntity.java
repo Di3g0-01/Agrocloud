@@ -43,6 +43,10 @@ public class PlanEntity {
     @Column(name = "is_popular", nullable = false)
     private Boolean popular = false;
 
+    @Builder.Default
+    @Column(name = "is_active", nullable = false)
+    private Boolean active = true;
+
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
 
@@ -63,4 +67,6 @@ public class PlanEntity {
 
     public Boolean getPopular() { return popular; }
     public void setPopular(Boolean popular) { this.popular = popular; }
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
 }

@@ -1,23 +1,38 @@
-import { useState } from "react";
-import { C_PLANTILLAS, C_INSTANCIAS, C_PLAN } from "../../data/cliente";
+import { useState, useEffect } from "react";
+import { C_PLAN } from "../../data/cliente";
+import { getPlantillas } from "../../api/plantillasApi";
+import { crearInstancia, mapInstanciaDBToCInstancia } from "../../api/instanciasApi";
 import type { CPlantillaDB, CInstancia, ClientePage } from "../../types/cliente";
 import { CreateInstanciaModal, SvgPaths } from "./ClienteInstancias";
 
-export function ClientePlantillas({ onNavigate }: { onNavigate?: (p: ClientePage) => void }) {
+export function ClientePlantillas({ onNavigate, onCreateInstance, currentCount = 0 }: { onNavigate?: (p: ClientePage) => void; onCreateInstance?: (inst: CInstancia) => void; currentCount?: number }) {
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("Todas");
   const [drawer, setDrawer] = useState<CPlantillaDB | null>(null);
   const [createModal, setCreateModal] = useState<string | null>(null);
+  const [plantillas, setPlantillas] = useState<CPlantillaDB[]>([]);
+  const [error, setError] = useState("");
 
-  const handleAddInstance = (newInst: CInstancia) => {
-    C_INSTANCIAS.unshift(newInst);
-    setCreateModal(null);
-    onNavigate?.("instancias");
+  useEffect(() => {
+    getPlantillas().then(data => setPlantillas(data.filter(p => p.estado === "Activa").map(p => ({
+      id: p.id, nombre: p.nombre, categoria: "General", descripcion: p.descripcion,
+      tablas: p.tablas, entidades: p.schema, casosDeUso: [],
+      icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4",
+    })))).catch(() => setError("No se pudieron cargar las plantillas."));
+  }, []);
+
+  const handleAddInstance = async (newInst: CInstancia) => {
+    try {
+      const created = await crearInstancia({ nombre: newInst.nombre, plantilla: newInst.plantilla });
+      onCreateInstance?.(mapInstanciaDBToCInstancia(created));
+      setCreateModal(null);
+      onNavigate?.("instancias");
+    } catch { setError("No se pudo crear la instancia. Revisa la conexión o el límite de tu plan."); }
   };
 
-  const categorias = ["Todas", ...Array.from(new Set(C_PLANTILLAS.map(p => p.categoria)))];
+  const categorias = ["Todas", ...Array.from(new Set(plantillas.map(p => p.categoria)))];
 
-  const filtered = C_PLANTILLAS.filter(p => {
+  const filtered = plantillas.filter(p => {
     const matchSearch = p.nombre.toLowerCase().includes(search.toLowerCase()) || p.descripcion.toLowerCase().includes(search.toLowerCase());
     const matchCat = catFilter === "Todas" || p.categoria === catFilter;
     return matchSearch && matchCat;
@@ -29,6 +44,7 @@ export function ClientePlantillas({ onNavigate }: { onNavigate?: (p: ClientePage
         <h1 className="text-2xl font-semibold text-gray-900">Plantillas DB</h1>
         <p className="text-sm text-gray-500 mt-1">Schemas PostgreSQL preconfigurados para el sector agrícola. Úsalos al crear una nueva instancia.</p>
       </div>
+      {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</p>}
 
       {/* Search + filters */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
@@ -149,7 +165,7 @@ export function ClientePlantillas({ onNavigate }: { onNavigate?: (p: ClientePage
           onCreate={handleAddInstance}
           onUpgradePlan={() => onNavigate?.("plan")}
           plantillaInicial={createModal}
-          currentCount={C_INSTANCIAS.length}
+          currentCount={currentCount}
           maxInstancias={C_PLAN.maxInstancias}
         />
       )}

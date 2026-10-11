@@ -34,6 +34,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
 
         PlanEntity plan = planService.findEntityById(request.planId());
+        if (!Boolean.TRUE.equals(plan.getActive())) {
+            throw new IllegalArgumentException("Este plan no está disponible para contratar");
+        }
 
         // Cancel previous active subscription if exists
         repository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, SubscriptionStatus.active)

@@ -54,13 +54,17 @@ public class SubscriptionController {
 
     @GetMapping("/usuario/{userId}")
     public ResponseEntity<List<SubscriptionResponse>> getSubscriptionsByUser(
-            @PathVariable UUID userId
+            @PathVariable UUID userId,
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
+        if (!principal.isAdminOrSupport() && !principal.id().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
         return ResponseEntity.ok(service.getUserSubscriptions(userId));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'SOPORTE_TECNICO')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'SOPORTE')")
     public ResponseEntity<List<SubscriptionResponse>> listAll() {
         return ResponseEntity.ok(service.getAllSubscriptions());
     }

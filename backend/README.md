@@ -47,6 +47,16 @@ falta, toma las credenciales de `.env` y ejecuta Maven en un contenedor temporal
 Las pruebas se niegan a escribir si `DB_URL` no termina en `/agrocloud_test` y
 eliminan las cuentas temporales que crean. `agrocloud_db` no se modifica.
 
+### Colección de Postman
+
+Importa `AgroCloud_Postman_Collection.json` desde la raíz del repositorio. La
+variable `baseUrl` apunta al backend local (`http://localhost:8080/api/v1`).
+Ejecuta **Iniciar sesión** con una cuenta de prueba: la colección guarda el JWT en
+`token`. Cambia de cuenta según el rol indicado en cada solicitud. Las solicitudes
+de creación guardan los identificadores devueltos para las rutas siguientes.
+La colección partió de los 32 endpoints presentes en `develop` al inicio del
+E04 y se amplía al completar cada módulo.
+
 ### Endpoints
 
 - `POST /api/v1/auth/register`: crea una cuenta de cliente y devuelve un JWT.
@@ -78,3 +88,71 @@ Ejemplo de registro (también se aceptan los alias del frontend `nombreEmpresa`,
 
 La selección y contratación de un plan corresponde al módulo de suscripciones; se realiza
 después de crear la cuenta y no forma parte del contrato de autenticación.
+
+### Flujo de incidencias E04
+
+El cliente crea el ticket con `POST /api/v1/incidencias`, enviando el ID de una
+instancia propia, asunto, categoría, problema y prioridad (`ALTA`, `MEDIA` o
+`BAJA`). El administrador asigna un usuario de Soporte activo mediante
+`PATCH /api/v1/incidencias/{id}/asignacion` con `{ "agenteId": "UUID" }`.
+Cada ticket conserva su UUID para las rutas y recibe un código público único
+como `INC-00001`. Los tickets anteriores obtienen un código al aplicar V8.
+
+Soporte consulta únicamente sus tickets asignados. El administrador ve todos
+los tickets y el cliente solo los propios. También existen las rutas
+`GET /api/v1/incidencias/cliente/{id}` y
+`GET /api/v1/incidencias/agente/{id}`; cada ID se comprueba contra el usuario
+autenticado, salvo para el administrador.
+
+El agente asignado o el administrador cambia el estado con
+`PATCH /api/v1/incidencias/{id}/estado` y un cuerpo como
+`{ "estado": "EN_REVISION" }`. El flujo de atención es `ABIERTA` →
+`EN_REVISION` → `RESUELTA`. Al resolver se debe enviar también
+`mensajeResolucion` (1 a 2000 caracteres) para explicar al cliente qué se hizo;
+el mensaje queda guardado y se devuelve al consultar el ticket. Por ejemplo:
+`{ "estado": "RESUELTA", "mensajeResolucion": "Se restauró la conexión y se verificó el servicio." }`.
+El cliente propietario puede cambiarlo a `CERRADA`
+en cualquier momento si ya no necesita atención. El administrador también
+puede cerrarlo. `CERRADA` es final: nadie puede reabrirlo ni reasignarlo.
+La ruta anterior `PATCH /api/v1/incidencias/{id}` se conserva para el frontend
+actual; admite cambiar el estado (con `mensajeResolucion` al resolver) o la
+`guiaDiagnostico`, en solicitudes separadas.
+
+El administrador asigna al agente desde la pantalla de incidencias; soporte
+solo ve las asignadas y escribe el mensaje antes de resolver. El cliente puede
+cerrar desde el detalle y no puede reabrir. El mensaje de resolución aparece en
+el detalle del ticket. `V10__incident_notifications.sql` crea la tabla de
+notificaciones; la campana usa `GET /api/v1/notificaciones`,
+`PATCH /api/v1/notificaciones/{id}/leida` y el flujo autenticado
+`GET /api/v1/notificaciones/stream` para recibir avisos al instante. La interfaz
+también consulta periódicamente si se corta la conexión.
+
+Las instancias también generan notificaciones para su propietario al crearse,
+reiniciarse, cambiar de estado o eliminarse. El aviso de eliminación conserva
+el nombre de la instancia y no enlaza a un recurso que ya no existe. Si se
+solicita el mismo estado actual, no se crea un aviso duplicado. Estos eventos
+usan las mismas rutas y el mismo flujo en tiempo real de la campana.
+
+`V11__incident_comments.sql` agrega comentarios persistentes a cada ticket.
+El cliente propietario, el agente asignado y el administrador pueden consultarlos
+con `GET /api/v1/incidencias/{id}/comentarios` y escribirlos con
+`POST /api/v1/incidencias/{id}/comentarios` y `{ "texto": "..." }` (1 a 2000
+caracteres). Los demás usuarios reciben 403. Un ticket cerrado conserva el
+historial para lectura, pero no acepta mensajes nuevos. Cada comentario avisa
+a los demás participantes mediante la campana.
+
+`V12__incident_resolution_actor.sql` conserva quién resolvió el ticket y cuándo.
+`GET /api/v1/incidencias/actividad` devuelve al usuario de soporte autenticado
+sus tickets pendientes y las resoluciones que realizó, incluso si el cliente
+cerró el ticket después. Los tickets resueltos antes de V12 no tienen autor
+verificable; si siguen asignados al agente aparecen como históricos con el autor
+sin registrar.
+
+Para probar el flujo completo sin tocar la base de la aplicación, crea una base
+separada llamada `agrocloud_test` en el PostgreSQL local y ejecuta
+`docker compose --env-file <ruta-al-.env> -f docker-compose.e04-test.yml run --rm integration`.
+La prueba de incidencias crea usuarios e instancias temporales en esa base,
+recorre apertura, asignación, comentarios, atención, resolución y cierre,
+comprueba permisos por rol y recibe por SSE avisos de tickets e instancias.
+Al terminar elimina los datos temporales. El test verifica que `DB_URL` termine
+en `/agrocloud_test` antes de crear datos.

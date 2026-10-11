@@ -1,10 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Ticket, TicketEstado, TicketPrioridad } from "../../types/cliente";
-import { TICKETS_INIT, C_INSTANCIAS } from "../../data/cliente";
+import type { CInstancia } from "../../types/cliente";
+import { actualizarIncidencia, crearIncidencia, getIncidencias, mapIncidenciaToTicket } from "../../api/incidenciasApi";
 import { CustomSelect } from "../../components/ui/CustomSelect";
+import { IncidentComments } from "../../components/shared/IncidentComments";
 
-export function ClienteSoporte({ organizationName, initials }: { organizationName: string; initials: string }) {
-  const [tickets, setTickets] = useState<Ticket[]>(TICKETS_INIT);
+export function ClienteSoporte({ organizationName, initials, instanciasList }: { organizationName: string; initials: string; instanciasList: CInstancia[] }) {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    void refreshTickets();
+    const onUpdate = () => { void refreshTickets(); };
+    window.addEventListener("agrocloud:incidents-updated", onUpdate);
+    return () => window.removeEventListener("agrocloud:incidents-updated", onUpdate);
+  }, []);
   const [search, setSearch] = useState("");
   const [detalle, setDetalle] = useState<Ticket | null>(null);
   const [showNew, setShowNew] = useState(false);
@@ -13,15 +22,25 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
   const [form, setForm] = useState({ asunto: "", instancia: "", categoria: "", prioridad: "Media" as TicketPrioridad, descripcion: "" });
   const [formErr, setFormErr] = useState<Partial<typeof form>>({});
 
+  function refreshTickets() {
+    return getIncidencias().then(data => {
+      const updated = data.map(mapIncidenciaToTicket);
+      setTickets(updated);
+      setDetalle(current => current ? updated.find(ticket => ticket.id === current.id) ?? null : null);
+      setError("");
+    }).catch(() => setError("No se pudieron cargar tus incidencias."));
+  }
+
   const reciente = tickets[0] ?? null;
 
   const filtered = tickets.filter(t => {
     const q = search.toLowerCase();
-    return t.id.toLowerCase().includes(q) || t.asunto.toLowerCase().includes(q);
+    return t.codigo.toLowerCase().includes(q) || t.asunto.toLowerCase().includes(q);
   });
 
   const estadoColor = (e: TicketEstado) =>
     e === "Resuelta"   ? "bg-lime-100 text-lime-700 border border-lime-300"
+    : e === "Cerrada" ? "bg-gray-100 text-gray-600 border border-gray-200"
     : e === "En proceso" ? "bg-amber-50 text-amber-700 border border-amber-200"
     : "bg-blue-50 text-blue-600 border border-blue-200";
 
@@ -35,31 +54,45 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
     return Object.keys(err).length === 0;
   }
 
-  function enviarTicket() {
+  async function enviarTicket() {
     if (!validar()) return;
-    const nuevo: Ticket = {
-      id: `INC-${String(Math.floor(Math.random() * 900) + 100)}`,
-      asunto: form.asunto, instancia: form.instancia, categoria: form.categoria,
-      prioridad: form.prioridad, estado: "Abierta",
-      descripcion: form.descripcion, creado: "2026-09-06", actualizado: "2026-09-06",
-      historial: [{ autor: "cliente", texto: form.descripcion, fecha: "2026-09-06 12:00" }],
-    };
+    const instance = instanciasList.find(i => i.nombre === form.instancia);
+    if (!instance?.id) { setError("Selecciona una instancia registrada."); return; }
+    let nuevo: Ticket;
+    try {
+      const created = await crearIncidencia({ instanciaId: instance.id, asunto: form.asunto, categoria: form.categoria,
+        problema: form.descripcion, prioridad: form.prioridad.toUpperCase() as 'ALTA' | 'MEDIA' | 'BAJA' });
+      nuevo = mapIncidenciaToTicket(created);
+    } catch { setError("No se pudo enviar la incidencia. Revisa la conexión e inténtalo de nuevo."); return; }
     setTickets(prev => [nuevo, ...prev]);
     setShowNew(false);
     setForm({ asunto: "", instancia: "", categoria: "", prioridad: "Media", descripcion: "" });
     setFormErr({});
-    setConfirmacion(`Incidencia ${nuevo.id} registrada correctamente. El equipo de soporte la revisará a la brevedad.`);
+    setConfirmacion(`Incidencia ${nuevo.codigo} registrada correctamente. El equipo de soporte la revisará a la brevedad.`);
     setTimeout(() => setConfirmacion(""), 5000);
+  }
+
+  async function cerrarTicket(ticket: Ticket) {
+    try {
+      const closed = mapIncidenciaToTicket(await actualizarIncidencia(ticket.id, { estado: "CERRADA" }));
+      setTickets(current => current.map(item => item.id === closed.id ? closed : item));
+      setDetalle(closed);
+      setError("");
+      setConfirmacion(`Incidencia ${closed.codigo} cerrada.`);
+    } catch { setError("No se pudo cerrar la incidencia."); }
   }
 
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
+      {error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
       {/* Encabezado */}
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Soporte</h1>
           <p className="text-sm text-gray-500 mt-1">Reporta un problema técnico o consulta el estado de tus incidencias.</p>
         </div>
+        <div className="flex gap-2">
+        <button onClick={() => void refreshTickets()} className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 hover:bg-white">Actualizar estado</button>
         <button onClick={() => setShowNew(true)}
           className="flex items-center gap-2 bg-lime-400 hover:bg-lime-300 text-gray-900 font-medium px-4 py-2.5 rounded-lg text-sm transition-colors">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,6 +100,7 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
           </svg>
           Nueva incidencia
         </button>
+        </div>
       </div>
 
       {/* Confirmación de envío */}
@@ -93,10 +127,11 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-mono text-sm font-semibold text-gray-900">{reciente.id}</span>
+                    <span className="font-mono text-sm font-semibold text-gray-900">{reciente.codigo}</span>
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${estadoColor(reciente.estado)}`}>{reciente.estado}</span>
                   </div>
                   <p className="text-sm text-gray-700 mb-2 leading-snug">{reciente.asunto}</p>
+                  {reciente.mensajeResolucion && <p className="mb-2 rounded-lg border border-lime-200 bg-lime-50 p-2 text-sm text-lime-900 whitespace-pre-wrap"><strong>Resuelta:</strong> {reciente.mensajeResolucion}</p>}
                   <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-gray-400">
                     <span>Instancia: <span className="font-mono text-gray-600">{reciente.instancia}</span></span>
                     <span>Última actualización: <span className="text-gray-600">{reciente.actualizado}</span></span>
@@ -152,7 +187,7 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
               <tbody>
                 {filtered.map(t => (
                   <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors text-center">
-                    <td className="px-4 py-3.5 font-mono text-xs font-semibold text-gray-900 whitespace-nowrap">{t.id}</td>
+                    <td className="px-4 py-3.5 font-mono text-xs font-semibold text-gray-900 whitespace-nowrap">{t.codigo}</td>
                     <td className="px-4 py-3.5 text-xs text-gray-400 whitespace-nowrap">{t.creado}</td>
                     <td className="px-4 py-3.5 text-xs text-gray-800 whitespace-nowrap max-w-[240px] truncate mx-auto">{t.asunto}</td>
                     <td className="px-4 py-3.5 text-xs text-gray-500 font-mono whitespace-nowrap">{t.instancia}</td>
@@ -184,7 +219,7 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
             role="dialog" aria-label="Detalle de incidencia">
             <div className="p-5 border-b border-gray-100 flex items-start justify-between shrink-0">
               <div className="min-w-0">
-                <p className="font-mono font-semibold text-gray-900">{detalle.id}</p>
+                <p className="font-mono font-semibold text-gray-900">{detalle.codigo}</p>
                 <p className="text-xs text-gray-500 mt-0.5 leading-snug truncate">{detalle.asunto}</p>
               </div>
               <button onClick={() => setDetalle(null)} aria-label="Cerrar panel"
@@ -221,6 +256,11 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
                 <p className="text-sm text-gray-600 leading-relaxed bg-gray-50 border border-gray-100 rounded-xl p-3">{detalle.descripcion}</p>
               </div>
 
+              {detalle.mensajeResolucion && <div className="rounded-xl border border-lime-200 bg-lime-50 p-4">
+                <p className="text-xs font-semibold text-lime-800 mb-2">Mensaje de resolución de soporte</p>
+                <p className="text-sm text-lime-900 whitespace-pre-wrap">{detalle.mensajeResolucion}</p>
+              </div>}
+
               {/* Cronología */}
               <div>
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-3">Cronología</p>
@@ -244,9 +284,11 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
                   ))}
                 </div>
               </div>
+              <IncidentComments incidentId={detalle.id} closed={detalle.estado === "Cerrada"} />
             </div>
 
             <div className="p-5 border-t border-gray-100 shrink-0">
+              {detalle.estado !== "Cerrada" && <button onClick={() => void cerrarTicket(detalle)} className="mb-2 w-full py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-medium rounded-xl text-sm">Cerrar incidencia</button>}
               <button onClick={() => setDetalle(null)}
                 className="w-full py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium rounded-xl text-sm transition-colors">
                 Cerrar
@@ -279,7 +321,7 @@ export function ClienteSoporte({ organizationName, initials }: { organizationNam
                 <CustomSelect
                   value={form.instancia}
                   onChange={(val) => setForm(f => ({ ...f, instancia: val }))}
-                  options={C_INSTANCIAS.map(i => ({ value: i.nombre, label: i.nombre }))}
+                  options={instanciasList.map(i => ({ value: i.nombre, label: i.nombre }))}
                   placeholder="Seleccionar instancia..."
                   className="w-full"
                 />

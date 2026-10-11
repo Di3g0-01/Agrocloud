@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ActivityIcon, StatusBadge } from "../../components/ui";
-import { C_PLAN, C_PLANTILLAS } from "../../data/cliente";
+import { C_PLAN } from "../../data/cliente";
+import { getPlantillas } from "../../api/plantillasApi";
 import type { CInstancia, CPlantillaDB, ClientePage } from "../../types/cliente";
 import { SvgPaths } from "./ClienteInstancias";
 
@@ -12,12 +13,17 @@ export function ClienteDashboard({
   instanciasList?: CInstancia[];
 }) {
   const [selectedTemplate, setSelectedTemplate] = useState<CPlantillaDB | null>(null);
+  const [templates, setTemplates] = useState<CPlantillaDB[]>([]);
+  useEffect(() => {
+    getPlantillas().then(data => setTemplates(data.filter(p => p.estado === "Activa").map(p => ({
+      id: p.id, nombre: p.nombre, categoria: "General", descripcion: p.descripcion, tablas: p.tablas,
+      entidades: p.schema, casosDeUso: [], icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4",
+    })))).catch(() => setTemplates([]));
+  }, []);
 
-  const clienteActivity = [
-    { icon: "resuelta" as const, title: "Instancia creada", sub: "agro-inventario-db · 30 ago" },
-    { icon: "abierta" as const, title: "Suscripción renovada", sub: "Plan Productor · 29 ago" },
-    { icon: "asignada" as const, title: "Incidencia enviada", sub: "INC-024 · 28 ago" },
-  ];
+  const clienteActivity = instanciasList.slice(0, 3).map(inst => ({
+    icon: "resuelta" as const, title: "Instancia registrada", sub: `${inst.nombre} · ${inst.creada}`,
+  }));
 
   const totalUsado = instanciasList.reduce((s, i) => s + i.usadoGB, 0);
   const totalGB = C_PLAN.totalGB;
@@ -35,8 +41,8 @@ export function ClienteDashboard({
         {[
           { label: "INSTANCIAS", value: String(instanciasList.length), sub: `${activas} activas`, icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: "text-lime-600 bg-lime-50" },
           { label: "ALMACENAMIENTO", value: `${totalUsado} GB`, sub: `/ ${totalGB} GB`, icon: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4", color: "text-blue-500 bg-blue-50" },
-          { label: "PLAN", value: C_PLAN.nombre, sub: "Q60 / mes", icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z", color: "text-purple-500 bg-purple-50" },
-          { label: "SUSCRIPCIÓN", value: "Activa", sub: "Estado actual", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-lime-600 bg-lime-50" },
+          { label: "PLAN", value: C_PLAN.nombre, sub: `Q${C_PLAN.precio} / mes`, icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z", color: "text-purple-500 bg-purple-50" },
+          { label: "SUSCRIPCIÓN", value: C_PLAN.estado, sub: "Estado actual", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-lime-600 bg-lime-50" },
         ].map(k => (
           <div key={k.label} className="bg-white border border-gray-100 rounded-xl p-5 text-left flex flex-col items-start">
             <div className="flex items-center justify-start gap-2 mb-3">
@@ -95,6 +101,7 @@ export function ClienteDashboard({
             <h2 className="font-semibold text-gray-900">Actividad reciente</h2>
           </div>
           <div className="p-5 space-y-5">
+            {clienteActivity.length === 0 && <p className="text-xs text-gray-400">Aún no hay actividad registrada.</p>}
             {clienteActivity.map((a, i) => (
               <div key={i} className="flex items-start gap-3">
                 <ActivityIcon tipo={a.icon} />
@@ -119,7 +126,7 @@ export function ClienteDashboard({
           </button>
         </div>
         <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {C_PLANTILLAS.slice(0, 3).map(t => (
+          {templates.slice(0, 3).map(t => (
             <div
               key={t.id}
               onClick={() => setSelectedTemplate(t)}

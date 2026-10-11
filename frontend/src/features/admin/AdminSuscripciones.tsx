@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 import { StatusBadge, CustomSelect } from "../../components/ui";
 import { listAdminUsers } from "../../api/adminUsersApi";
+import { getPlanes, crearPlan, actualizarPlan } from "../../api/planesApi";
+import { getTodasSuscripciones, actualizarEstadoSuscripcion } from "../../api/suscripcionesApi";
 import type { Suscripcion } from "../../types/admin";
 
 interface PlanItem {
+  id: string;
+  descripcion: string;
+  popular: boolean;
   nombre: string;
   precio: string;
   storage: string;
@@ -21,48 +26,30 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<Suscripcion | null>(null);
   const [suscripcionesList, setSuscripcionesList] = useState<Suscripcion[]>([]);
+  const [error, setError] = useState("");
 
   // Planes State (from former AdminPlanes)
   const [modalOpen, setModalOpen] = useState(false);
-  const [planes, setPlanes] = useState<PlanItem[]>([
-    { nombre: "Finca", precio: "Q25", storage: "10 GB", instancias: "1", clientes: 0, ingresos: "Q0", estado: "Activo" },
-    { nombre: "Productor", precio: "Q60", storage: "50 GB", instancias: "2", clientes: 0, ingresos: "Q0", estado: "Activo" },
-    { nombre: "Agro Pro", precio: "Q120", storage: "100 GB", instancias: "3", clientes: 0, ingresos: "Q0", estado: "Activo" },
-    { nombre: "Agro Enterprise", precio: "Q250", storage: "250 GB", instancias: "5", clientes: 0, ingresos: "Q0", estado: "Activo" },
-  ]);
+  const [planes, setPlanes] = useState<PlanItem[]>([]);
 
   useEffect(() => {
-    listAdminUsers()
-      .then((users) => {
-        const clienteUsers = users.filter((u) => u.role === "CLIENTE");
-        const mappedSubs: Suscripcion[] = clienteUsers.map((u, idx) => {
-          const formattedDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString("es-GT") : "Reciente";
-          return {
-            id: `SUB-${1000 + idx}`,
-            cliente: u.organizationName || u.contactName || u.email,
-            plan: "Productor",
-            precio: "Q60",
-            inicio: formattedDate,
-            renovacion: "Próximo mes",
-            estado: u.status === "ACTIVO" ? "Activa" : "Suspendida",
-            monto: 60,
-          };
-        });
+    Promise.all([listAdminUsers(), getPlanes(), getTodasSuscripciones()])
+      .then(([users, catalog, subscriptions]) => {
+        const names = new Map(users.map(u => [u.id, u.organizationName || u.contactName || u.email]));
+        const mappedSubs: Suscripcion[] = subscriptions.map(s => ({
+          id: s.id, cliente: names.get(s.usuarioId) || "Cliente", plan: s.planNombre,
+          precio: `Q${s.monto}`, inicio: s.fechaInicio, renovacion: s.fechaProximoPago || "—",
+          estado: ({ active: "Activa", pending_payment: "Pendiente", suspended: "Suspendida", cancelled: "Cancelada" } as const)[s.estado],
+        }));
         setSuscripcionesList(mappedSubs);
-
-        setPlanes((prev) =>
-          prev.map((plan) => {
-            const count = mappedSubs.filter((s) => s.plan === plan.nombre).length;
-            const priceNum = parseInt(plan.precio.replace(/[^0-9]/g, "")) || 0;
-            return {
-              ...plan,
-              clientes: count,
-              ingresos: `Q${count * priceNum}`,
-            };
-          })
-        );
+        setPlanes(catalog.map(plan => {
+          const count = mappedSubs.filter(s => s.plan === plan.nombre && s.estado === "Activa").length;
+          return { id: plan.id, nombre: plan.nombre, descripcion: plan.descripcion, popular: Boolean(plan.popular), precio: `Q${plan.precioMensual}`,
+            storage: `${plan.almacenamientoGb} GB`, instancias: String(plan.instanciasPermitidas),
+            clientes: count, ingresos: `Q${count * plan.precioMensual}`, estado: plan.activo === false ? "Inactivo" : "Activo" };
+        }));
       })
-      .catch((err) => console.error("Error al obtener suscripciones de usuarios:", err));
+      .catch(() => setError("No se pudieron cargar los planes y las suscripciones."));
   }, []);
 
   // Form State for creating new plan
@@ -86,11 +73,19 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
     setEstado("Activo");
   };
 
-  const handleCreatePlan = (e: React.FormEvent) => {
+  const handleCreatePlan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombre || !precio) return;
+    const pNum = Number(precio);
 
+    try {
+    const created = await crearPlan({ nombre, precioMensual: pNum,
+      almacenamientoGb: Number(storage) || 20, instanciasPermitidas: Number(instancias) || 1,
+      descripcion, activo: estado === "Activo", popular: false });
     const newPlan: PlanItem = {
+      id: created.id,
+      descripcion,
+      popular: false,
       nombre,
       precio: precio.startsWith("Q") ? precio : `Q${precio}`,
       storage: storage ? (storage.includes("GB") ? storage : `${storage} GB`) : "20 GB",
@@ -103,15 +98,35 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
     setPlanes((prev) => [...prev, newPlan]);
     resetForm();
     setModalOpen(false);
+    } catch { setError("No se pudo guardar el plan comercial."); }
   };
 
-  const handleUpdatePlan = (e: React.FormEvent) => {
+  const handleUpdatePlan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPlan) return;
-    setPlanes((prev) =>
-      prev.map((p) => (p.nombre === editingPlan.nombre ? editingPlan : p))
-    );
-    setEditingPlan(null);
+    try {
+      await actualizarPlan(editingPlan.id, { nombre: editingPlan.nombre,
+        precioMensual: Number(editingPlan.precio.replace(/[^0-9.]/g, "")),
+        almacenamientoGb: Number(editingPlan.storage.replace(/[^0-9.]/g, "")),
+        instanciasPermitidas: Number(editingPlan.instancias), descripcion: editingPlan.descripcion,
+        activo: editingPlan.estado === "Activo", popular: editingPlan.popular });
+      setPlanes(prev => prev.map(p => p.id === editingPlan.id ? editingPlan : p));
+      setEditingPlan(null);
+    } catch { setError("No se pudo actualizar el plan."); }
+  };
+
+  const changeSubscriptionStatus = async (sub: Suscripcion, status: 'suspended' | 'cancelled') => {
+    try {
+      await actualizarEstadoSuscripcion(sub.id, status);
+      const estado = status === 'suspended' ? 'Suspendida' : 'Cancelada';
+      setSuscripcionesList(prev => prev.map(s => s.id === sub.id ? { ...s, estado } : s));
+      if (sub.estado === 'Activa') setPlanes(prev => prev.map(plan => {
+        if (plan.nombre !== sub.plan) return plan;
+        const count = Math.max(0, plan.clientes - 1);
+        return { ...plan, clientes: count, ingresos: `Q${count * Number(plan.precio.replace(/[^0-9.]/g, ''))}` };
+      }));
+      setDetalle(prev => prev?.id === sub.id ? { ...prev, estado } : prev);
+    } catch { setError("No se pudo cambiar el estado de la suscripción."); }
   };
 
   const totalIngresosNum = planes.reduce((acc, p) => {
@@ -159,7 +174,7 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
                 ["Precio", detalle.precio + " /mes"],
                 ["Fecha de inicio", detalle.inicio],
                 ["Próxima renovación", detalle.renovacion],
-                ["Método de pago", "Tarjeta •••• 4242"],
+                ["Método de pago", "No registrado"],
               ].map(([k, v]) => (
                 <div key={k}>
                   <p className={`text-xs mb-0.5 ${isDark ? "text-slate-400" : "text-gray-400"}`}>{k}</p>
@@ -171,9 +186,10 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
           <div className={`border rounded-xl p-6 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <h3 className={`text-sm font-semibold mb-4 ${isDark ? "text-slate-200" : "text-gray-800"}`}>Acciones</h3>
             <div className="space-y-2">
-              {["Renovar suscripción", "Cambiar plan", "Suspender"].map((a, i) => (
+              {["Suspender", "Cancelar"].map((a, i) => (
                 <button
                   key={a}
+                  onClick={() => changeSubscriptionStatus(detalle, a === "Suspender" ? "suspended" : "cancelled")}
                   className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                     i === 0
                       ? "bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold"
@@ -202,20 +218,7 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
               </tr>
             </thead>
             <tbody className={`divide-y ${isDark ? "divide-slate-800" : "divide-gray-50"}`}>
-              {[
-                ["ago 2026", detalle.precio, "Pagado", "01 ago 2026"],
-                ["jul 2026", detalle.precio, "Pagado", "01 jul 2026"],
-                ["jun 2026", detalle.precio, "Pagado", "01 jun 2026"],
-              ].map(([p, m, e, f]) => (
-                <tr key={p}>
-                  <td className={`py-3 ${isDark ? "text-slate-300" : "text-gray-700"}`}>{p}</td>
-                  <td className={`py-3 ${isDark ? "text-slate-300" : "text-gray-700"}`}>{m}</td>
-                  <td className="py-3">
-                    <StatusBadge s={e} />
-                  </td>
-                  <td className={`py-3 ${isDark ? "text-slate-500" : "text-gray-400"}`}>{f}</td>
-                </tr>
-              ))}
+              <tr><td colSpan={4} className="py-4 text-center text-gray-400">No hay renovaciones registradas.</td></tr>
             </tbody>
           </table>
         </div>
@@ -244,6 +247,7 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
           </button>
         )}
       </div>
+      {error && <p role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</p>}
 
       {/* Tabs Selector */}
       <div className={`flex border-b mb-6 gap-6 text-sm font-medium ${isDark ? "border-slate-800" : "border-gray-200"}`}>
@@ -326,7 +330,7 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {planes.map((plan) => (
-              <div key={plan.nombre} className={`border rounded-xl p-6 flex flex-col ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
+              <div key={plan.id} className={`border rounded-xl p-6 flex flex-col ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-lime-950/40" : "bg-lime-50"}`}>
                     <svg className="w-5 h-5 text-lime-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -482,12 +486,13 @@ export function AdminSuscripciones({ isDark }: { isDark?: boolean }) {
                         <>
                           <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
                           <div className={`absolute right-4 top-10 z-20 border rounded-xl shadow-lg py-1 w-40 text-xs ${isDark ? "bg-slate-900 border-slate-800 text-slate-200" : "bg-white border-gray-200 text-gray-700"}`}>
-                            {["Ver detalle", "Renovar", "Cambiar plan", "Suspender", "Cancelar"].map((a, i) => (
+                            {["Ver detalle", "Suspender", "Cancelar"].map((a, i) => (
                               <button
                                 key={a}
                                 onClick={() => {
                                   setMenuOpen(null);
                                   if (a === "Ver detalle") setDetalle(s);
+                                  if (a === "Suspender" || a === "Cancelar") changeSubscriptionStatus(s, a === "Suspender" ? "suspended" : "cancelled");
                                 }}
                                 className={`w-full text-left px-4 py-2 transition-colors ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-50"} ${i >= 3 ? "text-red-500" : ""}`}
                               >

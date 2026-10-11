@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { StatusBadge, CustomSelect } from "../../components/ui";
 import type { ClienteAdmin } from "../../types/admin";
-import { listAdminUsers } from "../../api/adminUsersApi";
+import { listAdminUsers, updateAdminUser, type AdminUser } from "../../api/adminUsersApi";
+import { getTodasSuscripciones } from "../../api/suscripcionesApi";
+import { getInstancias } from "../../api/instanciasApi";
+import type { InstanciaDB, Suscripcion as DbSuscripcion } from "../../types";
 
-export function AdminClientes({ isDark }: { isDark?: boolean }) {
+export function AdminClientes({ isDark, onNavigate, onEditClient }: { isDark?: boolean; onNavigate?: (page: 'usuarios' | 'instancias' | 'suscripciones' | 'pagos') => void; onEditClient?: (id: string) => void }) {
   const [search, setSearch] = useState("");
   const [tipoFilter, setTipoFilter] = useState("Todos");
   const [planFilter, setPlanFilter] = useState("Todos");
@@ -11,29 +14,67 @@ export function AdminClientes({ isDark }: { isDark?: boolean }) {
   const [detalle, setDetalle] = useState<ClienteAdmin | null>(null);
   const [tab, setTab] = useState("Información");
   const [clientesList, setClientesList] = useState<ClienteAdmin[]>([]);
+  const [rawUsers, setRawUsers] = useState<AdminUser[]>([]);
+  const [dbInstances, setDbInstances] = useState<InstanciaDB[]>([]);
+  const [dbSubscriptions, setDbSubscriptions] = useState<DbSuscripcion[]>([]);
+  const [error, setError] = useState("");
+  const [now] = useState(() => Date.now());
 
   useEffect(() => {
-    listAdminUsers()
-      .then((users) => {
+    Promise.allSettled([listAdminUsers(), getTodasSuscripciones(), getInstancias()])
+      .then(([usersResult, subscriptionsResult, instancesResult]) => {
+        if (usersResult.status !== "fulfilled") throw new Error("users unavailable");
+        const users = usersResult.value;
+        const subscriptions = subscriptionsResult.status === "fulfilled" ? subscriptionsResult.value : [];
+        const instances = instancesResult.status === "fulfilled" ? instancesResult.value : [];
+        if (subscriptionsResult.status === "rejected" || instancesResult.status === "rejected") {
+          setError("Se cargaron los clientes, pero no se pudieron consultar todos sus servicios.");
+        }
+        setRawUsers(users);
+        setDbInstances(instances);
+        setDbSubscriptions(subscriptions);
         const clienteUsers = users.filter((u) => u.role === "CLIENTE");
-        const mapped: ClienteAdmin[] = clienteUsers.map((u) => ({
+        const mapped: ClienteAdmin[] = clienteUsers.map((u) => {
+          const activeSub = subscriptions.find(s => s.usuarioId === u.id && s.estado === "active");
+          const owned = instances.filter(i => i.usuarioId === u.id);
+          const used = owned.reduce((sum, i) => sum + (i.almacenamientoUsadoGb || 0), 0);
+          const total = owned.reduce((sum, i) => sum + (i.almacenamientoTotalGb || 0), 0);
+          return {
           id: u.id,
           nombre: u.organizationName || u.contactName || u.email,
           tipo: "Finca",
           responsable: u.contactName || "No especificado",
           correo: u.email,
           telefono: u.phone || "No especificado",
-          plan: "Productor",
-          instancias: 0,
-          almacenamiento: "0 GB / 50 GB",
-          suscripcion: u.status === "ACTIVO" ? "Activa" : "Inactiva",
+          plan: activeSub?.planNombre || "Sin plan",
+          instancias: owned.length,
+          almacenamiento: `${used} GB / ${total} GB`,
+          suscripcion: activeSub ? "Activa" : "Inactiva",
           estado: u.status === "ACTIVO" ? "Activo" : "Inactivo",
           registro: new Date(u.createdAt).toLocaleDateString("es-GT"),
-        }));
+        }; });
         setClientesList(mapped);
       })
-      .catch((err) => console.error("Error al cargar clientes:", err));
+      .catch(() => setError("No se pudieron cargar los clientes y sus servicios."));
   }, []);
+
+  const handleAction = async (action: string, client: ClienteAdmin) => {
+    setMenuOpen(null);
+    if (action === "Ver perfil") { setDetalle(client); return; }
+    if (action === "Editar") { onEditClient?.(client.id); return; }
+    if (action === "Ver instancias") { onNavigate?.('instancias'); return; }
+    if (action === "Ver suscripción") { onNavigate?.('suscripciones'); return; }
+    if (action === "Ver pagos") { onNavigate?.('pagos'); return; }
+    if (action === "Suspender") {
+      const user = rawUsers.find(u => u.id === client.id);
+      if (!user || !window.confirm(`¿Suspender a ${client.nombre}?`)) return;
+      try {
+        await updateAdminUser(user.id, { organizationName: user.organizationName, contactName: user.contactName || '',
+          email: user.email, phone: user.phone || '', role: user.role, status: 'SUSPENDIDO' });
+        setClientesList(prev => prev.map(c => c.id === client.id ? { ...c, estado: 'Inactivo' } : c));
+      } catch { setError("No se pudo suspender al cliente."); }
+    }
+  };
 
   const filtered = clientesList.filter(c =>
     (tipoFilter === "Todos" || c.tipo === tipoFilter) &&
@@ -105,7 +146,9 @@ export function AdminClientes({ isDark }: { isDark?: boolean }) {
                 ))}
               </div>
             )}
-            {tab !== "Información" && <p className={`text-xs py-8 text-center ${isDark ? "text-slate-500" : "text-gray-400"}`}>Sin datos disponibles para esta sección.</p>}
+            {tab === "Instancias" && <div className="space-y-2">{dbInstances.filter(i => i.usuarioId === detalle.id).map(i => <div key={i.id} className="rounded-lg border px-3 py-2 text-sm">{i.nombre} · {i.plantilla} · <StatusBadge s={i.estado} /></div>)}{!dbInstances.some(i => i.usuarioId === detalle.id) && <p>No hay instancias registradas.</p>}</div>}
+            {tab === "Suscripción" && <div className="space-y-2">{dbSubscriptions.filter(s => s.usuarioId === detalle.id).map(s => <div key={s.id} className="rounded-lg border px-3 py-2 text-sm">{s.planNombre} · Q{s.monto} · <StatusBadge s={s.estado} /></div>)}{!dbSubscriptions.some(s => s.usuarioId === detalle.id) && <p>No hay suscripciones registradas.</p>}</div>}
+            {(tab === "Pagos" || tab === "Actividad") && <p className={`text-xs py-8 text-center ${isDark ? "text-slate-500" : "text-gray-400"}`}>No hay registros disponibles para esta sección.</p>}
           </div>
         </div>
       </div>
@@ -114,6 +157,7 @@ export function AdminClientes({ isDark }: { isDark?: boolean }) {
 
   return (
     <div className={`flex-1 overflow-auto p-4 lg:p-8 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
+      {error && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
           <h1 className={`text-xl lg:text-2xl font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>Clientes</h1>
@@ -124,9 +168,9 @@ export function AdminClientes({ isDark }: { isDark?: boolean }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: "ACTIVAS", value: String(clientesList.filter(c => c.suscripcion === "Activa").length), sub: "Suscripciones vigentes", color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" },
-          { label: "PRÓX. RENOVAR", value: "0", sub: "Próximos 15 días", color: isDark ? "text-amber-400 bg-amber-950/60 border border-amber-800/40" : "text-amber-500 bg-amber-50", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
-          { label: "SUSPENDIDAS", value: String(clientesList.filter(c => c.estado === "Inactivo").length), sub: "Acceso restringido", color: isDark ? "text-red-400 bg-red-950/60 border border-red-800/40" : "text-red-500 bg-red-50", icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" },
-          { label: "CANCELADAS", value: "0", sub: "Sin servicio activo", color: isDark ? "text-slate-400 bg-slate-800 border border-slate-700" : "text-gray-500 bg-gray-100", icon: "M6 18L18 6M6 6l12 12" },
+          { label: "PRÓX. RENOVAR", value: String(dbSubscriptions.filter(s => s.estado === "active" && s.fechaProximoPago && new Date(s.fechaProximoPago).getTime() >= now && new Date(s.fechaProximoPago).getTime() - now <= 15 * 86400000).length), sub: "Próximos 15 días", color: isDark ? "text-amber-400 bg-amber-950/60 border border-amber-800/40" : "text-amber-500 bg-amber-50", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
+          { label: "SUSPENDIDAS", value: String(dbSubscriptions.filter(s => s.estado === "suspended").length), sub: "Acceso restringido", color: isDark ? "text-red-400 bg-red-950/60 border border-red-800/40" : "text-red-500 bg-red-50", icon: "M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" },
+          { label: "CANCELADAS", value: String(dbSubscriptions.filter(s => s.estado === "cancelled").length), sub: "Sin servicio activo", color: isDark ? "text-slate-400 bg-slate-800 border border-slate-700" : "text-gray-500 bg-gray-100", icon: "M6 18L18 6M6 6l12 12" },
         ].map(k => (
           <div key={k.label} className={`border rounded-xl p-5 flex flex-col items-start ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <div className="flex items-center gap-2 mb-3">
@@ -162,7 +206,7 @@ export function AdminClientes({ isDark }: { isDark?: boolean }) {
         <table className="w-full min-w-max text-sm">
           <thead>
             <tr className={`border-b ${isDark ? "bg-slate-800/60 border-slate-800 text-slate-400" : "bg-gray-50 border-gray-100 text-gray-400"}`}>
-              {["Cliente", "Tipo", "Responsable", "Plan", "Instancias", "Suscripción", "Estado", "Registro", ""].map(h => (
+              {["Cliente", "Tipo", "Responsable", "Plan", "Instancias", "Suscripción", "Estado", "Registro", "Acciones"].map(h => (
                 <th key={h} className="px-5 py-3 text-left font-medium text-xs uppercase tracking-wide whitespace-nowrap">{h}</th>
               ))}
             </tr>
@@ -192,7 +236,7 @@ export function AdminClientes({ isDark }: { isDark?: boolean }) {
                       <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
                       <div className={`absolute right-4 top-10 z-20 border rounded-xl shadow-lg py-1 w-40 text-xs ${isDark ? "bg-slate-900 border-slate-800 text-slate-200" : "bg-white border-gray-200 text-gray-700"}`}>
                         {["Ver perfil", "Editar", "Ver instancias", "Ver suscripción", "Ver pagos", "Suspender"].map((a, i) => (
-                          <button key={a} onClick={() => { setMenuOpen(null); if (a === "Ver perfil") setDetalle(c); }} className={`w-full text-left px-4 py-2 transition-colors ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-50"} ${i === 5 ? "text-red-500" : ""}`}>{a}</button>
+                          <button key={a} onClick={() => handleAction(a, c)} className={`w-full text-left px-4 py-2 transition-colors ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-50"} ${i === 5 ? "text-red-500" : ""}`}>{a}</button>
                         ))}
                       </div>
                     </>

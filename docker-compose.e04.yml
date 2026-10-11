@@ -1,0 +1,73 @@
+name: agrocloud-e04
+
+services:
+  db:
+    image: postgres:16
+    container_name: agrocloud-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Define POSTGRES_DB en el archivo .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Define POSTGRES_USER en el archivo .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en el archivo .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:15432:5432"
+    networks:
+      - agrocloud
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  api:
+    image: agrocloud-backend:e04
+    build:
+      context: ./backend
+    container_name: agrocloud-api
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:?Define POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER:?Define POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET}
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - agrocloud
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8080/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  web:
+    image: agrocloud-web:e04
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8080/api/v1
+    container_name: agrocloud-web
+    ports:
+      - "127.0.0.1:5173:80"
+    networks:
+      - agrocloud
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    external: true
+    name: agrocloud-postgres-data
+
+networks:
+  agrocloud:
+    external: true
+    name: agrocloud-net
