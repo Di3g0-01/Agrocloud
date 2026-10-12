@@ -16,5 +16,5 @@ RUN apt-get update \
     && useradd --system --gid agrocloud agrocloud
 COPY --from=build /workspace/target/backend-*.jar app.jar
 USER agrocloud
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENV JAVA_OPTS="-Xms128m -Xmx320m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m -Xss512k"
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
