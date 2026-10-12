@@ -8,7 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<UserRole>;
-  register: (nombre: string, email: string, pass: string, empresa?: string) => Promise<UserRole>;
+  register: (name: string, email: string, pass: string, company?: string) => Promise<UserRole>;
   logout: () => void;
 }
 
@@ -60,10 +60,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res.user.rol;
   };
 
-  const register = async (nombre: string, email: string, pass: string, empresa?: string): Promise<UserRole> => {
+  const register = async (fullName: string, email: string, pass: string, companyName?: string): Promise<UserRole> => {
     const res = await registerApi({
-      organizationName: empresa?.trim() || nombre.trim(),
-      contactName: nombre.trim(),
+      organizationName: companyName?.trim() || fullName.trim(),
+      contactName: fullName.trim(),
       email,
       password: pass,
     });

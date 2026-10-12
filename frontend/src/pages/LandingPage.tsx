@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getPlanes } from '../api/planesApi';
+import { getPlans } from '../api/plansApi';
 import type { Plan } from '../types';
 import {
   CheckCircle2,
@@ -21,17 +21,17 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onSelectPlan, onNavigateLogin }) => {
-  const [planes, setPlanes] = useState<Plan[]>([]);
-  const [loadingPlanes, setLoadingPlanes] = useState<boolean>(true);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState<boolean>(true);
 
   useEffect(() => {
-    getPlanes()
-      .then((data) => setPlanes(data))
+    getPlans()
+      .then((data) => setPlans(data))
       .catch(() => console.error('Error al cargar planes'))
-      .finally(() => setLoadingPlanes(false));
+      .finally(() => setLoadingPlans(false));
   }, []);
 
-  const modulosAgricolas = [
+  const agriculturalModules = [
     { icon: Sprout, title: 'Cultivos y Parcelas', desc: 'Organización geográfica de áreas de siembra, variedades de cultivos y extensión por manzana.' },
     { icon: TrendingUp, title: 'Cosechas y Producción', desc: 'Registro histórico de quintales o toneladas cosechadas, rendimiento por ciclo e historial de producción.' },
     { icon: Boxes, title: 'Control de Inventarios', desc: 'Centralización de fertilizantes, agroquímicos, semillas y herramientas sin pérdidas de stock.' },
@@ -120,13 +120,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectPlan, onNaviga
             </p>
           </div>
 
-          {loadingPlanes ? (
+          {loadingPlans ? (
             <div className="flex items-center justify-center py-16">
               <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {planes.map((plan) => (
+              {plans.map((plan) => (
                 <div
                   key={plan.id}
                   className={`relative flex flex-col justify-between rounded-2xl p-6 transition-all duration-300 ${
@@ -200,7 +200,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectPlan, onNaviga
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {modulosAgricolas.map((m, idx) => (
+          {agriculturalModules.map((m, idx) => (
             <div
               key={idx}
               className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 hover:border-emerald-500/40 hover:bg-slate-900 transition-all group"

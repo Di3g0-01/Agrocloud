@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { instances, incidents, INITIAL_DOCS } from "../../data/shared";
-import { CLIENTES_DATA, PLANTILLAS_ADMIN } from "../../data/admin";
+import { CLIENTS_DATA, ADMIN_TEMPLATES } from "../../data/admin";
 
 export interface SearchResultItem {
   id: string;
@@ -59,7 +59,7 @@ export function GlobalSearchModal({
 
     // Search Clientes (only for admin/soporte)
     if (role !== "cliente") {
-      CLIENTES_DATA.forEach((cli) => {
+      CLIENTS_DATA.forEach((cli) => {
         if (
           cli.nombre.toLowerCase().includes(q) ||
           cli.responsable.toLowerCase().includes(q) ||
@@ -78,7 +78,7 @@ export function GlobalSearchModal({
     }
 
     // Search Plantillas DB
-    PLANTILLAS_ADMIN.forEach((p) => {
+    ADMIN_TEMPLATES.forEach((p) => {
       if (
         p.nombre.toLowerCase().includes(q) ||
         p.descripcion.toLowerCase().includes(q) ||
@@ -96,13 +96,13 @@ export function GlobalSearchModal({
     });
 
     // Search Planes
-    const planesStatic = [
+    const staticPlans = [
       { nombre: "Finca", precio: "Q25", storage: "10 GB", instancias: "1" },
       { nombre: "Productor", precio: "Q60", storage: "50 GB", instancias: "2" },
       { nombre: "Agro Pro", precio: "Q120", storage: "100 GB", instancias: "3" },
       { nombre: "Agro Enterprise", precio: "Q250", storage: "250 GB", instancias: "5" },
     ];
-    planesStatic.forEach((plan) => {
+    staticPlans.forEach((plan) => {
       if (plan.nombre.toLowerCase().includes(q) || plan.storage.toLowerCase().includes(q)) {
         results.push({
           id: `plan-${plan.nombre}`,

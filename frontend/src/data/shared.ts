@@ -8,7 +8,7 @@ export const activityLogs: ActivityLog[] = [];
 
 export const templates: string[] = [];
 
-export interface Documento {
+export interface DocItem {
   id: string;
   titulo: string;
   descripcion: string;
@@ -21,7 +21,7 @@ export interface Documento {
   autor: string;
 }
 
-export const INITIAL_DOCS: Documento[] = [];
+export const INITIAL_DOCS: DocItem[] = [];
 
 
 

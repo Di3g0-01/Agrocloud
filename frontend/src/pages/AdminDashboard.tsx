@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUsuarios, crearUsuario } from '../api/usuariosApi';
+import { getUsers, createUser } from '../api/usersApi';
 import type { User, UserRole } from '../types';
 import {
   Users,
@@ -17,21 +17,21 @@ import {
 import { CustomSelect } from '../components/ui/CustomSelect';
 
 export const AdminDashboard: React.FC = () => {
-  const [usuarios, setUsuarios] = useState<User[]>([]);
+  const [userList, setUserList] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
 
   // New User Form State
-  const [newNombre, setNewNombre] = useState<string>('');
+  const [newName, setNewName] = useState<string>('');
   const [newEmail, setNewEmail] = useState<string>('');
-  const [newRol, setNewRol] = useState<UserRole>('CLIENTE');
-  const [newEmpresa, setNewEmpresa] = useState<string>('');
+  const [newRole, setNewRole] = useState<UserRole>('CLIENTE');
+  const [newCompany, setNewCompany] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   const fetchUsers = async () => {
     try {
-      const data = await getUsuarios();
-      setUsuarios(data);
+      const data = await getUsers();
+      setUserList(data);
     } catch (err) {
       console.error(err);
     }
@@ -43,19 +43,19 @@ export const AdminDashboard: React.FC = () => {
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newNombre || !newEmail) return;
+    if (!newName || !newEmail) return;
     setSubmitting(true);
 
     try {
-      const nuevo = await crearUsuario({
-        nombre: newNombre,
+      const newEntry = await createUser({
+        nombre: newName,
         email: newEmail,
-        rol: newRol,
-        empresa: newEmpresa,
+        rol: newRole,
+        empresa: newCompany,
       });
-      setUsuarios([nuevo, ...usuarios]);
+      setUserList([newEntry, ...userList]);
       setShowAddModal(false);
-      setNewNombre('');
+      setNewName('');
       setNewEmail('');
     } catch (err) {
       console.error(err);
@@ -64,7 +64,7 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const filteredUsuarios = usuarios.filter(
+  const filteredUsers = userList.filter(
     (u) =>
       u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -105,7 +105,7 @@ export const AdminDashboard: React.FC = () => {
               <span className="text-xs font-medium">Usuarios Registrados</span>
               <Users className="w-4 h-4 text-emerald-400" />
             </div>
-            <div className="text-2xl font-bold text-white">{usuarios.length} cuentas</div>
+            <div className="text-2xl font-bold text-white">{userList.length} cuentas</div>
             <div className="text-[11px] text-emerald-400 mt-1">Roles activos: Admin, Cliente, Soporte</div>
           </div>
 
@@ -180,7 +180,7 @@ export const AdminDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {filteredUsuarios.map((u) => (
+                {filteredUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
                     <td className="p-3.5 font-semibold text-white">
                       <div>{u.nombre}</div>
@@ -233,8 +233,8 @@ export const AdminDashboard: React.FC = () => {
                   <input
                     type="text"
                     required
-                    value={newNombre}
-                    onChange={(e) => setNewNombre(e.target.value)}
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
                     placeholder="ej: David Ixquiac"
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                   />
@@ -256,8 +256,8 @@ export const AdminDashboard: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-300 mb-1">Empresa / Cooperativa</label>
                   <input
                     type="text"
-                    value={newEmpresa}
-                    onChange={(e) => setNewEmpresa(e.target.value)}
+                    value={newCompany}
+                    onChange={(e) => setNewCompany(e.target.value)}
                     placeholder="ej: Cooperativa El Roble"
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                   />
@@ -266,8 +266,8 @@ export const AdminDashboard: React.FC = () => {
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">Rol de Acceso</label>
                   <CustomSelect
-                    value={newRol}
-                    onChange={(val) => setNewRol(val as UserRole)}
+                    value={newRole}
+                    onChange={(val) => setNewRole(val as UserRole)}
                     isDark={true}
                     size="md"
                     className="w-full"

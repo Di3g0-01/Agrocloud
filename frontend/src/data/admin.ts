@@ -1,16 +1,16 @@
-import type { Usuario, ClienteAdmin, InstanciaAdmin, Suscripcion, PagoAdmin, PlantillaAdmin } from "../types/admin";
+import type { ManagedUser, AdminClient, AdminInstance, Subscription, AdminPayment, AdminTemplate } from "../types/admin";
 
-export const USUARIOS_DATA: Usuario[] = [];
+export const USERS_DATA: ManagedUser[] = [];
 
-export const CLIENTES_DATA: ClienteAdmin[] = [];
+export const CLIENTS_DATA: AdminClient[] = [];
 
-export const INSTANCIAS_ADMIN: InstanciaAdmin[] = [];
+export const ADMIN_INSTANCES: AdminInstance[] = [];
 
-export const SUSCRIPCIONES_DATA: Suscripcion[] = [];
+export const SUBSCRIPTIONS_DATA: Subscription[] = [];
 
-export const PAGOS_ADMIN: PagoAdmin[] = [];
+export const ADMIN_PAYMENTS: AdminPayment[] = [];
 
-export const MESES_INGRESOS: { mes: string; monto: number }[] = [];
+export const MONTHLY_REVENUE: { mes: string; monto: number }[] = [];
 
-export const PLANTILLAS_ADMIN: PlantillaAdmin[] = [];
+export const ADMIN_TEMPLATES: AdminTemplate[] = [];
 

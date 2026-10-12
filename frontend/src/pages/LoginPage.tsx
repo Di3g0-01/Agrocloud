@@ -13,10 +13,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
   const [isRegistering, setIsRegistering] = useState<boolean>(false);
 
   // Form states
-  const [nombre, setNombre] = useState<string>('');
+  const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [empresa, setEmpresa] = useState<string>('');
+  const [company, setCompany] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
 
@@ -27,12 +27,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
 
     try {
       if (isRegistering) {
-        if (!nombre || !email || !password) {
+        if (!name || !email || !password) {
           setErrorMsg('Por favor completa los campos obligatorios.');
           setSubmitting(false);
           return;
         }
-        const role = await register(nombre, email, password, empresa);
+        const role = await register(name, email, password, company);
         onLoginSuccess(role);
       } else {
         if (!email || !password) {
@@ -102,8 +102,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
                     <input
                       type="text"
                       required
-                      value={nombre}
-                      onChange={(e) => setNombre(e.target.value)}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                       placeholder="Diego Ovalle"
                       className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
                     />
@@ -116,8 +116,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
                     <Building className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
                     <input
                       type="text"
-                      value={empresa}
-                      onChange={(e) => setEmpresa(e.target.value)}
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
                       placeholder="Finca Los Pinos"
                       className="w-full pl-9 pr-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
                     />

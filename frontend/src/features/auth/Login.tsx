@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import axios from "axios";
 import { loginApi, registerApi } from "../../api/authApi";
-import { getPlanes } from "../../api/planesApi";
-import { contratarPlan } from "../../api/suscripcionesApi";
+import { getPlans } from "../../api/plansApi";
+import { subscribeToPlan } from "../../api/subscriptionsApi";
 import { LogoIcon } from "../../components/ui";
 import type { AuthResponse, Plan } from "../../types";
 
@@ -20,7 +20,7 @@ const emptyRegistration = {
   password: "",
 };
 
-const DEFAULT_PLANES: Plan[] = [
+const DEFAULT_PLANS: Plan[] = [
   { id: "plan-finca", nombre: "Finca", almacenamientoGb: 10, precioMensual: 25, descripcion: "Ideal para pequeños productores y fincas que inician la digitalización.", instanciasPermitidas: 1, popular: false, activo: true },
   { id: "plan-productor", nombre: "Productor", almacenamientoGb: 50, precioMensual: 60, descripcion: "Diseñado para productores agrícolas con volumen creciente de datos.", instanciasPermitidas: 1, popular: true, activo: true },
   { id: "plan-agro-pro", nombre: "Agro Pro", almacenamientoGb: 100, precioMensual: 120, descripcion: "Para mediano y gran productor con alta disponibilidad.", instanciasPermitidas: 2, popular: false, activo: true },
@@ -47,7 +47,7 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const [planes, setPlanes] = useState<Plan[]>(DEFAULT_PLANES);
+  const [plans, setPlans] = useState<Plan[]>(DEFAULT_PLANS);
   const [selectedPlanId, setSelectedPlanId] = useState<string>("plan-productor");
   const [cardData, setCardData] = useState({
     numero: "4532 •••• •••• 8821",
@@ -57,11 +57,11 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
   });
 
   useEffect(() => {
-    getPlanes()
+    getPlans()
       .then((data) => {
         if (data && data.length > 0) {
           const actives = data.filter((p) => p.activo !== false);
-          setPlanes(actives);
+          setPlans(actives);
           if (!actives.some((p) => p.id === selectedPlanId)) {
             setSelectedPlanId(actives[0].id);
           }
@@ -123,7 +123,7 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
     setRegStep("pago");
   };
 
-  const selectedPlan = planes.find((p) => p.id === selectedPlanId) || planes[0] || DEFAULT_PLANES[0];
+  const selectedPlan = plans.find((p) => p.id === selectedPlanId) || plans[0] || DEFAULT_PLANS[0];
 
   const handleSimulatePaymentAndFinish = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -145,7 +145,7 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
 
       // 3. Simular pago y contratar plan seleccionado en backend
       try {
-        await contratarPlan(selectedPlan.id, selectedPlan.nombre, selectedPlan.precioMensual);
+        await subscribeToPlan(selectedPlan.id, selectedPlan.nombre, selectedPlan.precioMensual);
       } catch (subErr) {
         console.warn("Error contratando plan inicial:", subErr);
       }
@@ -302,7 +302,7 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
         {mode === "register" && regStep === "plan" && (
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {planes.map((p) => {
+              {plans.map((p) => {
                 const isSelected = selectedPlanId === p.id;
                 return (
                   <div
