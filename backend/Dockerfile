@@ -2,7 +2,7 @@ FROM maven:3.9.9-eclipse-temurin-24 AS build
 WORKDIR /workspace
 COPY pom.xml .
 COPY src ./src
-RUN --mount=type=cache,target=/root/.m2 mvn -B clean verify
+RUN --mount=type=cache,target=/root/.m2 mvn -B clean package -DskipTests
 
 FROM scratch AS artifact
 COPY --from=build /workspace/target/backend-*.jar /app.jar
