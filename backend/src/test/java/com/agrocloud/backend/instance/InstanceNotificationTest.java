@@ -11,10 +11,15 @@ import com.agrocloud.backend.entity.User;
 import com.agrocloud.backend.instance.dto.CreateInstanceRequest;
 import com.agrocloud.backend.instance.entity.InstanceEntity;
 import com.agrocloud.backend.instance.entity.InstanceStatus;
+import com.agrocloud.backend.instance.repository.InstanceMetricRepository;
 import com.agrocloud.backend.instance.repository.InstanceRepository;
 import com.agrocloud.backend.instance.service.InstanceServiceImpl;
 import com.agrocloud.backend.notification.NotificationService;
 import com.agrocloud.backend.repository.UserRepository;
+import com.agrocloud.backend.security.EncryptionService;
+import com.agrocloud.backend.plan.entity.PlanEntity;
+import com.agrocloud.backend.subscription.entity.SubscriptionEntity;
+import com.agrocloud.backend.subscription.entity.SubscriptionStatus;
 import com.agrocloud.backend.subscription.service.SubscriptionService;
 import com.agrocloud.backend.template.entity.TemplateEntity;
 import com.agrocloud.backend.template.repository.TemplateRepository;
@@ -33,10 +38,12 @@ class InstanceNotificationTest {
     @Mock SubscriptionService subscriptions;
     @Mock TemplateRepository templates;
     @Mock NotificationService notifications;
+    @Mock EncryptionService encryptionService;
+    @Mock InstanceMetricRepository instanceMetricRepository;
     InstanceServiceImpl service;
 
     @BeforeEach void setUp() {
-        service = new InstanceServiceImpl(instances, users, subscriptions, templates, notifications);
+        service = new InstanceServiceImpl(instances, users, subscriptions, templates, notifications, encryptionService, instanceMetricRepository);
     }
 
     @Test void creationNotifiesOwner() {
@@ -46,7 +53,14 @@ class InstanceNotificationTest {
         template.setNombre("Cultivos y parcelas");
         template.setEstado("Activa");
         when(users.findById(owner.getId())).thenReturn(Optional.of(owner));
-        when(subscriptions.findActiveSubscriptionEntity(owner.getId())).thenReturn(Optional.empty());
+        PlanEntity plan = new PlanEntity();
+        plan.setMaxInstances(5);
+        plan.setStorageGb(250.0);
+        SubscriptionEntity subscription = new SubscriptionEntity();
+        subscription.setPlan(plan);
+        subscription.setUser(owner);
+        subscription.setStatus(SubscriptionStatus.active);
+        when(subscriptions.findActiveSubscriptionEntity(owner.getId())).thenReturn(Optional.of(subscription));
         when(templates.findByNombreIgnoreCase("Cultivos y parcelas")).thenReturn(Optional.of(template));
         when(instances.save(any())).thenAnswer(call -> {
             InstanceEntity entity = call.getArgument(0);

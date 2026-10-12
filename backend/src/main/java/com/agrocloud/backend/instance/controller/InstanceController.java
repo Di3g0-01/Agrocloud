@@ -1,6 +1,8 @@
 package com.agrocloud.backend.instance.controller;
 
 import com.agrocloud.backend.instance.dto.CreateInstanceRequest;
+import com.agrocloud.backend.instance.dto.InstanceCredentialResponse;
+import com.agrocloud.backend.instance.dto.InstanceMonitoringResponse;
 import com.agrocloud.backend.instance.dto.InstanceResponse;
 import com.agrocloud.backend.instance.entity.InstanceStatus;
 import com.agrocloud.backend.instance.service.InstanceService;
@@ -8,7 +10,6 @@ import com.agrocloud.backend.security.UserPrincipal;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,10 +26,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/instancias")
-@RequiredArgsConstructor
 public class InstanceController {
 
     private final InstanceService service;
+
+    public InstanceController(InstanceService service) {
+        this.service = service;
+    }
 
     @GetMapping
     public ResponseEntity<List<InstanceResponse>> list(@AuthenticationPrincipal UserPrincipal principal) {
@@ -91,4 +95,21 @@ public class InstanceController {
         service.deleteInstance(id, principal.id(), principal.isAdminOrSupport());
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{id}/credenciales")
+    public ResponseEntity<InstanceCredentialResponse> getCredentials(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(service.getInstanceCredentials(id, principal.id(), principal.isAdminOrSupport()));
+    }
+
+    @GetMapping("/{id}/metricas")
+    public ResponseEntity<InstanceMonitoringResponse> getMetrics(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(service.getInstanceMetrics(id, principal.id(), principal.isAdminOrSupport()));
+    }
 }
+

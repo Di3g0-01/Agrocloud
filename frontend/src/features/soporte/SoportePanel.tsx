@@ -90,7 +90,7 @@ export function SoportePanel({ user, onLogout }: { user: User; onLogout: () => v
         </header>
         <main className={`flex-1 overflow-auto ${isDark ? "bg-slate-950" : "bg-gray-50"}`}>
           {page === "dashboard" && <SoporteDashboard setPage={setPage} isDark={isDark} />}
-          {page === "incidencias" && <SoporteIncidencias isDark={isDark} />}
+          {page === "incidencias" && <SoporteIncidencias isDark={isDark} currentUser={user} />}
           {page === "instancias" && <SoporteInstancias isDark={isDark} />}
           {page === "actividad" && <SoporteActividad isDark={isDark} />}
           {page === "documentacion" && <SharedDocumentacion userRole="soporte" isDark={isDark} />}

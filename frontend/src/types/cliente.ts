@@ -14,7 +14,7 @@ export interface CInstancia {
   plantilla: string;
   usadoGB: number;
   totalGB: number;
-  estado: "Activa" | "Reiniciando" | "Suspendida" | "Error";
+  estado: "Operativa" | "Activa" | "Reiniciando" | "Suspendida" | "Error";
   creada: string;
   version: string;
   host: string;

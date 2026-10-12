@@ -31,12 +31,17 @@ public class IncidentCommentService {
     @Transactional(readOnly = true)
     public List<IncidentCommentResponse> list(UUID incidentId, UserPrincipal principal) {
         IncidentEntity incident = accessibleIncident(incidentId, principal);
-        return comments.findByIncidentIdOrderByCreatedAtAscIdAsc(incident.id).stream()
-                .map(IncidentCommentResponse::from).toList();
+        List<IncidentComment> commentList = comments.findByIncidentIdOrderByCreatedAtAscIdAsc(incident.id);
+        if (principal.hasRole("CLIENTE")) {
+            commentList = commentList.stream()
+                    .filter(c -> c.targetRole == null || "CLIENTE".equalsIgnoreCase(c.targetRole) || c.author.getId().equals(principal.id()))
+                    .toList();
+        }
+        return commentList.stream().map(IncidentCommentResponse::from).toList();
     }
 
     @Transactional
-    public IncidentCommentResponse add(UUID incidentId, String text, UserPrincipal principal) {
+    public IncidentCommentResponse add(UUID incidentId, String text, String targetRole, UserPrincipal principal) {
         IncidentEntity incident = accessibleIncident(incidentId, principal);
         if ("CERRADA".equals(incident.status))
             throw new IllegalStateException("Un ticket cerrado no admite comentarios");
@@ -49,16 +54,56 @@ public class IncidentCommentService {
         comment.incident = incident;
         comment.author = author;
         comment.body = body;
+        if (targetRole != null && !targetRole.isBlank()) {
+            comment.targetRole = targetRole.trim().toUpperCase();
+        } else {
+            comment.targetRole = "CLIENTE";
+        }
         IncidentCommentResponse result = IncidentCommentResponse.from(comments.saveAndFlush(comment));
         String title = "Nuevo comentario en " + IncidentResponse.from(incident).codigo();
-        if (!incident.owner.getId().equals(principal.id()))
-            notifications.create(incident.owner, "TICKET_COMENTARIO", title, incident.subject, incident.id);
+        
+        // Notify owner only if comment is targeted for CLIENTE or submitted by client
+        if (!"SOPORTE".equalsIgnoreCase(comment.targetRole) && !"ADMIN".equalsIgnoreCase(comment.targetRole)) {
+            if (!incident.owner.getId().equals(principal.id()))
+                notifications.create(incident.owner, "TICKET_COMENTARIO", title, incident.subject, incident.id);
+        }
         if (incident.assignedSupport != null && !incident.assignedSupport.getId().equals(principal.id()))
             notifications.create(incident.assignedSupport, "TICKET_COMENTARIO", title, incident.subject, incident.id);
         for (User admin : users.findByRole_CodeAndStatus(Role.ADMINISTRADOR, AccountStatus.ACTIVO))
             if (!admin.getId().equals(principal.id()))
                 notifications.create(admin, "TICKET_COMENTARIO", title, incident.subject, incident.id);
         return result;
+    }
+
+    @Transactional
+    public IncidentCommentResponse update(UUID commentId, String text, UserPrincipal principal) {
+        IncidentComment comment = comments.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comentario no encontrado"));
+        if (!comment.author.getId().equals(principal.id()) && !principal.hasRole("ADMINISTRADOR")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para editar este comentario");
+        }
+        if ("CERRADA".equals(comment.incident.status)) {
+            throw new IllegalStateException("Un ticket cerrado no admite modificar comentarios");
+        }
+        String body = text == null ? "" : text.trim();
+        if (body.isEmpty() || body.length() > 2000) {
+            throw new IllegalArgumentException("Escribe un comentario de 1 a 2000 caracteres");
+        }
+        comment.body = body;
+        return IncidentCommentResponse.from(comments.saveAndFlush(comment));
+    }
+
+    @Transactional
+    public void delete(UUID commentId, UserPrincipal principal) {
+        IncidentComment comment = comments.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comentario no encontrado"));
+        if (!comment.author.getId().equals(principal.id()) && !principal.hasRole("ADMINISTRADOR")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para eliminar este comentario");
+        }
+        if ("CERRADA".equals(comment.incident.status)) {
+            throw new IllegalStateException("Un ticket cerrado no admite eliminar comentarios");
+        }
+        comments.delete(comment);
     }
 
     private IncidentEntity accessibleIncident(UUID id, UserPrincipal principal) {

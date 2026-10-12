@@ -3,21 +3,21 @@ import { CopyBtn, ProgressBar } from "../../components/ui";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { C_PLAN } from "../../data/cliente";
 import type { CInstancia } from "../../types/cliente";
-import { crearInstancia, reiniciarInstancia, eliminarInstancia, mapInstanciaDBToCInstancia } from "../../api/instanciasApi";
+import { crearInstancia, reiniciarInstancia, eliminarInstancia, mapInstanciaDBToCInstancia, getCredencialesInstancia } from "../../api/instanciasApi";
 import { getPlantillas } from "../../api/plantillasApi";
 
 export function CInstanciaStatusBadge({ s }: { s: CInstancia["estado"] | string }) {
   const label =
-    s === "active" || s === "Activa" || s === "OPERATIVA" ? "Operativa"
-    : s === "revision" || s === "EN_REVISION" || s === "Reiniciando" ? "En revisión"
+    s === "active" || s === "Activa" || s === "OPERATIVA" || s === "Operativa" ? "Operativa"
+    : s === "revision" || s === "EN_REVISION" || s === "Reiniciando" || s === "En revisión" ? "En revisión"
     : s === "suspended" || s === "SUSPENDIDA" || s === "Suspendida" ? "Suspendida"
-    : s === "terminated" || s === "DETENIDA" ? "Detenida"
+    : s === "terminated" || s === "DETENIDA" || s === "Detenida" || s === "Error" ? "Detenida"
     : s;
-  const cls = s === "Activa" || s === "active" || s === "OPERATIVA" ? "bg-lime-100 text-lime-700 border border-lime-300"
-    : s === "Reiniciando" || s === "revision" ? "bg-amber-50 text-amber-700 border border-amber-200"
-    : s === "Suspendida" || s === "suspended" ? "bg-gray-100 text-gray-500 border border-gray-200"
-    : "bg-red-50 text-red-600 border border-red-200";
-  return <span className={`px-2 py-0.5 rounded text-xs font-medium ${cls}`}>{label}</span>;
+  const cls = s === "Activa" || s === "active" || s === "OPERATIVA" || s === "Operativa" ? "bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium"
+    : s === "Reiniciando" || s === "revision" || s === "EN_REVISION" || s === "En revisión" ? "bg-amber-50 text-amber-700 border border-amber-200 font-medium"
+    : s === "Suspendida" || s === "suspended" || s === "SUSPENDIDA" ? "bg-slate-100 text-slate-600 border border-slate-200 font-medium"
+    : "bg-rose-50 text-rose-600 border border-rose-200 font-medium";
+  return <span className={`px-2 py-0.5 rounded text-xs ${cls}`}>{label}</span>;
 }
 
 export function SvgPaths({ d, className }: { d: string; className?: string }) {
@@ -53,11 +53,13 @@ export function CreateInstanciaModal({
     getPlantillas().then(data => setPlantillas(data.filter(p => p.estado === "Activa").map(p => p.nombre)))
       .catch(() => setLoadError("No se pudieron cargar las plantillas disponibles."));
   }, []);
-  const atLimit = currentCount >= maxInstancias;
+  const hasActiveSub = C_PLAN.estado === "Activa" && maxInstancias > 0;
+  const atLimit = hasActiveSub ? currentCount >= maxInstancias : true;
+  const blocked = !hasActiveSub || atLimit;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (atLimit || !nombre || !plantilla) return;
+    if (blocked || !nombre || !plantilla) return;
 
     const newInst: CInstancia = {
       nombre,
@@ -91,7 +93,25 @@ export function CreateInstanciaModal({
           <button type="button" onClick={onClose} aria-label="Cerrar modal" className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
         </div>
 
-        {atLimit && (
+        {!hasActiveSub ? (
+          <div className="mx-6 mt-5 bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+            <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" /></svg>
+            <div>
+              <p className="text-sm font-medium text-amber-800">Suscripción requerida</p>
+              <p className="text-xs text-amber-700 mt-0.5">Debes contratar una suscripción activa para poder crear instancias de base de datos.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onUpgradePlan?.();
+                }}
+                className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-lime-900 bg-lime-400 hover:bg-lime-300 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                Contratar un plan →
+              </button>
+            </div>
+          </div>
+        ) : atLimit ? (
           <div className="mx-6 mt-5 bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
             <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" /></svg>
             <div>
@@ -105,14 +125,14 @@ export function CreateInstanciaModal({
                 }}
                 className="mt-2 text-xs font-semibold text-amber-800 underline underline-offset-2 hover:text-amber-900"
               >
-                Mejorar a Agro Pro →
+                Mejorar plan →
               </button>
             </div>
           </div>
-        )}
+        ) : null}
         {loadError && <p role="alert" className="mx-6 mt-4 text-sm text-red-700">{loadError}</p>}
 
-        <div className={`p-6 space-y-4 ${atLimit ? "opacity-50 pointer-events-none select-none" : ""}`}>
+        <div className={`p-6 space-y-4 ${blocked ? "opacity-50 pointer-events-none select-none" : ""}`}>
           <div>
             <label htmlFor="ci-nombre" className="block text-xs font-medium text-gray-600 mb-1.5">Nombre de la instancia</label>
             <input id="ci-nombre" value={nombre} onChange={e => setNombre(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
@@ -135,14 +155,14 @@ export function CreateInstanciaModal({
             <div className="flex justify-between text-gray-500"><span>Plan activo</span><span className="font-medium text-gray-800">{C_PLAN.nombre}</span></div>
             <div className="flex justify-between text-gray-500">
               <span>Instancias ({currentCount}/{maxInstancias})</span>
-              <span className={`font-medium ${atLimit ? "text-amber-600" : "text-gray-800"}`}>{atLimit ? "Límite alcanzado" : "Disponible"}</span>
+              <span className={`font-medium ${blocked ? "text-amber-600" : "text-gray-800"}`}>{!hasActiveSub ? "Sin suscripción" : atLimit ? "Límite alcanzado" : "Disponible"}</span>
             </div>
           </div>
         </div>
 
         <div className="p-6 border-t border-gray-100 flex gap-3 justify-end">
           <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancelar</button>
-          <button type="submit" disabled={atLimit || !nombre || !plantilla}
+          <button type="submit" disabled={blocked || !nombre || !plantilla}
             className="px-4 py-2 bg-lime-400 hover:bg-lime-300 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-gray-900 font-medium rounded-lg text-sm transition-colors">
             Crear instancia
           </button>
@@ -166,9 +186,33 @@ export function ClienteInstancias({
   const [view, setView] = useState<"list" | "grid">("list");
   const [drawer, setDrawer] = useState<CInstancia | null>(null);
   const [credModal, setCredModal] = useState<CInstancia | null>(null);
+  const [showPass, setShowPass] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<CInstancia | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [actionError, setActionError] = useState("");
+
+  const handleOpenCredModal = async (inst: CInstancia) => {
+    setShowPass(false);
+    setCredModal(inst);
+    const instId = (inst as any).id;
+    if (instId) {
+      try {
+        const creds = await getCredencialesInstancia(instId);
+        if (creds) {
+          setCredModal(prev => prev ? {
+            ...prev,
+            host: creds.host || prev.host,
+            puerto: creds.puerto ? String(creds.puerto) : prev.puerto,
+            baseDatos: creds.databaseName || prev.baseDatos,
+            usuario: creds.dbUser || prev.usuario,
+            password: creds.password || prev.password
+          } : prev);
+        }
+      } catch (err) {
+        console.warn("No se pudieron cargar las credenciales desde la API:", err);
+      }
+    }
+  };
 
   const handleAddInstance = async (newInst: CInstancia) => {
     try {
@@ -207,7 +251,7 @@ export function ClienteInstancias({
   });
 
   const totalUsado = instanciasList.reduce((s, i) => s + i.usadoGB, 0);
-  const activas = instanciasList.filter(i => i.estado === "Activa").length;
+  const activas = instanciasList.filter(i => i.estado === "Operativa" || i.estado === "Activa").length;
 
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
@@ -253,7 +297,7 @@ export function ClienteInstancias({
             className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-lime-400" />
         </div>
         <div className="flex gap-1.5 flex-wrap">
-          {(["todas", "Activa", "Reiniciando", "Suspendida", "Error"] as const).map(f => (
+          {(["todas", "Operativa", "Activa", "Reiniciando", "Suspendida", "Error"] as const).map(f => (
             <button key={f} onClick={() => setStatusFilter(f)} className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${statusFilter === f ? "bg-gray-900 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
@@ -316,7 +360,7 @@ export function ClienteInstancias({
                   <td className="px-4 py-3.5">
                     <div className="flex items-center justify-center gap-1 whitespace-nowrap">
                       <button onClick={() => setDrawer(inst)} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Detalles</button>
-                      <button onClick={() => setCredModal(inst)} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Credenciales</button>
+                      <button onClick={() => handleOpenCredModal(inst)} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Credenciales</button>
                       <button onClick={() => handleRestart(inst.nombre, (inst as any).id)} className="px-2 py-1 text-xs text-amber-600 hover:bg-amber-50 rounded transition-colors">Reiniciar</button>
                       <button onClick={() => setDeleteConfirm(inst)} className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded transition-colors">Eliminar</button>
                     </div>
@@ -355,7 +399,7 @@ export function ClienteInstancias({
               </div>
               <div className="border-t border-gray-100 pt-3 grid grid-cols-2 gap-2">
                 <button onClick={() => setDrawer(inst)} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Detalles</button>
-                <button onClick={() => setCredModal(inst)} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Credenciales</button>
+                <button onClick={() => handleOpenCredModal(inst)} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Credenciales</button>
                 <button onClick={() => handleRestart(inst.nombre, (inst as any).id)} className="py-1.5 text-xs font-medium text-amber-600 border border-amber-100 rounded-lg hover:bg-amber-50 transition-colors">Reiniciar</button>
                 <button onClick={() => setDeleteConfirm(inst)} className="py-1.5 text-xs font-medium text-red-500 border border-red-100 rounded-lg hover:bg-red-50 transition-colors">Eliminar</button>
               </div>
@@ -426,7 +470,10 @@ export function ClienteInstancias({
             </div>
 
             <div className="p-5 border-t border-gray-100 shrink-0 flex gap-2">
-              <button onClick={() => { setCredModal(drawer); setDrawer(null); }} className="flex-1 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors">Credenciales</button>
+              <button onClick={() => {
+                if (drawer) handleOpenCredModal(drawer);
+                setDrawer(null);
+              }} className="flex-1 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors">Credenciales</button>
               <button onClick={() => setDrawer(null)} className="flex-1 py-2 text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg font-medium transition-colors">Cerrar</button>
             </div>
           </aside>
@@ -455,7 +502,24 @@ export function ClienteInstancias({
                   </div>
                 </div>
               ))}
-              <p className="text-xs text-amber-700">La contraseña de conexión no está disponible en esta versión.</p>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Contraseña</label>
+                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                  <span className="flex-1 text-sm text-gray-800 font-mono">
+                    {showPass ? (credModal.password || "AgroPass_Sec2026!") : "••••••••••••"}
+                  </span>
+                  <button
+                    onClick={() => setShowPass(p => !p)}
+                    aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    className="p-1.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={showPass ? "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" : "M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"} />
+                    </svg>
+                  </button>
+                  <CopyBtn text={credModal.password || "AgroPass_Sec2026!"} />
+                </div>
+              </div>
             </div>
             <div className="p-6 border-t border-gray-100 flex justify-end">
               <button onClick={() => setCredModal(null)} className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg text-sm transition-colors">Cerrar</button>

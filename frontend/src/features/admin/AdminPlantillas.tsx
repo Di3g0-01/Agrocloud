@@ -309,7 +309,7 @@ export function AdminPlantillas({ isDark }: { isDark?: boolean }) {
                   <label className={`block text-xs font-medium mb-1.5 ${isDark ? "text-slate-300" : "text-gray-700"}`}>Estado</label>
                   <CustomSelect
                     value={estado}
-                    onChange={(val) => setEstado(val as "Activa" | "Inactiva")}
+                    onChange={(val: string) => setEstado(val as "Activa" | "Inactiva")}
                     options={[
                       { value: "Activa", label: "Activa" },
                       { value: "Inactiva", label: "Inactiva" },

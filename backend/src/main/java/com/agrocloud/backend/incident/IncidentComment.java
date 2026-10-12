@@ -21,10 +21,12 @@ public class IncidentComment {
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "author_id", nullable = false) public User author;
     @Column(nullable = false, length = 2000) public String body;
+    @Column(name = "target_role", nullable = false, length = 20) public String targetRole = "CLIENTE";
     @Column(name = "created_at", nullable = false) public Instant createdAt;
 
     @PrePersist void create() {
         if (id == null) id = UUID.randomUUID();
+        if (targetRole == null || targetRole.isBlank()) targetRole = "CLIENTE";
         if (createdAt == null) createdAt = Instant.now();
     }
 }

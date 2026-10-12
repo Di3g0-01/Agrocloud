@@ -4,6 +4,7 @@ import com.agrocloud.backend.entity.AccountStatus;
 import com.agrocloud.backend.entity.Role;
 import com.agrocloud.backend.entity.User;
 import com.agrocloud.backend.instance.entity.InstanceEntity;
+import com.agrocloud.backend.instance.entity.InstanceStatus;
 import com.agrocloud.backend.instance.repository.InstanceRepository;
 import com.agrocloud.backend.notification.NotificationService;
 import com.agrocloud.backend.repository.UserRepository;
@@ -151,15 +152,39 @@ public class IncidentService {
         }
         incident.status = next;
         IncidentResponse result = IncidentResponse.from(incidents.saveAndFlush(incident));
-        if ("RESUELTA".equals(next)) {
-            notifications.create(incident.owner, "TICKET_RESUELTO", "Incidencia resuelta " + result.codigo(),
-                    incident.resolutionMessage, incident.id);
-        } else if ("EN_REVISION".equals(next)) {
+        if ("EN_REVISION".equals(next)) {
+            if (incident.instance != null && incident.instance.getStatus() == InstanceStatus.active) {
+                incident.instance.setStatus(InstanceStatus.revision);
+                instances.save(incident.instance);
+                if (incident.instance.getOwner() != null) {
+                    notifications.create(incident.instance.getOwner(), "INSTANCIA_ESTADO", "Instancia en revisión",
+                            "La instancia " + incident.instance.getName() + " ahora está en revisión por soporte técnico.",
+                            incident.instance.getId());
+                }
+            }
             notifications.create(incident.owner, "TICKET_EN_REVISION", "Incidencia en revisión " + result.codigo(),
                     "Soporte comenzó a revisar tu incidencia.", incident.id);
-        } else if ("CERRADA".equals(next) && incident.assignedSupport != null) {
-            notifications.create(incident.assignedSupport, "TICKET_CERRADO", "Incidencia cerrada " + result.codigo(),
-                    "La incidencia se cerró.", incident.id);
+        } else if ("RESUELTA".equals(next) || "CERRADA".equals(next)) {
+            if (incident.instance != null && incident.instance.getStatus() == InstanceStatus.revision) {
+                boolean hasOtherInRevision = incidents.existsByInstanceIdAndStatusAndIdNot(
+                        incident.instance.getId(), "EN_REVISION", incident.id);
+                if (!hasOtherInRevision) {
+                    incident.instance.setStatus(InstanceStatus.active);
+                    instances.save(incident.instance);
+                    if (incident.instance.getOwner() != null) {
+                        notifications.create(incident.instance.getOwner(), "INSTANCIA_ESTADO", "Instancia operativa",
+                                "La instancia " + incident.instance.getName() + " vuelve a estar activa.",
+                                incident.instance.getId());
+                    }
+                }
+            }
+            if ("RESUELTA".equals(next)) {
+                notifications.create(incident.owner, "TICKET_RESUELTO", "Incidencia resuelta " + result.codigo(),
+                        incident.resolutionMessage, incident.id);
+            } else if (incident.assignedSupport != null) {
+                notifications.create(incident.assignedSupport, "TICKET_CERRADO", "Incidencia cerrada " + result.codigo(),
+                        "La incidencia se cerró.", incident.id);
+            }
         }
         return result;
     }

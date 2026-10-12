@@ -61,7 +61,7 @@ export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: Use
           {page === "pagos" && <AdminPagos isDark={isDark} />}
           {page === "plantillas" && <AdminPlantillas isDark={isDark} />}
           {page === "monitoreo" && <AdminMonitoreo isDark={isDark} />}
-          {page === "incidencias" && <AdminIncidencias isDark={isDark} />}
+          {page === "incidencias" && <AdminIncidencias isDark={isDark} currentUser={user} />}
           {page === "configuracion" && <AdminConfiguracion theme={theme} setTheme={setTheme} />}
           {page === "documentacion" && <SharedDocumentacion userRole="admin" isDark={isDark} />}
         </main>

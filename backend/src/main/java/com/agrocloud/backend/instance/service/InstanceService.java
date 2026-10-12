@@ -3,6 +3,8 @@ package com.agrocloud.backend.instance.service;
 import com.agrocloud.backend.instance.dto.CreateInstanceRequest;
 import com.agrocloud.backend.instance.dto.InstanceResponse;
 import com.agrocloud.backend.instance.entity.InstanceStatus;
+import com.agrocloud.backend.instance.dto.InstanceCredentialResponse;
+import com.agrocloud.backend.instance.dto.InstanceMonitoringResponse;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,4 +16,8 @@ public interface InstanceService {
     InstanceResponse restartInstance(UUID id, UUID requestingUserId, boolean isAdminOrSupport);
     InstanceResponse updateInstanceStatus(UUID id, InstanceStatus newStatus);
     void deleteInstance(UUID id, UUID requestingUserId, boolean isAdminOrSupport);
+
+    InstanceCredentialResponse getInstanceCredentials(UUID instanceId, UUID requestingUserId, boolean isAdminOrSupport);
+    InstanceMonitoringResponse getInstanceMetrics(UUID instanceId, UUID requestingUserId, boolean isAdminOrSupport);
 }
+

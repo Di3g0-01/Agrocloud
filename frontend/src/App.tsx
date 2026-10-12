@@ -38,12 +38,14 @@ export default function App() {
   const handleAuthenticated = ({ token, user: authenticatedUser }: AuthResponse) => {
     localStorage.setItem("agrocloud_token", token);
     localStorage.setItem("agrocloud_user", JSON.stringify(authenticatedUser));
+    window.dispatchEvent(new Event("agrocloud:auth-change"));
     setUser(authenticatedUser);
     setRole(authenticatedUser.rol === "ADMIN" ? "admin" : authenticatedUser.rol === "SOPORTE" ? "soporte" : "cliente");
   };
   const handleLogout = () => {
     localStorage.removeItem("agrocloud_token");
     localStorage.removeItem("agrocloud_user");
+    window.dispatchEvent(new Event("agrocloud:auth-change"));
     setUser(null);
     setRole("landing");
   };

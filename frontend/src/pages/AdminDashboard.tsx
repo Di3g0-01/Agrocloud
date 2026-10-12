@@ -14,6 +14,7 @@ import {
   X,
   UserCheck,
 } from 'lucide-react';
+import { CustomSelect } from '../components/ui/CustomSelect';
 
 export const AdminDashboard: React.FC = () => {
   const [usuarios, setUsuarios] = useState<User[]>([]);
@@ -263,16 +264,20 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Rol de Acceso</label>
-                  <select
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Rol de Acceso</label>
+                  <CustomSelect
                     value={newRol}
-                    onChange={(e) => setNewRol(e.target.value as UserRole)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
-                  >
-                    <option value="CLIENTE">Cliente (Productor/Finca)</option>
-                    <option value="SOPORTE">Soporte Técnico</option>
-                    <option value="ADMIN">Administrador</option>
-                  </select>
+                    onChange={(val) => setNewRol(val as UserRole)}
+                    isDark={true}
+                    size="md"
+                    className="w-full"
+                    dropdownClassName="w-full"
+                    options={[
+                      { value: "CLIENTE", label: "Cliente (Productor/Finca)", icon: <Users className="w-3.5 h-3.5" /> },
+                      { value: "SOPORTE", label: "Soporte Técnico", icon: <UserCheck className="w-3.5 h-3.5" /> },
+                      { value: "ADMIN", label: "Administrador", icon: <Shield className="w-3.5 h-3.5" /> },
+                    ]}
+                  />
                 </div>
 
                 <div className="pt-2 flex justify-end gap-3">

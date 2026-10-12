@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ProgressBar, StatusBadge } from "../../components/ui";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { getInstancias, actualizarEstadoInstancia } from "../../api/instanciasApi";
 import type { InstanciaDB } from "../../types";
 
@@ -64,7 +65,21 @@ export function SoporteInstancias({ isDark }: { isDark?: boolean }) {
                 <td className="px-5 py-4"><div className="flex items-center gap-2"><ProgressBar value={inst.memoria ?? 0} color={(inst.memoria ?? 0) > 70 ? "bg-red-400" : (inst.memoria ?? 0) > 50 ? "bg-amber-400" : "bg-lime-400"} /><span className={`text-xs w-8 shrink-0 ${isDark ? "text-slate-400" : "text-gray-500"}`}>{inst.memoria ?? 0}%</span></div></td>
                 <td className={`px-5 py-4 text-xs font-mono ${isDark ? "text-slate-400" : "text-gray-400"}`}>{inst.region || "us-east-1"}</td>
                 <td className="px-5 py-4"><StatusBadge s={inst.estado} /></td>
-                <td className="px-5 py-4"><select aria-label={`Cambiar estado de ${inst.nombre}`} value={inst.estado} onChange={e => updateStatus(inst.id, e.target.value as InstanciaDB['estado'])} className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700"><option value="active">Operativa</option><option value="revision">En revisión</option><option value="suspended">Suspendida</option><option value="terminated">Detenida</option></select></td>
+                <td className="px-5 py-4">
+                  <CustomSelect
+                    value={inst.estado}
+                    onChange={(val) => updateStatus(inst.id, val as InstanciaDB["estado"])}
+                    isDark={isDark}
+                    size="xs"
+                    className="w-32"
+                    options={[
+                      { value: "active", label: "Operativa" },
+                      { value: "revision", label: "En revisión" },
+                      { value: "suspended", label: "Suspendida" },
+                      { value: "terminated", label: "Detenida" },
+                    ]}
+                  />
+                </td>
               </tr>
             ))}</tbody>
           </table>
@@ -84,7 +99,22 @@ export function SoporteInstancias({ isDark }: { isDark?: boolean }) {
                 <div><div className={`flex justify-between text-xs mb-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}><span>Memoria</span><span>{inst.memoria ?? 0}%</span></div><ProgressBar value={inst.memoria ?? 0} color={(inst.memoria ?? 0) > 70 ? "bg-red-400" : (inst.memoria ?? 0) > 50 ? "bg-amber-400" : "bg-lime-400"} /></div>
               </div>
               <div className={`mt-4 pt-4 border-t flex items-center justify-between text-xs ${isDark ? "border-slate-800 text-slate-400" : "border-gray-100 text-gray-400"}`}><span className="font-mono">{inst.version || "PostgreSQL 16"}</span><span>{inst.region || "us-east-1"}</span></div>
-              <select aria-label={`Cambiar estado de ${inst.nombre}`} value={inst.estado} onChange={e => updateStatus(inst.id, e.target.value as InstanciaDB['estado'])} className="mt-3 w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs text-gray-700"><option value="active">Operativa</option><option value="revision">En revisión</option><option value="suspended">Suspendida</option><option value="terminated">Detenida</option></select>
+              <div className="mt-3">
+                <CustomSelect
+                  value={inst.estado}
+                  onChange={(val) => updateStatus(inst.id, val as InstanciaDB["estado"])}
+                  isDark={isDark}
+                  size="sm"
+                  className="w-full"
+                  dropdownClassName="w-full"
+                  options={[
+                    { value: "active", label: "Operativa" },
+                    { value: "revision", label: "En revisión" },
+                    { value: "suspended", label: "Suspendida" },
+                    { value: "terminated", label: "Detenida" },
+                  ]}
+                />
+              </div>
             </div>
           ))}
         </div>

@@ -7,16 +7,18 @@ import com.agrocloud.backend.plan.entity.PlanEntity;
 import com.agrocloud.backend.plan.repository.PlanRepository;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PlanServiceImpl implements PlanService {
 
     private final PlanRepository repository;
+
+    public PlanServiceImpl(PlanRepository repository) {
+        this.repository = repository;
+    }
 
     @Override
     public List<PlanResponse> getAllPlans() {

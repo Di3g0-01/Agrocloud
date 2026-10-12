@@ -12,4 +12,9 @@ public interface IncidentRepository extends JpaRepository<IncidentEntity, UUID> 
     List<IncidentEntity> findByAssignedSupportIdOrderByCreatedAtDesc(UUID supportId);
     List<IncidentEntity> findByResolvedByIdOrderByResolvedAtDesc(UUID supportId);
     List<IncidentEntity> findAllByOrderByCreatedAtDesc();
+
+    @Query("SELECT COUNT(i) > 0 FROM IncidentEntity i WHERE i.instance.id = :instanceId AND i.status = :status AND i.id <> :excludeId")
+    boolean existsByInstanceIdAndStatusAndIdNot(@org.springframework.data.repository.query.Param("instanceId") UUID instanceId,
+                                                @org.springframework.data.repository.query.Param("status") String status,
+                                                @org.springframework.data.repository.query.Param("excludeId") UUID excludeId);
 }

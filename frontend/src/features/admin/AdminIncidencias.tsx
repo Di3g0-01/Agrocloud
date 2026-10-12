@@ -5,8 +5,12 @@ import { listAdminUsers } from "../../api/adminUsersApi";
 import type { AdminUser } from "../../api/adminUsersApi";
 import type { Incident } from "../../types/shared";
 import { IncidentComments } from "../../components/shared/IncidentComments";
+import { CustomSelect } from "../../components/ui/CustomSelect";
+import { Headphones } from "lucide-react";
 
-export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
+import type { User } from "../../types";
+
+export function AdminIncidencias({ isDark, currentUser }: { isDark?: boolean; currentUser?: User }) {
   const [selected, setSelected] = useState<Incident | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [agents, setAgents] = useState<AdminUser[]>([]);
@@ -35,7 +39,9 @@ export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
       setIncidents(current => current.map(incident => incident.id === updated.id ? updated : incident));
       setSelected(updated);
       setError("");
-      setNotice(`${updated.codigo} asignada a soporte.`);
+      const agentObj = agents.find(a => a.id === agentChoice);
+      const agentName = agentObj?.contactName || agentObj?.email || "soporte";
+      setNotice(`${updated.codigo} asignada a ${agentName}. Puedes enviarle instrucciones directamente abajo.`);
     } catch { setError("No se pudo asignar la incidencia."); }
   };
   return (
@@ -82,7 +88,7 @@ export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
           </table>
         </div>
         {selected && (
-          <div className={`w-72 border rounded-xl p-5 self-start shrink-0 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
+          <div className={`w-80 lg:w-96 border rounded-xl p-5 self-start shrink-0 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
             <div className="flex justify-between mb-4"><span className={`font-mono font-semibold text-sm ${isDark ? "text-white" : "text-gray-900"}`}>{selected.codigo}</span><button onClick={() => setSelected(null)} className="text-gray-400">✕</button></div>
             <div className="space-y-3">
               {[["Cliente", selected.cliente], ["Instancia", selected.instancia], ["Plantilla", selected.plantilla], ["Asunto", selected.asunto]].map(([k, v]) => (
@@ -92,14 +98,45 @@ export function AdminIncidencias({ isDark }: { isDark?: boolean }) {
               <div><p className={`text-xs mb-0.5 ${isDark ? "text-slate-400" : "text-gray-400"}`}>Guía</p><p className={`text-sm leading-relaxed rounded-lg p-3 ${isDark ? "bg-lime-950/40 border border-lime-800/40 text-lime-300" : "bg-lime-50 border border-lime-100 text-gray-600"}`}>{selected.guia}</p></div>
               <div className="flex gap-2"><PriorityBadge p={selected.prioridad} /><StatusBadge s={selected.estado} /></div>
               <div>
-                <label htmlFor="assigned-agent" className={`block text-xs mb-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}>Agente de soporte</label>
-                <select id="assigned-agent" value={agentChoice} onChange={event => setAgentChoice(event.target.value)} disabled={selected.estado === "Cerrada"} className="w-full rounded-lg border border-gray-300 bg-white p-2 text-sm text-gray-900">
-                  <option value="">Seleccionar agente...</option>
-                  {agents.map(agent => <option key={agent.id} value={agent.id}>{agent.contactName || agent.email}</option>)}
-                </select>
-                {selected.estado !== "Cerrada" && <button onClick={assign} disabled={!agentChoice || agentChoice === selected.agenteId} className="mt-2 rounded-lg bg-lime-400 px-3 py-2 text-xs font-semibold text-gray-900 disabled:opacity-50">Asignar a soporte</button>}
+                <label className={`block text-xs mb-1.5 font-medium ${isDark ? "text-slate-400" : "text-gray-500"}`}>Agente de soporte</label>
+                <CustomSelect
+                  id="assigned-agent"
+                  value={agentChoice}
+                  onChange={setAgentChoice}
+                  disabled={selected.estado === "Cerrada"}
+                  placeholder="Seleccionar agente..."
+                  isDark={isDark}
+                  size="sm"
+                  className="w-full"
+                  dropdownClassName="w-full max-w-full"
+                  options={agents.map(agent => ({
+                    value: agent.id,
+                    label: agent.contactName || agent.email,
+                    icon: <Headphones className="w-3.5 h-3.5" />,
+                    description: agent.email
+                  }))}
+                />
+                {selected.estado !== "Cerrada" && (
+                  <button onClick={assign} disabled={!agentChoice || agentChoice === selected.agenteId} className="mt-2.5 rounded-xl bg-lime-400 hover:bg-lime-500 px-3 py-2 text-xs font-semibold text-gray-900 disabled:opacity-50 transition-colors">
+                    Asignar a soporte
+                  </button>
+                )}
               </div>
-              <IncidentComments incidentId={selected.id} closed={selected.estado === "Cerrada"} isDark={isDark} />
+              {(() => {
+                const currentAgent = agents.find(a => a.id === (agentChoice || selected.agenteId));
+                const assignedAgentName = currentAgent?.contactName || currentAgent?.email;
+                return (
+                  <IncidentComments
+                    incidentId={selected.id}
+                    closed={selected.estado === "Cerrada"}
+                    isDark={isDark}
+                    currentUser={currentUser}
+                    clientName={selected.cliente}
+                    assignedAgentName={assignedAgentName}
+                    defaultTargetRole={agentChoice ? "SOPORTE" : "CLIENTE"}
+                  />
+                );
+              })()}
             </div>
           </div>
         )}
