@@ -4,7 +4,6 @@ import com.agrocloud.backend.plan.dto.PlanResponse;
 import com.agrocloud.backend.plan.dto.UpsertPlanRequest;
 import com.agrocloud.backend.plan.service.PlanService;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,10 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/planes")
-@RequiredArgsConstructor
 public class PlanController {
 
     private final PlanService service;
+
+    public PlanController(PlanService service) {
+        this.service = service;
+    }
 
     @GetMapping
     public ResponseEntity<List<PlanResponse>> list() {

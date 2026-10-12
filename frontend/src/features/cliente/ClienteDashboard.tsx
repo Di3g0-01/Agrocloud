@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { ActivityIcon, StatusBadge } from "../../components/ui";
+import { ActivityIcon } from "../../components/ui";
 import { C_PLAN } from "../../data/cliente";
 import { getPlantillas } from "../../api/plantillasApi";
 import type { CInstancia, CPlantillaDB, ClientePage } from "../../types/cliente";
-import { SvgPaths } from "./ClienteInstancias";
+import { SvgPaths, CInstanciaStatusBadge } from "./ClienteInstancias";
 
 export function ClienteDashboard({
   onNavigate,
@@ -82,7 +82,7 @@ export function ClienteDashboard({
                     <td className="px-5 py-4 text-gray-500">PostgreSQL</td>
                     <td className="px-5 py-4 text-gray-600">{inst.plantilla}</td>
                     <td className="px-5 py-4 text-gray-500">{inst.usadoGB} / {inst.totalGB} GB</td>
-                    <td className="px-5 py-4 flex justify-center"><StatusBadge s={inst.estado} /></td>
+                    <td className="px-5 py-4 flex justify-center"><CInstanciaStatusBadge s={inst.estado} /></td>
                     <td className="px-5 py-4 text-gray-400">
                       <button onClick={() => onNavigate?.("instancias")} className="text-xs text-lime-600 hover:text-lime-700 font-medium">Ver</button>
                     </td>

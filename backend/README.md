@@ -174,3 +174,20 @@ en `/agrocloud_test` antes de crear datos.
 - `GET /api/v1/pagos`: Consulta general de todos los pagos registrados (Administrador y Soporte Técnico).
 - `GET /api/v1/facturas/{pagoId}` (o `GET /api/v1/facturas/pago/{pagoId}`): Genera y consulta el comprobante fiscal estructurado en JSON con desglose de subtotal, impuesto (IVA 12%) y total.
 
+### Módulo de Monitoreo de Instancias y Credenciales
+
+`V14__create_instance_metrics.sql` añade la tabla `instance_metrics` para almacenar el historial de métricas operativas (CPU, memoria, almacenamiento y estado) de cada instancia.
+
+- `GET /api/v1/instancias/{id}/credenciales`: Obtiene las credenciales de acceso a la base de datos (usuario, contraseña desencriptada AES-256, host y puerto).
+- `GET /api/v1/instancias/{id}/metricas`: Obtiene el resumen de métricas en tiempo real y el historial reciente de la instancia para gráficos y monitoreo.
+
+### Visibilidad de Comentarios de Incidencias
+
+`V15__comment_target_role.sql` agrega la columna `target_role` a `incident_comments` para definir la audiencia y alcance de los mensajes intercambiados en tickets entre Cliente, Soporte y Administrador.
+
+### Ciclo de Suscripciones y Pagos
+- Creación de instancias condicionada a poseer una suscripción activa con validación estricta (`SubscriptionService`).
+- Al registrarse o contratar un plan, se simula el pago registrando la transacción (`PaymentService`) y emitiendo la factura correspondiente (`InvoiceService`).
+- Migraciones ejecutadas hasta `V15__comment_target_role.sql`.
+
+

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { adminUserError, createAdminUser, getAdminUser, listAdminUsers, updateAdminUser, type AdminUser, type ApiRole, type ApiStatus } from '../../api/adminUsersApi';
+import { CustomSelect } from '../../components/ui/CustomSelect';
 
 const roles: Record<ApiRole, string> = { ADMINISTRADOR: 'Administrador', CLIENTE: 'Cliente', SOPORTE: 'Soporte' };
 const statuses: Record<ApiStatus, string> = { ACTIVO: 'Activo', PENDIENTE: 'Pendiente', SUSPENDIDO: 'Suspendido' };
@@ -79,10 +80,28 @@ export function AdminUsuarios({ currentUserId, initialUserId }: { currentUserId:
       {([['Total usuarios', users.length], ['Activos', users.filter(u => u.status === 'ACTIVO').length], ['Soporte', users.filter(u => u.role === 'SOPORTE').length], ['Suspendidos', users.filter(u => u.status === 'SUSPENDIDO').length]] as const).map(([label, count]) =>
         <div key={label} className="bg-white border border-gray-100 rounded-xl p-4"><p className="text-xs text-gray-500">{label}</p><p className="text-2xl font-semibold mt-2">{count}</p></div>)}
     </div>
-    <div className="flex flex-wrap gap-3 mb-4">
+    <div className="flex flex-wrap gap-3 mb-4 items-center">
       <input aria-label="Buscar usuario" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre, finca o correo" className="flex-1 min-w-56 border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white" />
-      <select aria-label="Filtrar por rol" value={roleFilter} onChange={e => setRoleFilter(e.target.value as ApiRole | '')} className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"><option value="">Todos los roles</option>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
-      <select aria-label="Filtrar por estado" value={statusFilter} onChange={e => setStatusFilter(e.target.value as ApiStatus | '')} className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"><option value="">Todos los estados</option>{Object.entries(statuses).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
+      <CustomSelect
+        value={roleFilter}
+        onChange={val => setRoleFilter(val as ApiRole | '')}
+        size="md"
+        className="min-w-44"
+        options={[
+          { value: '', label: 'Todos los roles' },
+          ...Object.entries(roles).map(([value, label]) => ({ value, label }))
+        ]}
+      />
+      <CustomSelect
+        value={statusFilter}
+        onChange={val => setStatusFilter(val as ApiStatus | '')}
+        size="md"
+        className="min-w-44"
+        options={[
+          { value: '', label: 'Todos los estados' },
+          ...Object.entries(statuses).map(([value, label]) => ({ value, label }))
+        ]}
+      />
     </div>
     <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
       <table className="w-full min-w-[740px] text-sm"><thead className="bg-gray-50 text-left text-xs text-gray-500"><tr>{['Nombre', 'Correo', 'Rol', 'Organización', 'Estado', 'Registro', 'Acciones'].map(h => <th key={h} className="px-4 py-3 font-medium">{h}</th>)}</tr></thead>
@@ -105,8 +124,30 @@ export function AdminUsuarios({ currentUserId, initialUserId }: { currentUserId:
           <label className="text-sm">Teléfono<input maxLength={30} disabled={mode === 'view'} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2" /></label>
           {mode === 'create' && <label className="text-sm sm:col-span-2">Contraseña inicial<input type="password" required minLength={8} maxLength={72} autoComplete="new-password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2" /><span className="text-xs text-gray-500">Compártela con el miembro de soporte por un canal privado.</span></label>}
           {mode === 'edit' && <label className="text-sm sm:col-span-2">Nueva contraseña (opcional)<input type="password" minLength={8} maxLength={72} autoComplete="new-password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} className="mt-1 w-full border rounded-lg px-3 py-2" /><span className="text-xs text-gray-500">Déjala vacía para conservar la contraseña actual.</span></label>}
-          <label className="text-sm">Rol<select disabled={mode !== 'edit' || selected?.id === currentUserId} value={form.role} onChange={e => setForm({ ...form, role: e.target.value as ApiRole })} className="mt-1 w-full border rounded-lg px-3 py-2 bg-white">{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-          {mode !== 'create' && <label className="text-sm">Estado<select disabled={mode === 'view' || selected?.id === currentUserId} value={form.status} onChange={e => setForm({ ...form, status: e.target.value as ApiStatus })} className="mt-1 w-full border rounded-lg px-3 py-2 bg-white">{Object.entries(statuses).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
+          <div>
+            <label className="text-sm block mb-1 font-medium">Rol</label>
+            <CustomSelect
+              disabled={mode !== 'edit' || selected?.id === currentUserId}
+              value={form.role}
+              onChange={val => setForm({ ...form, role: val as ApiRole })}
+              size="md"
+              className="w-full"
+              options={Object.entries(roles).map(([value, label]) => ({ value, label }))}
+            />
+          </div>
+          {mode !== 'create' && (
+            <div>
+              <label className="text-sm block mb-1 font-medium">Estado</label>
+              <CustomSelect
+                disabled={mode === 'view' || selected?.id === currentUserId}
+                value={form.status}
+                onChange={val => setForm({ ...form, status: val as ApiStatus })}
+                size="md"
+                className="w-full"
+                options={Object.entries(statuses).map(([value, label]) => ({ value, label }))}
+              />
+            </div>
+          )}
           <div className="sm:col-span-2 flex justify-end gap-2 mt-2"><button type="button" onClick={() => setMode(null)} className="px-4 py-2 rounded-lg border text-sm">Cerrar</button>{mode !== 'view' && <button disabled={saving} type="submit" className="px-4 py-2 rounded-lg bg-green-700 text-white text-sm disabled:opacity-50">{saving ? 'Guardando...' : mode === 'create' ? 'Crear cuenta' : 'Guardar cambios'}</button>}</div>
         </form>
       </div>

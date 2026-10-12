@@ -18,4 +18,5 @@ public interface SubscriptionService {
     SubscriptionResponse suspenderSubscription(UUID subscriptionId);
     SubscriptionResponse cancelarSubscription(UUID subscriptionId);
     Optional<SubscriptionEntity> findActiveSubscriptionEntity(UUID userId);
+    SubscriptionEntity ensureActiveEnterpriseSubscription(UUID userId);
 }

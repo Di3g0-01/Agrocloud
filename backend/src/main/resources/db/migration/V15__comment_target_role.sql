@@ -1,0 +1,1 @@
+ALTER TABLE incident_comments ADD COLUMN IF NOT EXISTS target_role VARCHAR(20) DEFAULT 'CLIENTE';

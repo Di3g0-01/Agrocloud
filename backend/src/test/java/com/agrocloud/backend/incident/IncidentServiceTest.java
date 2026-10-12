@@ -8,6 +8,7 @@ import com.agrocloud.backend.entity.AccountStatus;
 import com.agrocloud.backend.entity.Role;
 import com.agrocloud.backend.entity.User;
 import com.agrocloud.backend.instance.entity.InstanceEntity;
+import com.agrocloud.backend.instance.entity.InstanceStatus;
 import com.agrocloud.backend.instance.repository.InstanceRepository;
 import com.agrocloud.backend.notification.NotificationService;
 import com.agrocloud.backend.repository.UserRepository;
@@ -138,6 +139,30 @@ class IncidentServiceTest {
                 () -> service.changeStatus(ticketId, "ABIERTA", null, principal(clientId, "CLIENTE")));
     }
 
+    @Test void instanceStatusUpdatesToRevisionWhenIncidentIsInReviewAndRestoresWhenResolved() {
+        UUID ticketId = UUID.randomUUID();
+        UUID agentId = UUID.randomUUID();
+        IncidentEntity incident = incident("ABIERTA");
+        incident.id = ticketId;
+        incident.instance.setStatus(InstanceStatus.active);
+        User agent = new User();
+        agent.setId(agentId);
+        incident.assignedSupport = agent;
+
+        when(incidents.findById(ticketId)).thenReturn(Optional.of(incident));
+        when(incidents.saveAndFlush(incident)).thenReturn(incident);
+
+        service.changeStatus(ticketId, "EN_REVISION", null, principal(agentId, "SOPORTE"));
+        assertEquals(InstanceStatus.revision, incident.instance.getStatus());
+        verify(instances, atLeastOnce()).save(incident.instance);
+
+        when(incidents.existsByInstanceIdAndStatusAndIdNot(incident.instance.getId(), "EN_REVISION", ticketId))
+                .thenReturn(false);
+
+        service.changeStatus(ticketId, "RESUELTA", "Solucionado", principal(agentId, "SOPORTE"));
+        assertEquals(InstanceStatus.active, incident.instance.getStatus());
+    }
+
     @Test void clientCannotListAnotherClientsTickets() {
         ResponseStatusException error = assertThrows(ResponseStatusException.class,
                 () -> service.listClient(UUID.randomUUID(), principal(UUID.randomUUID(), "CLIENTE")));
@@ -163,7 +188,7 @@ class IncidentServiceTest {
         List<IncidentResponse> activity = service.activity(principal(supportId, "SOPORTE"));
 
         assertEquals(List.of(pending.id, historical.id, closed.id),
-                activity.stream().map(IncidentResponse::id).toList());
+                activity.stream().map(res -> res.id()).toList());
         assertNull(activity.get(1).resueltoPorId());
         assertEquals(supportId, activity.get(2).resueltoPorId());
         assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class,

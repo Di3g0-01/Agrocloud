@@ -114,7 +114,7 @@ public class User {
     }
 
     public Role getRole() {
-        return role.getCode();
+        return role != null ? role.getCode() : null;
     }
 
     public RoleEntity getRoleEntity() {

@@ -74,7 +74,7 @@ class IncidentCommentServiceTest {
             return comment;
         });
 
-        IncidentCommentResponse result = service.add(ticket.id, "  Necesito ayuda  ",
+        IncidentCommentResponse result = service.add(ticket.id, "  Necesito ayuda  ", "CLIENTE",
                 principal(ticket.owner.getId(), "CLIENTE"));
 
         assertEquals("Necesito ayuda", result.texto());
@@ -89,7 +89,7 @@ class IncidentCommentServiceTest {
         ticket.status = "CERRADA";
         when(incidents.findById(ticket.id)).thenReturn(Optional.of(ticket));
         assertThrows(IllegalStateException.class,
-                () -> service.add(ticket.id, "Hola", principal(ticket.owner.getId(), "CLIENTE")));
+                () -> service.add(ticket.id, "Hola", "CLIENTE", principal(ticket.owner.getId(), "CLIENTE")));
         verifyNoInteractions(comments, notifications);
     }
 
@@ -97,7 +97,7 @@ class IncidentCommentServiceTest {
         IncidentEntity ticket = ticket();
         when(incidents.findById(ticket.id)).thenReturn(Optional.of(ticket));
         assertEquals(HttpStatus.FORBIDDEN, assertThrows(ResponseStatusException.class,
-                () -> service.add(ticket.id, "Hola", principal(UUID.randomUUID(), "CLIENTE"))).getStatusCode());
+                () -> service.add(ticket.id, "Hola", "CLIENTE", principal(UUID.randomUUID(), "CLIENTE"))).getStatusCode());
         verifyNoInteractions(comments, notifications);
     }
 
@@ -122,7 +122,7 @@ class IncidentCommentServiceTest {
             return comment;
         });
 
-        IncidentCommentResponse result = service.add(ticket.id, "Ya revisé la instancia",
+        IncidentCommentResponse result = service.add(ticket.id, "Ya revisé la instancia", "CLIENTE",
                 principal(agentId, "SOPORTE"));
 
         assertEquals(Role.SOPORTE, result.rolAutor());
@@ -133,13 +133,46 @@ class IncidentCommentServiceTest {
         verify(notifications, never()).create(eq(agent), any(), any(), any(), any());
     }
 
+    @Test void privateSupportCommentHidesFromClientList() {
+        IncidentEntity ticket = ticket();
+        UUID supportId = UUID.randomUUID();
+        User supportUser = new User();
+        supportUser.setId(supportId);
+        com.agrocloud.backend.entity.RoleEntity sRole = new com.agrocloud.backend.entity.RoleEntity(Role.SOPORTE);
+        supportUser.setRoleEntity(sRole);
+        ticket.assignedSupport = supportUser;
+
+        IncidentComment publicComment = new IncidentComment();
+        publicComment.id = UUID.randomUUID();
+        publicComment.author = ticket.owner;
+        publicComment.targetRole = "CLIENTE";
+        publicComment.body = "Public message";
+
+        IncidentComment privateComment = new IncidentComment();
+        privateComment.id = UUID.randomUUID();
+        privateComment.author = supportUser;
+        privateComment.targetRole = "SOPORTE";
+        privateComment.body = "Internal support note";
+
+        when(incidents.findById(ticket.id)).thenReturn(Optional.of(ticket));
+        when(comments.findByIncidentIdOrderByCreatedAtAscIdAsc(ticket.id))
+                .thenReturn(List.of(publicComment, privateComment));
+
+        List<IncidentCommentResponse> clientView = service.list(ticket.id, principal(ticket.owner.getId(), "CLIENTE"));
+        assertEquals(1, clientView.size());
+        assertEquals("Public message", clientView.get(0).texto());
+
+        List<IncidentCommentResponse> supportView = service.list(ticket.id, principal(supportId, "SOPORTE"));
+        assertEquals(2, supportView.size());
+    }
+
     @Test void invalidBodyDoesNotCreateCommentOrNotification() {
         IncidentEntity ticket = ticket();
         when(incidents.findById(ticket.id)).thenReturn(Optional.of(ticket));
         assertThrows(IllegalArgumentException.class,
-                () -> service.add(ticket.id, "   ", principal(ticket.owner.getId(), "CLIENTE")));
+                () -> service.add(ticket.id, "   ", "CLIENTE", principal(ticket.owner.getId(), "CLIENTE")));
         assertThrows(IllegalArgumentException.class,
-                () -> service.add(ticket.id, "x".repeat(2001), principal(ticket.owner.getId(), "CLIENTE")));
+                () -> service.add(ticket.id, "x".repeat(2001), "CLIENTE", principal(ticket.owner.getId(), "CLIENTE")));
         verifyNoInteractions(comments, notifications);
     }
 
@@ -154,6 +187,8 @@ class IncidentCommentServiceTest {
         ticket.instance = instance;
         User owner = new User();
         owner.setId(UUID.randomUUID());
+        com.agrocloud.backend.entity.RoleEntity cRole = new com.agrocloud.backend.entity.RoleEntity(Role.CLIENTE);
+        owner.setRoleEntity(cRole);
         ticket.owner = owner;
         return ticket;
     }

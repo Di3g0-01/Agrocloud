@@ -20,20 +20,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('agrocloud_token');
-    const savedUser = localStorage.getItem('agrocloud_user');
+    const syncState = () => {
+      const savedToken = localStorage.getItem('agrocloud_token');
+      const savedUser = localStorage.getItem('agrocloud_user');
 
-    if (savedToken && savedUser) {
-      try {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        console.error('Error al restaurar sesión guardada:', e);
-        localStorage.removeItem('agrocloud_token');
-        localStorage.removeItem('agrocloud_user');
+      if (savedToken && savedUser) {
+        try {
+          setToken(savedToken);
+          setUser(JSON.parse(savedUser));
+        } catch (e) {
+          console.error('Error al restaurar sesión guardada:', e);
+          localStorage.removeItem('agrocloud_token');
+          localStorage.removeItem('agrocloud_user');
+          setUser(null);
+          setToken(null);
+        }
+      } else {
+        setUser(null);
+        setToken(null);
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    syncState();
+    window.addEventListener('storage', syncState);
+    window.addEventListener('agrocloud:auth-change', syncState);
+    return () => {
+      window.removeEventListener('storage', syncState);
+      window.removeEventListener('agrocloud:auth-change', syncState);
+    };
   }, []);
 
   const login = async (email: string, pass: string): Promise<UserRole> => {
@@ -86,7 +101,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth debe ser utilizado dentro de un AuthProvider');
+    const savedToken = typeof window !== 'undefined' ? localStorage.getItem('agrocloud_token') : null;
+    const savedUser = typeof window !== 'undefined' ? localStorage.getItem('agrocloud_user') : null;
+    let parsedUser: User | null = null;
+    if (savedUser) {
+      try {
+        parsedUser = JSON.parse(savedUser);
+      } catch {
+        parsedUser = null;
+      }
+    }
+    return {
+      user: parsedUser,
+      token: savedToken,
+      isAuthenticated: Boolean(parsedUser && savedToken),
+      isLoading: false,
+      login: async () => 'CLIENTE' as UserRole,
+      register: async () => 'CLIENTE' as UserRole,
+      logout: () => {
+        localStorage.removeItem('agrocloud_token');
+        localStorage.removeItem('agrocloud_user');
+      },
+    };
   }
   return context;
 };

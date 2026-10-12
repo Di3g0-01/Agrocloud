@@ -30,7 +30,7 @@ export function AdminDashboard({ onNavigate, isDark }: { onNavigate?: (page: any
       setClientesCount(clienteUsers.length);
 
       setInstanciasCount(insts.length);
-      const activeCount = insts.filter((i) => i.estado === "active").length;
+      const activeCount = insts.filter((i) => (i.estado as string) === "active" || (i.estado as string) === "Activa").length;
       setActiveInstCount(activeCount);
 
       const openIncs = incs.filter((i) => i.estado === "ABIERTA" || i.estado === "EN_REVISION");
@@ -42,7 +42,7 @@ export function AdminDashboard({ onNavigate, isDark }: { onNavigate?: (page: any
         cliente: i.cliente || "Cliente AgroCloud",
         plantilla: i.plantilla || "Sin plantilla",
         plan: subs.find(s => s.usuarioId === i.usuarioId && s.estado === "active")?.planNombre || "Sin plan",
-        estado: i.estado === "active" ? "Activa" : i.estado,
+        estado: i.estado === "active" ? "Activa" : i.estado === "revision" ? "En revisión" : i.estado === "suspended" ? "Suspendida" : i.estado === "terminated" ? "Detenida" : i.estado,
         fecha: i.fechaCreacion || "Reciente",
       }));
       setRecentInstances(mappedRecent);

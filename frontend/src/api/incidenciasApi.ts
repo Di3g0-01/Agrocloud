@@ -9,14 +9,21 @@ export interface IncidentComment {
   autor: string;
   rolAutor: 'CLIENTE' | 'SOPORTE' | 'ADMINISTRADOR';
   texto: string;
+  destinatario?: 'CLIENTE' | 'SOPORTE' | 'ADMIN';
   fecha: string;
 }
 
 export const getComentarios = async (incidentId: string): Promise<IncidentComment[]> =>
   (await axiosClient.get<IncidentComment[]>(`/incidencias/${incidentId}/comentarios`)).data;
 
-export const crearComentario = async (incidentId: string, texto: string): Promise<IncidentComment> =>
-  (await axiosClient.post<IncidentComment>(`/incidencias/${incidentId}/comentarios`, { texto })).data;
+export const crearComentario = async (incidentId: string, texto: string, destinatario?: string): Promise<IncidentComment> =>
+  (await axiosClient.post<IncidentComment>(`/incidencias/${incidentId}/comentarios`, { texto, destinatario })).data;
+
+export const editarComentario = async (commentId: string, texto: string): Promise<IncidentComment> =>
+  (await axiosClient.put<IncidentComment>(`/incidencias/comentarios/${commentId}`, { texto })).data;
+
+export const eliminarComentario = async (commentId: string): Promise<void> =>
+  (await axiosClient.delete(`/incidencias/comentarios/${commentId}`)).data;
 
 export const getIncidencias = async (): Promise<Incidencia[]> => {
   const res = await axiosClient.get('/incidencias');

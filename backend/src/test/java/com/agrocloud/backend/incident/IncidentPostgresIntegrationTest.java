@@ -27,6 +27,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import com.agrocloud.backend.plan.entity.PlanEntity;
+import com.agrocloud.backend.plan.repository.PlanRepository;
+import com.agrocloud.backend.subscription.entity.SubscriptionEntity;
+import com.agrocloud.backend.subscription.entity.SubscriptionStatus;
+import com.agrocloud.backend.subscription.repository.SubscriptionRepository;
+import java.time.LocalDate;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -52,6 +58,8 @@ class IncidentPostgresIntegrationTest {
     @Autowired IncidentRepository incidents;
     @Autowired IncidentCommentRepository comments;
     @Autowired NotificationRepository notifications;
+    @Autowired PlanRepository plans;
+    @Autowired SubscriptionRepository subscriptions;
 
     @Test
     void completeTicketFlowAndRealtimeNotificationsAreScopedToEachRole() throws Exception {
@@ -63,6 +71,18 @@ class IncidentPostgresIntegrationTest {
         UUID ticketId = null;
         try {
             User client = createUser("client-" + suffix, Role.CLIENTE, fixtures);
+            PlanEntity plan = plans.findById("plan-enterprise")
+                    .orElseGet(() -> plans.findAll().stream().findFirst().orElseThrow());
+            SubscriptionEntity clientSub = SubscriptionEntity.builder()
+                    .id(UUID.randomUUID())
+                    .user(client)
+                    .plan(plan)
+                    .status(SubscriptionStatus.active)
+                    .startDate(LocalDate.now())
+                    .nextBillingDate(LocalDate.now().plusYears(1))
+                    .amount(plan.getMonthlyPrice())
+                    .build();
+            subscriptions.save(clientSub);
             User outsider = createUser("outsider-" + suffix, Role.CLIENTE, fixtures);
             User admin = createUser("admin-" + suffix, Role.ADMINISTRADOR, fixtures);
             User support = createUser("support-" + suffix, Role.SOPORTE, fixtures);

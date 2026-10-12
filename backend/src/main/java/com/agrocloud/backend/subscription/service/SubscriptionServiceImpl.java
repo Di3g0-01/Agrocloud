@@ -13,16 +13,15 @@ import com.agrocloud.backend.subscription.dto.SubscriptionResponse;
 import com.agrocloud.backend.subscription.entity.SubscriptionEntity;
 import com.agrocloud.backend.subscription.entity.SubscriptionStatus;
 import com.agrocloud.backend.subscription.repository.SubscriptionRepository;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class SubscriptionServiceImpl implements SubscriptionService {
 
@@ -31,6 +30,20 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final PlanService planService;
     private final PaymentService paymentService;
     private final InstanceRepository instanceRepository;
+
+    public SubscriptionServiceImpl(
+            SubscriptionRepository repository,
+            UserRepository userRepository,
+            PlanService planService,
+            PaymentService paymentService,
+            InstanceRepository instanceRepository
+    ) {
+        this.repository = repository;
+        this.userRepository = userRepository;
+        this.planService = planService;
+        this.paymentService = paymentService;
+        this.instanceRepository = instanceRepository;
+    }
 
     @Override
     public SubscriptionResponse createSubscription(UUID userId, CreateSubscriptionRequest request) {
@@ -54,14 +67,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                     repository.save(previousSub);
                 });
 
-        SubscriptionEntity newSubscription = SubscriptionEntity.builder()
-                .user(user)
-                .plan(plan)
-                .amount(plan.getMonthlyPrice())
-                .status(SubscriptionStatus.active)
-                .startDate(LocalDate.now())
-                .nextBillingDate(LocalDate.now().plusMonths(1))
-                .build();
+        SubscriptionEntity newSubscription = new SubscriptionEntity();
+        newSubscription.setUser(user);
+        newSubscription.setPlan(plan);
+        newSubscription.setAmount(plan.getMonthlyPrice());
+        newSubscription.setStatus(SubscriptionStatus.active);
+        newSubscription.setStartDate(LocalDate.now());
+        newSubscription.setNextBillingDate(LocalDate.now().plusMonths(1));
 
         SubscriptionEntity saved = repository.save(newSubscription);
         paymentService.registerAutomaticPayment(saved.getId(), "Contratación de plan - " + plan.getName());
@@ -157,5 +169,47 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     @Transactional(readOnly = true)
     public Optional<SubscriptionEntity> findActiveSubscriptionEntity(UUID userId) {
         return repository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, SubscriptionStatus.active);
+    }
+
+    @Override
+    public SubscriptionEntity ensureActiveEnterpriseSubscription(UUID userId) {
+        Optional<SubscriptionEntity> existing = findActiveSubscriptionEntity(userId);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado con ID: " + userId));
+
+        PlanEntity enterprisePlan;
+        try {
+            enterprisePlan = planService.findEntityById("plan-enterprise");
+        } catch (Exception e) {
+            enterprisePlan = planService.getAllPlans().stream()
+                    .filter(p -> Boolean.TRUE.equals(p.active()))
+                    .max((p1, p2) -> Integer.compare(p1.maxInstances(), p2.maxInstances()))
+                    .map(resp -> planService.findEntityById(resp.id()))
+                    .orElseGet(() -> {
+                        PlanEntity fallback = new PlanEntity();
+                        fallback.setId("plan-enterprise");
+                        fallback.setName("Agro Enterprise");
+                        fallback.setMaxInstances(5);
+                        fallback.setStorageGb(250.0);
+                        fallback.setMonthlyPrice(new BigDecimal("250.00"));
+                        fallback.setActive(true);
+                        return fallback;
+                    });
+        }
+
+        SubscriptionEntity sub = new SubscriptionEntity();
+        sub.setId(UUID.randomUUID());
+        sub.setUser(user);
+        sub.setPlan(enterprisePlan);
+        sub.setStatus(SubscriptionStatus.active);
+        sub.setStartDate(LocalDate.now());
+        sub.setNextBillingDate(LocalDate.now().plusYears(1));
+        sub.setAmount(enterprisePlan.getMonthlyPrice() != null ? enterprisePlan.getMonthlyPrice() : BigDecimal.ZERO);
+
+        return repository.save(sub);
     }
 }

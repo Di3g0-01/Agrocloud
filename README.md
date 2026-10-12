@@ -1,93 +1,151 @@
-# AgroCloud - Frontend
+# AgroCloud - Plataforma SaaS Cloud & Database Management
 
-Frontend web de la plataforma **AgroCloud**, desarrollado con **React 19**, **TypeScript**, **Vite** y **Tailwind CSS**.
-
----
-
-## Requisitos Previos
-
-Antes de comenzar, asegúrate de tener instalado lo siguiente en tu sistema:
-
-* **Node.js**: Versión `18.x` o superior (Recomendado `20.x` o posterior). Puedes verificar tu versión con:
-  ```bash
-  node -v
-  ```
-* **npm** (Viene incluido con Node.js) o **pnpm** / **yarn**.
-* **Git** para clonar el repositorio.
+**AgroCloud** es una plataforma web integral tipo SaaS diseñada para la gestión, aprovisionamiento, monitoreo y soporte de instancias de bases de datos e infraestructura en la nube. Ofrece un portal para clientes con aprovisionamiento automático y seguro, y una consola de administración global.
 
 ---
 
-## Guía de Instalación y Ejecución
+## 🚀 Características Principales
 
-Sigue estos pasos para descargar y ejecutar la aplicación frontend en tu entorno local.
+### 🔐 Seguridad & Credenciales Encriptadas
+* **Encriptación AES-256:** Las credenciales de acceso a las bases de datos creadas (MySQL, PostgreSQL, MongoDB, Redis, etc.) se cifran en el backend mediante clave simétrica y almacenamiento seguro.
+* **Consulta Bajo Demanda:** El cliente puede visualizar o copiar sus credenciales desencriptadas mediante autenticación segura.
+
+### 📊 Monitoreo de Instancias en Tiempo Real
+* **Métricas Operativas:** Monitoreo activo de consumo de CPU (%), memoria RAM (MB / %), espacio en disco (GB) y conexiones activas.
+* **Consola de Administración:** Dashboard centralizado para administradores con gráficos y estados globales del clúster.
+
+### 🚨 Sistema de Incidentes y Soporte
+* **Creación y Seguimiento de Tickets:** Reporte de fallas asociadas a instancias específicas con asignación de severidad y estado (Abierto, En Progreso, Resuelto, Cerrado).
+* **Historial de Comentarios:** Comunicación bidireccional entre cliente y equipo de soporte.
+
+### 🔔 Centro de Notificaciones
+* Alertas automáticas por eventos del sistema, cambios de estado en instancias e incidentes creados/actualizados.
+
+---
+
+## 🛠️ Arquitectura y Tecnologías
+
+### **Backend**
+* **Lenguaje & Framework:** Java 17 / Spring Boot 3
+* **Seguridad:** Spring Security con Tokens JWT
+* **Persistencia:** Spring Data JPA / Hibernate
+* **Base de Datos:** PostgreSQL
+* **Migraciones:** Flyway Database Migrations (V1 a V15)
+* **Cifrado:** Algoritmo AES-256 / GCM / NoPadding con clave simétrica configurable.
+
+### **Frontend**
+* **Framework:** React 19
+* **Lenguaje:** TypeScript
+* **Bundler & Dev Server:** Vite
+* **Estilos:** Tailwind CSS v4
+* **Iconos:** Lucide React
+* **Cliente HTTP:** Axios (con interceptores para manejo de tokens JWT)
+
+### **Infraestructura y Contenedores**
+* **Docker & Docker Compose:** Archivos de orquestación para entornos de prueba (`docker-compose.e04.yml`) y desarrollo (`docker-compose.yml`).
+
+---
+
+## 📋 Requisitos Previos
+
+Asegúrate de contar con las siguientes herramientas instaladas:
+
+* **Java JDK:** Versión `17` o superior (`java -version`).
+* **Apache Maven:** Versión `3.8+` (`mvn -v`) o utilizar el ejecutable en la raíz de `backend`.
+* **Node.js:** Versión `18.x` o superior (Recomendado `20.x`+) (`node -v`).
+* **npm:** Incluido con Node.js (`npm -v`).
+* **PostgreSQL:** Versión `15+` o **Docker Desktop** para levantar la base de datos en contenedor.
+
+---
+
+## 💻 Guía de Instalación y Ejecución
 
 ### 1. Clonar el Repositorio
 
-Si aún no has clonado el proyecto, abre tu terminal y ejecuta:
-
 ```bash
 git clone https://github.com/Di3g0-01/Agrocloud.git
-cd AgroCloud/frontend
+cd AgroCloud
 ```
 
-> *(Si ya tienes la carpeta del proyecto en tu máquina, únicamente abre la terminal e ingresa a la carpeta `frontend`)*:
+---
+
+### 2. Ejecutar el Backend (Spring Boot)
+
+#### Opción A: Con Maven instalado localmente
+```bash
+cd backend
+mvn clean spring-boot:run
+```
+
+#### Opción B: Con el Wrapper de Maven (Windows / Linux)
+```bash
+# Windows (PowerShell / CMD)
+cd backend
+.\mvnw spring-boot:run
+
+# Linux / macOS
+cd backend
+./mvnw spring-boot:run
+```
+
+El servidor Backend iniciará por defecto en: **`http://localhost:8080`**
+
+---
+
+### 3. Ejecutar el Frontend (React + Vite)
+
+Abre una nueva terminal en la raíz del proyecto y ejecuta:
+
 ```bash
 cd frontend
-```
-
----
-
-### 2. Instalar Dependencias
-
-Ejecuta el siguiente comando para descargar e instalar todos los paquetes necesarios del proyecto:
-
-```bash
 npm install
-```
-
----
-
-### 3. Configuración de Variables de Entorno (Opcional)
-
-Si el frontend necesita conectarse al servidor backend local o en la nube, crea un archivo `.env` en la raíz de la carpeta `frontend` si no existe:
-
-```env
-VITE_API_BASE_URL=http://localhost:5000/api
-```
-
----
-
-### 4. Ejecutar en Modo de Desarrollo
-
-Para iniciar el servidor de desarrollo local con recarga rápida (HMR):
-
-```bash
 npm run dev
 ```
 
-Una vez ejecutado el comando, abre tu navegador e ingresa a la URL que aparece en la terminal (por lo general es):
-`http://localhost:5173`
+El servidor Frontend iniciará por defecto en: **`http://localhost:5173`**
 
 ---
 
-## Comandos Disponibles
+### 4. Despliegue con Docker Compose (Entorno Completo / Entregable E04)
 
-En la carpeta `frontend` puedes ejecutar los siguientes comandos:
+Si prefieres ejecutar toda la plataforma (Base de Datos + Backend + Frontend) mediante contenedores:
 
+```bash
+docker compose -f docker-compose.e04.yml up -d --build
+```
+
+---
+
+## 🧪 Pruebas y Verificación
+
+Para ejecutar la suite de pruebas funcionales y de verificación para la entrega actual, consulta el archivo:
+* 📄 **[Plan de Pruebas E04](PLAN_DE_PRUEBAS_E04.md)**
+
+Para interactuar con los endpoints REST del backend:
+* 📦 **[Colección de Postman](AgroCloud_Postman_Collection.json)**
+
+---
+
+## 📜 Scripts y Comandos Principales
+
+### **Frontend (`/frontend`)**
 | Comando | Descripción |
 | :--- | :--- |
-| `npm run dev` | Inicia el servidor de desarrollo local con Vite. |
-| `npm run build` | Compila el proyecto para producción (TypeScript + Vite). |
-| `npm run preview` | Permite previsualizar la build de producción localmente. |
-| `npm run lint` | Ejecuta el linter (Oxlint) para verificar la calidad del código. |
+| `npm run dev` | Inicia el servidor de desarrollo Vite. |
+| `npm run build` | Compila TypeScript y genera el bundle para producción. |
+| `npm run preview` | Previsualiza el build de producción en local. |
+| `npm run lint` | Ejecuta el linter (Oxlint) para análisis de código. |
+
+### **Backend (`/backend`)**
+| Comando | Descripción |
+| :--- | :--- |
+| `mvn spring-boot:run` | Ejecuta la aplicación Spring Boot. |
+| `mvn clean compile` | Valida la sintaxis y compila todas las clases Java. |
+| `mvn test` | Ejecuta la suite de pruebas unitarias e integración. |
 
 ---
 
-## Tecnologías Principales
+## 🤝 Créditos y Equipo
 
-* **Framework:** React 19
-* **Lenguaje:** TypeScript
-* **Bundler:** Vite
-* **Estilos:** Tailwind CSS v4
-* **Iconos:** Lucide React
-* **Peticiones HTTP:** Axios
+Desarrollado por el equipo de ingeniería de **AgroCloud** - Universidad Rafael Landívar.
+

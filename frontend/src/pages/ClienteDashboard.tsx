@@ -17,6 +17,7 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
+import { CustomSelect } from '../components/ui/CustomSelect';
 
 export const ClienteDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -70,8 +71,10 @@ export const ClienteDashboard: React.FC = () => {
       setInstancias([nueva, ...instancias]);
       setShowCreateModal(false);
       setNewInstanceName('');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      const apiMsg = err?.response?.data?.message || err?.message || 'Error al crear la instancia';
+      alert(apiMsg);
     } finally {
       setCreating(false);
     }
@@ -303,18 +306,20 @@ export const ClienteDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Plantilla de Tablas Iniciales</label>
-                  <select
+                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">Plantilla de Tablas Iniciales</label>
+                  <CustomSelect
                     value={selectedTemplate}
-                    onChange={(e) => setSelectedTemplate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
-                  >
-                    {plantillas.map((p, idx) => (
-                      <option key={idx} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSelectedTemplate}
+                    isDark={true}
+                    size="md"
+                    className="w-full"
+                    dropdownClassName="w-full"
+                    options={plantillas.map((p) => ({
+                      value: p,
+                      label: p,
+                      icon: <Layers className="w-3.5 h-3.5" />,
+                    }))}
+                  />
                 </div>
 
                 <div className="pt-2 flex justify-end gap-3">

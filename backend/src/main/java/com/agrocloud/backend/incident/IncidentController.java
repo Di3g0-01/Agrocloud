@@ -76,7 +76,7 @@ public class IncidentController {
     public record AssignmentRequest(@NotNull UUID agenteId) {}
     public record StatusRequest(@NotBlank String estado, @Size(max = 2000) String mensajeResolucion) {}
     public record IncidentUpdateRequest(String estado, String guiaDiagnostico, String mensajeResolucion) {}
-    public record CommentRequest(@NotBlank @Size(max = 2000) String texto) {}
+    public record CommentRequest(@NotBlank @Size(max = 2000) String texto, String destinatario) {}
 
     @GetMapping("/{id}/comentarios")
     public List<IncidentCommentResponse> listComments(@PathVariable UUID id,
@@ -87,6 +87,19 @@ public class IncidentController {
     @PostMapping("/{id}/comentarios")
     public ResponseEntity<IncidentCommentResponse> addComment(@PathVariable UUID id,
             @Valid @RequestBody CommentRequest request, @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(comments.add(id, request.texto(), principal));
+        return ResponseEntity.status(HttpStatus.CREATED).body(comments.add(id, request.texto(), request.destinatario(), principal));
+    }
+
+    @PutMapping("/comentarios/{commentId}")
+    public IncidentCommentResponse updateComment(@PathVariable UUID commentId,
+            @Valid @RequestBody CommentRequest request, @AuthenticationPrincipal UserPrincipal principal) {
+        return comments.update(commentId, request.texto(), principal);
+    }
+
+    @DeleteMapping("/comentarios/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable UUID commentId,
+            @AuthenticationPrincipal UserPrincipal principal) {
+        comments.delete(commentId, principal);
+        return ResponseEntity.noContent().build();
     }
 }

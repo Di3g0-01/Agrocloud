@@ -34,7 +34,7 @@ export function StatusBadge({ s }: { s: string }) {
   const label = getStatusLabel(s);
   const cls =
     s === "Resuelta" || s === "Operativa" || s === "Activa" || s === "ACTIVA" || s === "active"
-      ? "bg-lime-100 text-lime-700 border border-lime-300"
+      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
       : s === "En revisión" || s === "revision" || s === "pending_payment"
       ? "bg-amber-50 text-amber-700 border border-amber-200"
       : s === "Abierta"
