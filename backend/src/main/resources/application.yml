@@ -37,4 +37,4 @@ app:
     secret: ${JWT_SECRET:dGhpc0lzQVNlY3JldEtleUZvckFncm9DbG91ZEpXVEF1dGhlbnRpY2F0aW9uT25seTIwMjY=}
     expiration: ${JWT_EXPIRATION:PT8H}
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8443}
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8443,https://*.vercel.app}
