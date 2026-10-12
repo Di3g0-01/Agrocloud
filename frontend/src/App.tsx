@@ -5,8 +5,8 @@ import type { Role } from "./types/shared";
 import { Landing } from "./features/auth/Landing";
 import { Login } from "./features/auth/Login";
 import { AdminPanel } from "./features/admin/AdminPanel";
-import { ClientePanel } from "./features/cliente/ClientePanel";
-import { SoportePanel } from "./features/soporte/SoportePanel";
+import { ClientPanel } from "./features/client/ClientPanel";
+import { SupportPanel } from "./features/support/SupportPanel";
 
 export default function App() {
   const [role, setRole] = useState<Role>("landing");
@@ -54,7 +54,7 @@ export default function App() {
   if (role === "landing") return <Landing onLogin={() => openAuth("login")} onRegister={() => openAuth("register")} />;
   if (role === "login") return <Login initialMode={authMode} onAuthenticated={handleAuthenticated} />;
   if (role === "admin" && user) return <AdminPanel user={user} onLogout={handleLogout} />;
-  if (role === "cliente" && user) return <ClientePanel user={user} onLogout={handleLogout} />;
-  if (role === "soporte" && user) return <SoportePanel user={user} onLogout={handleLogout} />;
+  if (role === "cliente" && user) return <ClientPanel user={user} onLogout={handleLogout} />;
+  if (role === "soporte" && user) return <SupportPanel user={user} onLogout={handleLogout} />;
   return <Landing onLogin={() => openAuth("login")} onRegister={() => openAuth("register")} />;
 }

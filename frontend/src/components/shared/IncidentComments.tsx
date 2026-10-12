@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { crearComentario, editarComentario, eliminarComentario, getComentarios } from "../../api/incidenciasApi";
-import type { IncidentComment } from "../../api/incidenciasApi";
+import { createComment, editComment, deleteComment, getComments } from "../../api/incidentsApi";
+import type { IncidentComment } from "../../api/incidentsApi";
 import { useAuth } from "../../context/AuthContext";
 import { Edit2, Trash2, Lock, MessageSquare, Check, X, Users, Shield, Headphones } from "lucide-react";
 import { CustomSelect } from "../ui/CustomSelect";
@@ -81,7 +81,7 @@ export function IncidentComments({
     setDraft("");
     setEditingId(null);
     const refresh = () => {
-      getComentarios(incidentId).then(rows => {
+      getComments(incidentId).then(rows => {
         if (active) { setComments(rows); setError(""); }
       }).catch(() => { if (active) setError("No se pudieron cargar los comentarios."); });
     };
@@ -95,7 +95,7 @@ export function IncidentComments({
     if (!text || sending || closed) return;
     setSending(true);
     try {
-      const created = await crearComentario(incidentId, text, targetRole);
+      const created = await createComment(incidentId, text, targetRole);
       setComments(current => [...current, created]);
       setDraft("");
       setError("");
@@ -113,7 +113,7 @@ export function IncidentComments({
     if (!text || savingEdit) return;
     setSavingEdit(true);
     try {
-      const updated = await editarComentario(id, text);
+      const updated = await editComment(id, text);
       setComments(current => current.map(c => c.id === id ? updated : c));
       setEditingId(null);
       setEditText("");
@@ -129,7 +129,7 @@ export function IncidentComments({
     if (!window.confirm("¿Estás seguro de que deseas eliminar este comentario?")) return;
     setDeletingId(id);
     try {
-      await eliminarComentario(id);
+      await deleteComment(id);
       setComments(current => current.filter(c => c.id !== id));
       setError("");
     } catch {

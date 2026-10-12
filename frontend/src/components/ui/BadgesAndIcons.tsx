@@ -51,8 +51,8 @@ export function ProgressBar({ value, color }: { value: number; color: string }) 
   );
 }
 
-export function ActivityIcon({ tipo }: { tipo: string }) {
-  if (tipo === "asignada")
+export function ActivityIcon({ tipo: kind }: { tipo: string }) {
+  if (kind === "asignada")
     return (
       <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
         <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -60,7 +60,7 @@ export function ActivityIcon({ tipo }: { tipo: string }) {
         </svg>
       </div>
     );
-  if (tipo === "resuelta")
+  if (kind === "resuelta")
     return (
       <div className="w-7 h-7 rounded-full bg-lime-100 flex items-center justify-center shrink-0">
         <svg className="w-3.5 h-3.5 text-lime-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -68,7 +68,7 @@ export function ActivityIcon({ tipo }: { tipo: string }) {
         </svg>
       </div>
     );
-  if (tipo === "revisada")
+  if (kind === "revisada")
     return (
       <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
         <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -76,7 +76,7 @@ export function ActivityIcon({ tipo }: { tipo: string }) {
         </svg>
       </div>
     );
-  if (tipo === "abierta")
+  if (kind === "abierta")
     return (
       <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
         <svg className="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

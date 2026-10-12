@@ -22,7 +22,7 @@ export interface Plan {
   activo?: boolean;
 }
 
-export interface InstanciaDB {
+export interface DbInstance {
   id: string;
   nombre: string;
   plantilla: string;
@@ -44,7 +44,7 @@ export interface InstanciaDB {
   fechaCreacion?: string;
 }
 
-export interface Suscripcion {
+export interface Subscription {
   id: string;
   planId: string;
   planNombre: string;
@@ -55,7 +55,7 @@ export interface Suscripcion {
   monto: number;
 }
 
-export interface Incidencia {
+export interface IncidentRecord {
   id: string;
   codigo: string;
   cliente: string;

@@ -1,19 +1,19 @@
 import { useState } from "react";
-import { SharedDocumentacion } from "../../components/shared/SharedDocumentacion";
+import { SharedDocumentation } from "../../components/shared/SharedDocumentation";
 import { NotificationMenu } from "../../components/shared/NotificationMenu";
 import { GlobalSearchModal } from "../../components/shared/GlobalSearchModal";
 import type { AdminPage } from "../../types/admin";
-import { AdminClientes } from "./AdminClientes";
+import { AdminClients } from "./AdminClients";
 import { AdminDashboard } from "./AdminDashboard";
-import { AdminIncidencias } from "./AdminIncidencias";
-import { AdminInstancias } from "./AdminInstancias";
-import { AdminMonitoreo } from "./AdminMonitoreo";
-import { AdminPagos } from "./AdminPagos";
-import { AdminPlantillas } from "./AdminPlantillas";
+import { AdminIncidents } from "./AdminIncidents";
+import { AdminInstances } from "./AdminInstances";
+import { AdminMonitoring } from "./AdminMonitoring";
+import { AdminPayments } from "./AdminPayments";
+import { AdminTemplates } from "./AdminTemplates";
 import { AdminSidebar } from "./AdminSidebar";
-import { AdminSuscripciones } from "./AdminSuscripciones";
-import { AdminConfiguracion } from "./AdminConfiguracion";
-import { AdminUsuarios } from "./AdminUsuarios";
+import { AdminSubscriptions } from "./AdminSubscriptions";
+import { AdminSettings } from "./AdminSettings";
+import { AdminUsers } from "./AdminUsers";
 import type { User } from "../../types";
 import { userInitials } from "../../utils/userDisplay";
 
@@ -54,16 +54,16 @@ export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: Use
         </header>
         <main className={`flex-1 overflow-auto ${isDark ? "bg-slate-950" : "bg-gray-50"}`}>
           {page === "dashboard" && <AdminDashboard onNavigate={navigate} isDark={isDark} />}
-          {page === "clientes" && <AdminClientes isDark={isDark} onNavigate={navigate} onEditClient={id => { setEditClientId(id); setPage('usuarios'); }} />}
-          {page === "usuarios" && <AdminUsuarios currentUserId={user.id} initialUserId={editClientId} />}
-          {page === "instancias" && <AdminInstancias isDark={isDark} />}
-          {page === "suscripciones" && <AdminSuscripciones isDark={isDark} />}
-          {page === "pagos" && <AdminPagos isDark={isDark} />}
-          {page === "plantillas" && <AdminPlantillas isDark={isDark} />}
-          {page === "monitoreo" && <AdminMonitoreo isDark={isDark} />}
-          {page === "incidencias" && <AdminIncidencias isDark={isDark} currentUser={user} />}
-          {page === "configuracion" && <AdminConfiguracion theme={theme} setTheme={setTheme} />}
-          {page === "documentacion" && <SharedDocumentacion userRole="admin" isDark={isDark} />}
+          {page === "clientes" && <AdminClients isDark={isDark} onNavigate={navigate} onEditClient={id => { setEditClientId(id); setPage('usuarios'); }} />}
+          {page === "usuarios" && <AdminUsers currentUserId={user.id} initialUserId={editClientId} />}
+          {page === "instancias" && <AdminInstances isDark={isDark} />}
+          {page === "suscripciones" && <AdminSubscriptions isDark={isDark} />}
+          {page === "pagos" && <AdminPayments isDark={isDark} />}
+          {page === "plantillas" && <AdminTemplates isDark={isDark} />}
+          {page === "monitoreo" && <AdminMonitoring isDark={isDark} />}
+          {page === "incidencias" && <AdminIncidents isDark={isDark} currentUser={user} />}
+          {page === "configuracion" && <AdminSettings theme={theme} setTheme={setTheme} />}
+          {page === "documentacion" && <SharedDocumentation userRole="admin" isDark={isDark} />}
         </main>
       </div>
     </div>

@@ -11,21 +11,21 @@ export type AdminPage =
   | "configuracion"
   | "documentacion";
 
-export type UsuarioRol = "Cliente" | "Soporte" | "Administrador";
-export type UsuarioEstado = "Activo" | "Pendiente" | "Suspendido";
+export type ManagedUserRole = "Cliente" | "Soporte" | "Administrador";
+export type ManagedUserStatus = "Activo" | "Pendiente" | "Suspendido";
 
-export interface Usuario {
+export interface ManagedUser {
   id: string;
   nombre: string;
   correo: string;
-  rol: UsuarioRol;
+  rol: ManagedUserRole;
   org: string;
-  estado: UsuarioEstado;
+  estado: ManagedUserStatus;
   registro: string;
   acceso: string;
 }
 
-export interface ClienteAdmin {
+export interface AdminClient {
   id: string;
   nombre: string;
   tipo: string;
@@ -40,7 +40,7 @@ export interface ClienteAdmin {
   almacenamiento: string;
 }
 
-export interface InstanciaAdmin {
+export interface AdminInstance {
   id: string;
   nombre: string;
   cliente: string;
@@ -54,7 +54,7 @@ export interface InstanciaAdmin {
   conexiones: number;
 }
 
-export interface Suscripcion {
+export interface Subscription {
   id: string;
   cliente: string;
   plan: string;
@@ -64,7 +64,7 @@ export interface Suscripcion {
   estado: string;
 }
 
-export interface PagoAdmin {
+export interface AdminPayment {
   id: string;
   cliente: string;
   concepto: string;
@@ -74,7 +74,7 @@ export interface PagoAdmin {
   estado: string;
 }
 
-export interface PlantillaAdmin {
+export interface AdminTemplate {
   id: string;
   nombre: string;
   descripcion: string;
