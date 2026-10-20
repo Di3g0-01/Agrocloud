@@ -22,6 +22,7 @@ services:
     restart: unless-stopped
 
   api:
+    # Mail credentials are used only by the backend, never by the web build.
     image: agrocloud-backend:original-2026-09-22
     pull_policy: never
     container_name: agrocloud-api
@@ -34,6 +35,17 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
       JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:8443}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:5173}
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-smtp}
+      MAIL_FROM: ${MAIL_FROM:-AgroCloud <no-reply@agrocloud.local>}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      MAIL_HOST: ${MAIL_HOST:-host.docker.internal}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
+      MAIL_SSL: ${MAIL_SSL:-false}
     volumes:
       - type: bind
         source: ./build-artifacts/app.jar
