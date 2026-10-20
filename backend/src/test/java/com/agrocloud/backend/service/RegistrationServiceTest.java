@@ -29,7 +29,7 @@ class RegistrationServiceTest {
     @Mock
     private RoleRepository roleRepository;
     @Mock
-    private AuthResponseFactory responseFactory;
+    private EmailAccountService emailAccounts;
 
     @Test
     void registrationStoresBcryptHashAndAssignsClientRole() {
@@ -41,7 +41,7 @@ class RegistrationServiceTest {
         when(roleRepository.getReferenceById(Role.CLIENTE)).thenReturn(new RoleEntity(Role.CLIENTE));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        new RegistrationService(userRepository, roleRepository, new BCryptPasswordEncoder(4), responseFactory)
+        new RegistrationService(userRepository, roleRepository, new BCryptPasswordEncoder(4), emailAccounts)
                 .register(request);
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
@@ -52,8 +52,9 @@ class RegistrationServiceTest {
         assertThat(saved.getPasswordHash()).isNotEqualTo(password).startsWith("$2a$");
         assertThat(new BCryptPasswordEncoder().matches(password, saved.getPasswordHash())).isTrue();
         assertThat(saved.getRole()).isEqualTo(Role.CLIENTE);
-        assertThat(saved.getStatus()).isEqualTo(AccountStatus.ACTIVO);
-        verify(responseFactory).create(saved);
+        assertThat(saved.getStatus()).isEqualTo(AccountStatus.PENDIENTE);
+        assertThat(saved.isEmailVerified()).isFalse();
+        verify(emailAccounts).sendVerification(saved);
     }
 
     @Test
@@ -64,7 +65,7 @@ class RegistrationServiceTest {
         when(userRepository.existsByEmail("cliente@example.com")).thenReturn(true);
 
         RegistrationService service = new RegistrationService(
-                userRepository, roleRepository, new BCryptPasswordEncoder(4), responseFactory
+                userRepository, roleRepository, new BCryptPasswordEncoder(4), emailAccounts
         );
         assertThatThrownBy(() -> service.register(request))
                 .isInstanceOf(EmailAlreadyRegisteredException.class);

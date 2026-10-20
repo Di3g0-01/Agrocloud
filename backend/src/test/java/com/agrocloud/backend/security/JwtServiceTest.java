@@ -45,6 +45,19 @@ class JwtServiceTest {
     }
 
     @Test
+    void rejectsTokensIssuedBeforePasswordRecoveryOrForUnverifiedEmail() {
+        JwtService jwtService = new JwtService(SECRET, Duration.ofHours(1));
+        User user = activeUser();
+        String token = jwtService.generateToken(user);
+        user.setAuthVersion(1);
+        assertThat(jwtService.isValid(token, UserPrincipal.from(user))).isFalse();
+        String freshToken = jwtService.generateToken(user);
+        assertThat(jwtService.isValid(freshToken, UserPrincipal.from(user))).isTrue();
+        user.setEmailVerified(false);
+        assertThat(jwtService.isValid(freshToken, UserPrincipal.from(user))).isFalse();
+    }
+
+    @Test
     void rejectsExpiredToken() {
         JwtService jwtService = new JwtService(SECRET, Duration.ofSeconds(-1));
         String token = jwtService.generateToken(activeUser());

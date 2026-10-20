@@ -50,6 +50,54 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified = true;
+
+    @Column(name = "auth_version", nullable = false)
+    private long authVersion = 0;
+
+    @Column(name = "verification_token_hash", length = 64)
+    private String verificationTokenHash;
+
+    @Column(name = "verification_expires_at")
+    private Instant verificationExpiresAt;
+
+    @Column(name = "verification_sent_at")
+    private Instant verificationSentAt;
+
+    @Column(name = "reset_token_hash", length = 64)
+    private String resetTokenHash;
+
+    @Column(name = "reset_expires_at")
+    private Instant resetExpiresAt;
+
+    @Column(name = "reset_sent_at")
+    private Instant resetSentAt;
+
+    public boolean isEmailVerified() { return emailVerified; }
+    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+
+    public long getAuthVersion() { return authVersion; }
+    public void setAuthVersion(long authVersion) { this.authVersion = authVersion; }
+
+    public String getVerificationTokenHash() { return verificationTokenHash; }
+    public void setVerificationTokenHash(String verificationTokenHash) { this.verificationTokenHash = verificationTokenHash; }
+
+    public Instant getVerificationExpiresAt() { return verificationExpiresAt; }
+    public void setVerificationExpiresAt(Instant verificationExpiresAt) { this.verificationExpiresAt = verificationExpiresAt; }
+
+    public Instant getVerificationSentAt() { return verificationSentAt; }
+    public void setVerificationSentAt(Instant verificationSentAt) { this.verificationSentAt = verificationSentAt; }
+
+    public String getResetTokenHash() { return resetTokenHash; }
+    public void setResetTokenHash(String resetTokenHash) { this.resetTokenHash = resetTokenHash; }
+
+    public Instant getResetExpiresAt() { return resetExpiresAt; }
+    public void setResetExpiresAt(Instant resetExpiresAt) { this.resetExpiresAt = resetExpiresAt; }
+
+    public Instant getResetSentAt() { return resetSentAt; }
+    public void setResetSentAt(Instant resetSentAt) { this.resetSentAt = resetSentAt; }
+
     @PrePersist
     void prePersist() {
         Instant now = Instant.now();

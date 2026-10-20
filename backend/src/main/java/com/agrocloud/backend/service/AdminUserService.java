@@ -69,6 +69,13 @@ public class AdminUserService {
         }
         user.setOrganizationName(request.organizationName().trim());
         user.setContactName(optional(request.contactName()));
+        if (!email.equals(user.getEmail()) || (request.password() != null && !request.password().isBlank())) {
+            user.setAuthVersion(user.getAuthVersion() + 1);
+            user.setResetTokenHash(null);
+            user.setResetExpiresAt(null);
+            user.setVerificationTokenHash(null);
+            user.setVerificationExpiresAt(null);
+        }
         user.setEmail(email);
         user.setPhone(optional(request.phone()));
         if (request.password() != null && !request.password().isBlank()) {
