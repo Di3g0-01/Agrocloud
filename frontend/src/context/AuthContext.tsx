@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { User, UserRole } from '../types';
 import { loginApi, registerApi } from '../api/authApi';
+import type { MessageResponse } from '../api/authApi';
 
 interface AuthContextType {
   user: User | null;
@@ -8,7 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<UserRole>;
-  register: (name: string, email: string, pass: string, company?: string) => Promise<UserRole>;
+  register: (name: string, email: string, pass: string, company?: string) => Promise<MessageResponse>;
   logout: () => void;
 }
 
@@ -60,18 +61,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res.user.rol;
   };
 
-  const register = async (fullName: string, email: string, pass: string, companyName?: string): Promise<UserRole> => {
-    const res = await registerApi({
+  const register = async (fullName: string, email: string, pass: string, companyName?: string): Promise<MessageResponse> => {
+    return registerApi({
       organizationName: companyName?.trim() || fullName.trim(),
       contactName: fullName.trim(),
       email,
       password: pass,
     });
-    setToken(res.token);
-    setUser(res.user);
-    localStorage.setItem('agrocloud_token', res.token);
-    localStorage.setItem('agrocloud_user', JSON.stringify(res.user));
-    return res.user.rol;
   };
 
   const logout = () => {
@@ -117,7 +113,7 @@ export const useAuth = () => {
       isAuthenticated: Boolean(parsedUser && savedToken),
       isLoading: false,
       login: async () => 'CLIENTE' as UserRole,
-      register: async () => 'CLIENTE' as UserRole,
+      register: async () => { throw new Error('El proveedor de autenticación no está disponible.'); },
       logout: () => {
         localStorage.removeItem('agrocloud_token');
         localStorage.removeItem('agrocloud_user');
