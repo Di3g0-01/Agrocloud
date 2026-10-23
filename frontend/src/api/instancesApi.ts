@@ -67,6 +67,7 @@ export interface InstanceCredentialsResponse {
   host: string;
   puerto: number;
   databaseName: string;
+  dbSchema?: string;
   dbUser: string;
   password: string;
   region: string;
@@ -75,6 +76,22 @@ export interface InstanceCredentialsResponse {
 
 export const getInstanceCredentials = async (id: string): Promise<InstanceCredentialsResponse> => {
   const res = await axiosClient.get(`/instancias/${id}/credenciales`);
+  return res.data?.data || res.data;
+};
+
+export interface InstanceTableInfo {
+  nombre: string;
+  esquema: string;
+  totalFilas: number;
+}
+
+export const getInstanceTables = async (id: string): Promise<InstanceTableInfo[]> => {
+  const res = await axiosClient.get(`/instancias/${id}/tablas`);
+  return res.data?.data || res.data;
+};
+
+export const getInstanceTableData = async (id: string, tableName: string, limit = 50): Promise<Record<string, any>[]> => {
+  const res = await axiosClient.get(`/instancias/${id}/tablas/${tableName}/datos`, { params: { limit } });
   return res.data?.data || res.data;
 };
 
@@ -104,6 +121,44 @@ export interface InstanceMetricsResponse {
 
 export const getInstanceMetrics = async (id: string): Promise<InstanceMetricsResponse> => {
   const res = await axiosClient.get(`/instancias/${id}/metricas`);
+  return res.data?.data || res.data;
+};
+
+export interface CreateTablePayload {
+  tableName: string;
+  columns: {
+    name: string;
+    type: string;
+    length?: number;
+    nullable?: boolean;
+    primaryKey?: boolean;
+    defaultValue?: string;
+  }[];
+}
+
+export const createCustomTable = async (id: string, payload: CreateTablePayload): Promise<{ message: string }> => {
+  const res = await axiosClient.post(`/instancias/${id}/tablas`, payload);
+  return res.data?.data || res.data;
+};
+
+export interface TableColumnMetadata {
+  column_name: string;
+  data_type: string;
+  is_nullable: string;
+  column_default: string | null;
+}
+
+export const getInstanceTableColumns = async (id: string, tableName: string): Promise<TableColumnMetadata[]> => {
+  const res = await axiosClient.get(`/instancias/${id}/tablas/${tableName}/columnas`);
+  return res.data?.data || res.data;
+};
+
+export const insertInstanceTableRow = async (
+  id: string,
+  tableName: string,
+  data: Record<string, any>
+): Promise<Record<string, any>> => {
+  const res = await axiosClient.post(`/instancias/${id}/tablas/${tableName}/filas`, data);
   return res.data?.data || res.data;
 };
 

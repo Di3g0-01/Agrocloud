@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 120" width="100%" height="100%">
+  <!-- ISOTIPO (en fondo claro: contornos verde oscuro y acento verde lima) -->
+  <g transform="translate(10, 10)">
+    <!-- Nube de fondo en verde bosque oscuro -->
+    <path 
+      d="M 33 60 
+         C 22 60 17 52 19 43 
+         C 21 34 29 31 35 32 
+         C 37 19 50 11 63 13 
+         C 74 15 81 24 80 34 
+         C 87 36 93 41 91 50 
+         C 90 58 83 61 74 61" 
+      fill="none" 
+      stroke="#0f1f11" 
+      stroke-width="5" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    />
+
+    <!-- Cilindro Base de Datos - Anillo Superior -->
+    <path 
+      d="M 33 52 C 33 46 67 46 67 52 C 67 58 33 58 33 52 Z" 
+      fill="none" 
+      stroke="#0f1f11" 
+      stroke-width="4.5" 
+    />
+
+    <!-- Segundo anillo -->
+    <path 
+      d="M 33 54 V 62 C 33 68 67 68 67 62 V 54" 
+      fill="none" 
+      stroke="#0f1f11" 
+      stroke-width="4.5" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    />
+
+    <!-- Tercer anillo -->
+    <path 
+      d="M 33 65 V 73 C 33 79 67 79 67 73 V 65" 
+      fill="none" 
+      stroke="#0f1f11" 
+      stroke-width="4.5" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    />
+
+    <!-- Base inferior verde viva -->
+    <path 
+      d="M 33 76 V 84 C 33 90 67 90 67 84 V 76" 
+      fill="none" 
+      stroke="#65a30d" 
+      stroke-width="5" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    />
+
+    <!-- Hoja germinando en verde viva -->
+    <path 
+      d="M 50 63 
+         V 44 
+         C 50 31 63 28 65 38 
+         C 67 48 54 53 50 63 Z" 
+      fill="#65a30d" 
+    />
+    <path 
+      d="M 50 49 C 54 44 59 40 62 39" 
+      fill="none" 
+      stroke="#0f1f11" 
+      stroke-width="1.8" 
+      stroke-linecap="round"
+    />
+  </g>
+
+  <!-- TIPOGRAFÍA: "Agro" en verde bosque oscuro + "Cloud" en verde lima -->
+  <g id="agrocloud-text" transform="translate(125, 75)">
+    <!-- "Agro" -->
+    <text 
+      x="0" 
+      y="0" 
+      fill="#0f1f11" 
+      font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Inter', 'Helvetica Neue', sans-serif" 
+      font-size="58" 
+      font-weight="800" 
+      letter-spacing="-1.5"
+    >Agro</text>
+
+    <!-- "Cloud" -->
+    <text 
+      x="138" 
+      y="0" 
+      fill="none" 
+      stroke="#65a30d" 
+      stroke-width="4.2" 
+      stroke-linejoin="round"
+      font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Inter', 'Helvetica Neue', sans-serif" 
+      font-size="58" 
+      font-weight="500" 
+      letter-spacing="-1.2"
+    >Cloud</text>
+  </g>
+</svg>
