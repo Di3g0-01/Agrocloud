@@ -3,8 +3,10 @@
 El registro público crea una cuenta `CLIENTE`, pendiente y sin sesión. El enlace
 de confirmación dura 24 horas. La persona debe abrirlo y pulsar **Confirmar mi
 correo**; la confirmación abre una sesión y lleva directamente a **Selecciona tu
-plan** para completar el registro. El panel se muestra después de contratar el
-primer plan. Si se cierra o recarga la página, la cuenta sin suscripciones retoma
+plan** para continuar el registro. Después de elegir el plan se completa un
+formulario de pago simulado con datos ficticios de tarjeta. Solo al confirmar
+la simulación se contrata el plan y se abre el panel. Los datos de tarjeta no se
+envían al backend ni se guardan. Si se cierra o recarga la página, la cuenta sin suscripciones retoma
 la selección del plan al iniciar sesión.
 Ya no se simula un pago antes de confirmar el correo.
 
