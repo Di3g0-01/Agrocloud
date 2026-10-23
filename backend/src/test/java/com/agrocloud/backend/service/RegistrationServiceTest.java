@@ -15,6 +15,8 @@ import com.agrocloud.backend.exception.EmailAlreadyRegisteredException;
 import com.agrocloud.backend.repository.RoleRepository;
 import com.agrocloud.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -31,9 +33,9 @@ class RegistrationServiceTest {
     @Mock
     private EmailAccountService emailAccounts;
 
-    @Test
-    void registrationStoresBcryptHashAndAssignsClientRole() {
-        String password = "ClaveSegura123";
+    @ParameterizedTest
+    @ValueSource(strings = {"12345678", "SoloLetras", "!@#$%&*?", "Clave123!@#$%&*", "ContraseñaÁgil!2026"})
+    void registrationStoresBcryptHashAndAssignsClientRole(String password) {
         RegisterRequest request = new RegisterRequest(
                 "Finca Los Pinos", " Carlos Monterroso ", " CARLOS@Example.COM ",
                 "+502 4455-6677", password
