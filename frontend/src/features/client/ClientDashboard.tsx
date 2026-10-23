@@ -33,7 +33,7 @@ export function ClientDashboard({
   const totalUsed = instancesList.reduce((s, i) => s + (i.usadoGB || 0), 0);
   const totalGB = CLIENT_PLAN.totalGB;
   const dispGB = Math.max(0, totalGB - totalUsed);
-  const activeItems = instancesList.filter((i) => i.estado === "Activa").length;
+  const activeItems = instancesList.filter((i) => i.estado === "Operativa" || i.estado === "Activa" || (i.estado as string) === "active").length;
 
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">

@@ -1,12 +1,76 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { User } from "../../types/index";
+import type { ClientInstance } from "../../types/client";
 import { Toggle } from "../../components/ui/index";
+import { CLIENT_PLAN } from "../../data/client";
+import { getMyActiveSubscription } from "../../api/subscriptionsApi";
+import { getPlans } from "../../api/plansApi";
 
-export function ClientSettings({ user, organizationName, initials }: { user: User; organizationName: string; initials: string }) {
+export function ClientSettings({
+  user,
+  organizationName,
+  initials,
+  instancesList = [],
+}: {
+  user: User;
+  organizationName: string;
+  initials: string;
+  instancesList?: ClientInstance[];
+}) {
   const [profile, setProfile] = useState({ nombre: user.nombre, correo: user.email, telefono: user.telefono || "", nit: "" });
   const [profileEdit, setProfileEdit] = useState({ ...profile });
   const [profileDirty, setProfileDirty] = useState(false);
   const [profileOk, setProfileOk] = useState(false);
+
+  const [planInfo, setPlanInfo] = useState({
+    nombre: CLIENT_PLAN.nombre,
+    maxInstancias: CLIENT_PLAN.maxInstancias,
+    totalGB: CLIENT_PLAN.totalGB,
+    estado: CLIENT_PLAN.estado,
+    renovacion: "Suscripción activa",
+  });
+
+  useEffect(() => {
+    Promise.all([getMyActiveSubscription(), getPlans()]).then(([sub, catalog]) => {
+      if (sub && sub.planId) {
+        const found = catalog.find(p => p.id === sub.planId);
+        if (found) {
+          let renoText = "Suscripción activa.";
+          if (sub.fechaProximoPago) {
+            try {
+              const d = new Date(sub.fechaProximoPago);
+              renoText = `Suscripción activa. Renueva el ${d.toLocaleDateString("es-GT", { day: "numeric", month: "short", year: "numeric" })}.`;
+            } catch {
+              // fallback
+            }
+          }
+          setPlanInfo({
+            nombre: found.nombre,
+            maxInstancias: found.instanciasPermitidas,
+            totalGB: found.almacenamientoGb,
+            estado: sub.estado === "active" ? "Activa" : sub.estado,
+            renovacion: renoText,
+          });
+          return;
+        }
+      }
+      setPlanInfo({
+        nombre: CLIENT_PLAN.nombre,
+        maxInstancias: CLIENT_PLAN.maxInstancias,
+        totalGB: CLIENT_PLAN.totalGB,
+        estado: CLIENT_PLAN.estado,
+        renovacion: CLIENT_PLAN.estado === "Activa" ? "Suscripción activa." : "Sin suscripción activa.",
+      });
+    }).catch(() => {
+      // fallback to CLIENT_PLAN
+    });
+  }, []);
+
+  const totalUsedGB = instancesList.reduce((sum, i) => sum + (i.usadoGB || 0), 0);
+  const formatGb = (val: number) => {
+    const rounded = Number((val || 0).toFixed(4));
+    return rounded.toString();
+  };
 
   const [notifs, setNotifs] = useState({ instancias: true, pagos: true, incidencias: false });
 
@@ -115,16 +179,20 @@ export function ClientSettings({ user, organizationName, initials }: { user: Use
           <div className="bg-white border border-gray-100 rounded-xl p-6">
             {sectionHead("Preferencias y Estado", "Configuración de notificaciones y resumen de tu cuenta.")}
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Plan Actual</p>
-                <p className="text-sm font-medium text-gray-900">Plan Productor</p>
-                <p className="text-xs text-gray-500 mt-1">Suscripción activa. Renueva el 1 de oct 2026.</p>
+                <p className="text-sm font-semibold text-gray-900">{planInfo.nombre}</p>
+                <p className="text-xs text-gray-500 mt-1">{planInfo.renovacion}</p>
               </div>
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Recursos Utilizados</p>
-                <p className="text-sm font-medium text-gray-900">2 de 2 Instancias</p>
-                <p className="text-xs text-gray-500 mt-1">32 GB de 50 GB en almacenamiento.</p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {instancesList.length} de {planInfo.maxInstancias} {planInfo.maxInstancias === 1 ? "Instancia" : "Instancias"}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {formatGb(totalUsedGB)} GB de {planInfo.totalGB} GB en almacenamiento.
+                </p>
               </div>
             </div>
 
