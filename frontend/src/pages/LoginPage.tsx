@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Sprout, Mail, User as UserIcon, Building, ArrowLeft, KeyRound, AlertCircle } from 'lucide-react';
+import { Mail, User as UserIcon, Building, ArrowLeft, KeyRound, AlertCircle } from 'lucide-react';
 import type { UserRole } from '../types';
 
 interface LoginPageProps {
@@ -69,10 +69,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-lime-400 p-0.5 shadow-xl shadow-emerald-500/20">
-            <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-              <Sprout className="w-7 h-7 text-emerald-400" />
-            </div>
+          <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 p-2.5 shadow-xl shadow-emerald-500/10 flex items-center justify-center">
+            <img src="/agrocloud-isotipo.svg" alt="AgroCloud" className="w-12 h-12 object-contain" />
           </div>
         </div>
         <h2 className="mt-4 text-center text-3xl font-extrabold text-white">

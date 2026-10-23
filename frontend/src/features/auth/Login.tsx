@@ -4,12 +4,12 @@ import axios from "axios";
 import { loginApi, registerApi } from "../../api/authApi";
 import { getPlans } from "../../api/plansApi";
 import { subscribeToPlan } from "../../api/subscriptionsApi";
-import { LogoIcon } from "../../components/ui";
 import type { AuthResponse, Plan } from "../../types";
 
 interface LoginProps {
   initialMode: "login" | "register";
   onAuthenticated: (response: AuthResponse) => void;
+  onCancel?: () => void;
 }
 
 const emptyRegistration = {
@@ -37,7 +37,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Ocurrió un error inesperado.";
 }
 
-export function Login({ initialMode, onAuthenticated }: LoginProps) {
+export function Login({ initialMode, onAuthenticated, onCancel }: LoginProps) {
   const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [regStep, setRegStep] = useState<"cuenta" | "plan" | "pago">("cuenta");
   const [email, setEmail] = useState("");
@@ -168,9 +168,17 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-8 font-[Inter,sans-serif]">
-      <div className="mb-6 flex items-center gap-2">
-        <LogoIcon size={8} />
-        <span className="text-xl font-bold text-gray-900">AgroCloud</span>
+      {/* Logo centrado y más grande arriba del formulario */}
+      <div 
+        onClick={onCancel}
+        className="mb-8 flex items-center justify-center gap-3 cursor-pointer group transition-transform hover:scale-105 active:scale-95"
+      >
+        <img 
+          src="/agrocloud-isotipo-green.svg" 
+          alt="AgroCloud" 
+          className="w-11 h-11 object-contain drop-shadow-xs" 
+        />
+        <span className="text-3xl font-extrabold text-gray-950 tracking-tight">AgroCloud</span>
       </div>
 
       <div className={`w-full ${cardWidthClass} rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm transition-all duration-300`}>
@@ -252,7 +260,7 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
               </div>
             </div>
             <button type="submit" disabled={submitting}
-              className="w-full rounded-xl bg-lime-400 px-4 py-2.5 text-sm font-semibold text-gray-900 hover:bg-lime-300 disabled:cursor-wait disabled:opacity-60 transition-colors">
+              className="w-full rounded-xl bg-[#76d322] px-4 py-2.5 text-sm font-bold text-[#082113] hover:bg-[#68bc1d] active:scale-[0.98] shadow-md shadow-[#76d322]/20 hover:shadow-lg hover:shadow-[#76d322]/30 disabled:cursor-wait disabled:opacity-60 transition-all cursor-pointer">
               {submitting ? "Ingresando..." : "Iniciar sesión"}
             </button>
           </form>
@@ -292,7 +300,7 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
                 className={inputClass} placeholder="Al menos 8 caracteres" />
             </div>
             <button type="submit"
-              className="w-full rounded-xl bg-lime-400 px-4 py-2.5 text-sm font-semibold text-gray-900 hover:bg-lime-300 transition-colors flex items-center justify-center gap-1.5">
+              className="w-full rounded-xl bg-[#76d322] px-4 py-2.5 text-sm font-bold text-[#082113] hover:bg-[#68bc1d] active:scale-[0.98] shadow-md shadow-[#76d322]/20 hover:shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer">
               Continuar a elegir plan →
             </button>
           </form>
@@ -358,7 +366,7 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
               <button
                 type="button"
                 onClick={handleSelectPlanNext}
-                className="flex-1 rounded-xl bg-lime-400 px-4 py-2.5 text-sm font-semibold text-gray-900 hover:bg-lime-300 transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 rounded-xl bg-[#76d322] px-4 py-2.5 text-sm font-bold text-[#082113] hover:bg-[#68bc1d] active:scale-[0.98] shadow-md shadow-[#76d322]/20 hover:shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 Continuar al pago simulado →
               </button>
@@ -461,7 +469,7 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 rounded-xl bg-lime-400 px-4 py-2.5 text-sm font-semibold text-gray-900 hover:bg-lime-300 disabled:cursor-wait disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 rounded-xl bg-[#76d322] px-4 py-2.5 text-sm font-bold text-[#082113] hover:bg-[#68bc1d] active:scale-[0.98] shadow-md shadow-[#76d322]/20 hover:shadow-lg disabled:cursor-wait disabled:opacity-60 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 {submitting ? "Simulando pago..." : "Simular Pago y Entrar"}
               </button>
@@ -480,6 +488,19 @@ export function Login({ initialMode, onAuthenticated }: LoginProps) {
             {mode === "login" ? "Regístrate" : "Inicia sesión"}
           </button>
         </p>
+
+        {onCancel && (
+          <div className="mt-6 pt-5 border-t border-gray-100 flex justify-center">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="text-xs font-semibold text-gray-700 hover:text-gray-900 transition-all flex items-center gap-1.5 bg-white border border-gray-200 px-4 py-2 rounded-xl shadow-2xs hover:shadow-xs hover:bg-gray-50 active:scale-95 cursor-pointer"
+            >
+              <span>←</span>
+              <span>Regresar al sitio principal</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

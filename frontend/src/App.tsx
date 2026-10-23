@@ -50,9 +50,13 @@ export default function App() {
     setRole("landing");
   };
 
+  const handleCancelAuth = () => {
+    setRole("landing");
+  };
+
   if (restoring) return <div className="min-h-screen grid place-items-center text-sm text-gray-500">Cargando tu cuenta...</div>;
   if (role === "landing") return <Landing onLogin={() => openAuth("login")} onRegister={() => openAuth("register")} />;
-  if (role === "login") return <Login initialMode={authMode} onAuthenticated={handleAuthenticated} />;
+  if (role === "login") return <Login initialMode={authMode} onAuthenticated={handleAuthenticated} onCancel={handleCancelAuth} />;
   if (role === "admin" && user) return <AdminPanel user={user} onLogout={handleLogout} />;
   if (role === "cliente" && user) return <ClientPanel user={user} onLogout={handleLogout} />;
   if (role === "soporte" && user) return <SupportPanel user={user} onLogout={handleLogout} />;

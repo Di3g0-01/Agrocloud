@@ -3,6 +3,7 @@ export * from "./StatusBadge";
 export * from "./ProgressBar";
 export * from "./ActivityIcon";
 export * from "./LogoIcon";
+export * from "./AgroCloudBrand";
 export * from "./Toggle";
 export * from "./CopyBtn";
 export * from "./CustomSelect";

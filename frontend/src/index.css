@@ -70,24 +70,70 @@
   }
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Animaciones universales (Desktop y Móvil / Touch) */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-7px); }
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.08); }
 }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+@keyframes shimmerMobile {
+  0% { transform: translateX(-150%); }
+  100% { transform: translateX(250%); }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+@keyframes subtleGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-float-delayed {
+  animation: float 5s ease-in-out 1.2s infinite;
+  will-change: transform;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4.5s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-pulse-glow-delayed {
+  animation: pulseGlow 6s ease-in-out 1.8s infinite;
+  will-change: transform, opacity;
+}
+
+.animate-shimmer-continuous {
+  animation: shimmerMobile 3s infinite;
+  will-change: transform;
+}
+
+.animate-gradient-text {
+  background-size: 200% auto;
+  animation: subtleGradient 6s ease infinite;
+}
+
+/* Soporte táctil y móvil: estado activo para responder al toque */
+@media (hover: none) {
+  .touch-scale:active {
+    transform: scale(0.96) !important;
+  }
+}
+
 
 
 

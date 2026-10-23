@@ -62,6 +62,11 @@ export function ClientPlan({
     }).catch(() => setLoadError("No se pudieron cargar los planes o la suscripción."));
   }, []);
 
+  const formatGb = (val: number) => {
+    const rounded = Number((val || 0).toFixed(4));
+    return rounded.toString();
+  };
+
   const storageUsed = instancesList.reduce((acc, inst) => acc + (inst.usadoGB || 0), 0);
   const instUsed = instancesList.length;
 
@@ -168,10 +173,10 @@ export function ClientPlan({
                     </svg>
                     <span className="text-sm text-gray-700 font-medium">Almacenamiento</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">{storageUsed} <span className="text-gray-400 font-normal">/ {currentPlan.storage}</span></span>
+                  <span className="text-sm font-semibold text-gray-900">{formatGb(storageUsed)} <span className="text-gray-400 font-normal">/ {currentPlan.storage}</span></span>
                 </div>
                 <ProgressBar value={(storageUsed / currentPlan.storageGB) * 100} color="bg-blue-400" />
-                <p className="text-[10px] text-gray-400 mt-1.5">{Math.max(0, currentPlan.storageGB - storageUsed)} GB disponibles</p>
+                <p className="text-[10px] text-gray-400 mt-1.5">{formatGb(Math.max(0, currentPlan.storageGB - storageUsed))} GB disponibles</p>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
