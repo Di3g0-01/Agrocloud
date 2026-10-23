@@ -25,10 +25,15 @@ export function ClientDashboard({
     icon: "resuelta" as const, title: "Instancia registrada", sub: `${inst.nombre} · ${inst.creada}`,
   }));
 
-  const totalUsed = instancesList.reduce((s, i) => s + i.usadoGB, 0);
+  const formatGb = (val: number) => {
+    const rounded = Number((val || 0).toFixed(4));
+    return rounded.toString();
+  };
+
+  const totalUsed = instancesList.reduce((s, i) => s + (i.usadoGB || 0), 0);
   const totalGB = CLIENT_PLAN.totalGB;
   const dispGB = Math.max(0, totalGB - totalUsed);
-  const activeItems = instancesList.filter((i) => i.estado === "Activa").length;
+  const activeItems = instancesList.filter((i) => i.estado === "Operativa" || i.estado === "Activa" || (i.estado as string) === "active").length;
 
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
@@ -40,7 +45,7 @@ export function ClientDashboard({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
           { label: "INSTANCIAS", value: String(instancesList.length), sub: `${activeItems} activas`, icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: "text-lime-600 bg-lime-50" },
-          { label: "ALMACENAMIENTO", value: `${totalUsed} GB`, sub: `/ ${totalGB} GB`, icon: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4", color: "text-blue-500 bg-blue-50" },
+          { label: "ALMACENAMIENTO", value: `${formatGb(totalUsed)} GB`, sub: `/ ${totalGB} GB`, icon: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4", color: "text-blue-500 bg-blue-50" },
           { label: "PLAN", value: CLIENT_PLAN.nombre, sub: `Q${CLIENT_PLAN.precio} / mes`, icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z", color: "text-purple-500 bg-purple-50" },
           { label: "SUSCRIPCIÓN", value: CLIENT_PLAN.estado, sub: "Estado actual", icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-lime-600 bg-lime-50" },
         ].map(k => (
@@ -81,7 +86,7 @@ export function ClientDashboard({
                     <td className="px-5 py-4 font-mono font-medium text-gray-900">{inst.nombre}</td>
                     <td className="px-5 py-4 text-gray-500">PostgreSQL</td>
                     <td className="px-5 py-4 text-gray-600">{inst.plantilla}</td>
-                    <td className="px-5 py-4 text-gray-500">{inst.usadoGB} / {inst.totalGB} GB</td>
+                    <td className="px-5 py-4 text-gray-500">{formatGb(inst.usadoGB)} / {inst.totalGB} GB</td>
                     <td className="px-5 py-4 flex justify-center"><ClientInstanceStatusBadge s={inst.estado} /></td>
                     <td className="px-5 py-4 text-gray-400">
                       <button onClick={() => onNavigate?.("instancias")} className="text-xs text-lime-600 hover:text-lime-700 font-medium">Ver</button>
@@ -92,7 +97,7 @@ export function ClientDashboard({
             </table>
           )}
           <div className="px-5 py-3 text-center text-xs text-gray-400">
-            {instancesList.length} de {CLIENT_PLAN.maxInstancias} instancias · Capacidad disponible {dispGB} GB
+            {instancesList.length} de {CLIENT_PLAN.maxInstancias} instancias · Capacidad disponible {formatGb(dispGB)} GB
           </div>
         </div>
 

@@ -140,7 +140,7 @@ export function ClientPanel({ user, onLogout }: { user: User; onLogout: () => vo
         {page === "plan" && <ClientPlan organizationName={organizationName} instancesList={instancesList} onPlanChanged={() => setPlanRevision(n => n + 1)} />}
         {page === "pagos" && <ClientPayments organizationName={organizationName} />}
         {page === "soporte" && <ClientSupport organizationName={organizationName} initials={initials} instancesList={instancesList} />}
-        {page === "configuracion" && <ClientSettings user={user} organizationName={organizationName} initials={initials} />}
+        {page === "configuracion" && <ClientSettings user={user} organizationName={organizationName} initials={initials} instancesList={instancesList} />}
         {page === "documentacion" && <SharedDocumentation userRole="cliente" />}
       </div>
     </div>
