@@ -5,6 +5,7 @@ import { CLIENT_PLAN } from "../../data/client";
 import type { ClientInstance } from "../../types/client";
 import { createInstance, restartInstance, deleteInstance, mapDbInstanceToClientInstance, getInstanceCredentials } from "../../api/instancesApi";
 import { getTemplates } from "../../api/templatesApi";
+import { InstanceDataExplorerModal } from "./InstanceDataExplorerModal";
 
 export function ClientInstanceStatusBadge({ s }: { s: ClientInstance["estado"] | string }) {
   const label =
@@ -186,6 +187,7 @@ export function ClientInstances({
   const [view, setView] = useState<"list" | "grid">("list");
   const [drawer, setDrawer] = useState<ClientInstance | null>(null);
   const [credModal, setCredModal] = useState<ClientInstance | null>(null);
+  const [explorerModal, setExplorerModal] = useState<ClientInstance | null>(null);
   const [showPass, setShowPass] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<ClientInstance | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -250,7 +252,12 @@ export function ClientInstances({
     return matchSearch && matchStatus;
   });
 
-  const totalUsed = instancesList.reduce((s, i) => s + i.usadoGB, 0);
+  const formatGb = (val: number) => {
+    const rounded = Number(val.toFixed(4));
+    return rounded.toString();
+  };
+
+  const totalUsed = instancesList.reduce((s, i) => s + (i.usadoGB || 0), 0);
   const activeItems = instancesList.filter(i => i.estado === "Operativa" || i.estado === "Activa").length;
 
   return (
@@ -273,8 +280,8 @@ export function ClientInstances({
         {[
           { label: "Total instancias", value: `${instancesList.length} / ${CLIENT_PLAN.maxInstancias}`, sub: "Plan " + CLIENT_PLAN.nombre, icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: "text-lime-600 bg-lime-50" },
           { label: "Activas", value: String(activeItems), sub: `${instancesList.length - activeItems} no activas`, icon: "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", color: "text-lime-600 bg-lime-50" },
-          { label: "Almacenamiento usado", value: `${totalUsed} GB`, sub: `de ${CLIENT_PLAN.totalGB} GB del plan`, icon: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4", color: "text-blue-500 bg-blue-50" },
-          { label: "Almacenamiento disponible", value: `${CLIENT_PLAN.totalGB - totalUsed} GB`, sub: "Disponible para nuevas instancias", icon: "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", color: "text-gray-500 bg-gray-100" },
+          { label: "Almacenamiento usado", value: `${formatGb(totalUsed)} GB`, sub: `de ${CLIENT_PLAN.totalGB} GB del plan`, icon: "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4", color: "text-blue-500 bg-blue-50" },
+          { label: "Almacenamiento disponible", value: `${formatGb(Math.max(0, CLIENT_PLAN.totalGB - totalUsed))} GB`, sub: "Disponible para nuevas instancias", icon: "M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z", color: "text-gray-500 bg-gray-100" },
         ].map(k => (
           <div key={k.label} className="bg-white border border-gray-100 rounded-xl p-4 text-left flex flex-col items-start">
             <div className="flex items-center justify-start gap-2 mb-2">
@@ -352,13 +359,19 @@ export function ClientInstances({
                   </td>
                   <td className="px-4 py-3.5 text-xs text-gray-600 whitespace-nowrap">{inst.plantilla}</td>
                   <td className="px-4 py-3.5 w-36">
-                    <div className="flex justify-between text-[10px] text-gray-400 mb-1"><span>{inst.usadoGB} GB</span><span>{inst.totalGB} GB</span></div>
+                    <div className="flex justify-between text-[10px] text-gray-400 mb-1"><span>{formatGb(inst.usadoGB)} GB</span><span>{inst.totalGB} GB</span></div>
                     <ProgressBar value={(inst.usadoGB / inst.totalGB) * 100} color={inst.usadoGB / inst.totalGB > 0.8 ? "bg-red-400" : inst.usadoGB / inst.totalGB > 0.6 ? "bg-amber-400" : "bg-lime-400"} />
                   </td>
                   <td className="px-4 py-3.5 whitespace-nowrap flex justify-center"><ClientInstanceStatusBadge s={inst.estado} /></td>
                   <td className="px-4 py-3.5 text-xs text-gray-400 whitespace-nowrap">{inst.creada}</td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center justify-center gap-1 whitespace-nowrap">
+                      <button onClick={() => setExplorerModal(inst)} className="px-2 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded transition-colors flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7z M9 12h6m-6 4h6" />
+                        </svg>
+                        Ver Tablas
+                      </button>
                       <button onClick={() => setDrawer(inst)} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Detalles</button>
                       <button onClick={() => handleOpenCredModal(inst)} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Credenciales</button>
                       <button onClick={() => handleRestart(inst.nombre, (inst as any).id)} className="px-2 py-1 text-xs text-amber-600 hover:bg-amber-50 rounded transition-colors">Reiniciar</button>
@@ -392,12 +405,18 @@ export function ClientInstances({
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-xs"><span className="text-gray-400">Plantilla</span><span className="text-gray-700 font-medium">{inst.plantilla}</span></div>
                 <div>
-                  <div className="flex justify-between text-xs text-gray-400 mb-1"><span>Almacenamiento</span><span>{inst.usadoGB} / {inst.totalGB} GB</span></div>
+                  <div className="flex justify-between text-xs text-gray-400 mb-1"><span>Almacenamiento</span><span>{formatGb(inst.usadoGB)} / {inst.totalGB} GB</span></div>
                   <ProgressBar value={(inst.usadoGB / inst.totalGB) * 100} color={inst.usadoGB / inst.totalGB > 0.8 ? "bg-red-400" : "bg-lime-400"} />
                 </div>
                 <div className="flex justify-between text-xs"><span className="text-gray-400">Creada</span><span className="text-gray-700">{inst.creada}</span></div>
               </div>
               <div className="border-t border-gray-100 pt-3 grid grid-cols-2 gap-2">
+                <button onClick={() => setExplorerModal(inst)} className="col-span-2 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1.5">
+                  <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7z M9 12h6m-6 4h6" />
+                  </svg>
+                  Ver Tablas
+                </button>
                 <button onClick={() => setDrawer(inst)} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Detalles</button>
                 <button onClick={() => handleOpenCredModal(inst)} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Credenciales</button>
                 <button onClick={() => handleRestart(inst.nombre, (inst as any).id)} className="py-1.5 text-xs font-medium text-amber-600 border border-amber-100 rounded-lg hover:bg-amber-50 transition-colors">Reiniciar</button>
@@ -433,7 +452,7 @@ export function ClientInstances({
                   {[
                     { label: "CPU", value: drawer.cpu },
                     { label: "Memoria", value: drawer.memoria },
-                    { label: "Almacenamiento", value: Math.round((drawer.usadoGB / drawer.totalGB) * 100), extra: `${drawer.usadoGB} / ${drawer.totalGB} GB` },
+                    { label: "Almacenamiento", value: Math.round((drawer.usadoGB / drawer.totalGB) * 100), extra: `${formatGb(drawer.usadoGB)} / ${drawer.totalGB} GB` },
                   ].map(r => (
                     <div key={r.label}>
                       <div className="flex justify-between text-xs text-gray-500 mb-1.5">
@@ -469,12 +488,23 @@ export function ClientInstances({
               </div>
             </div>
 
-            <div className="p-5 border-t border-gray-100 shrink-0 flex gap-2">
+            <div className="p-5 border-t border-gray-100 shrink-0 flex flex-col gap-2">
               <button onClick={() => {
-                if (drawer) handleOpenCredModal(drawer);
+                if (drawer) setExplorerModal(drawer);
                 setDrawer(null);
-              }} className="flex-1 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors">Credenciales</button>
-              <button onClick={() => setDrawer(null)} className="flex-1 py-2 text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg font-medium transition-colors">Cerrar</button>
+              }} className="w-full py-2.5 text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span>Explorar Tablas y Datos</span>
+              </button>
+              <div className="flex gap-2">
+                <button onClick={() => {
+                  if (drawer) handleOpenCredModal(drawer);
+                  setDrawer(null);
+                }} className="flex-1 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors">Credenciales</button>
+                <button onClick={() => setDrawer(null)} className="flex-1 py-2 text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg font-medium transition-colors">Cerrar</button>
+              </div>
             </div>
           </aside>
         </>
@@ -553,6 +583,15 @@ export function ClientInstances({
           onUpgradePlan={() => onNavigate?.("plan")}
           currentCount={instancesList.length}
           maxInstancias={CLIENT_PLAN.maxInstancias}
+        />
+      )}
+
+      {explorerModal && (
+        <InstanceDataExplorerModal
+          instanceId={(explorerModal as any).id}
+          instanceName={explorerModal.nombre}
+          templateName={explorerModal.plantilla}
+          onClose={() => setExplorerModal(null)}
         />
       )}
     </div>

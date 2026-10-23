@@ -218,9 +218,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSelectPlan, onNaviga
       {/* ─── Footer ──────────────────────────────────────────────────────────────── */}
       <footer className="py-12 px-4 border-t border-slate-800 text-center text-xs text-slate-500">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Sprout className="w-4 h-4 text-emerald-400" />
-            <span className="font-semibold text-slate-300">AgroCloud DBaaS</span>
+          <div className="flex items-center gap-2.5">
+            <img src="/agrocloud-isotipo.svg" alt="AgroCloud" className="w-6 h-6 object-contain" />
+            <span className="font-semibold text-slate-200">AgroCloud DBaaS</span>
             <span>— Universidad Rafael Landívar</span>
           </div>
           <div>Ingeniería de Software I — Entregable 03 (30% Funcional)</div>
