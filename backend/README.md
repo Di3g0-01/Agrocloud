@@ -13,6 +13,9 @@ Esta carpeta contiene el Backend desarrollado con **Java 24**, **Spring Boot 4.1
 
 ## Autenticación
 
+Ver [configuración de correo y despliegue](../CORREOS_Y_ACCESO.md) para activar
+verificación de correo y recuperación de contraseña en Render y Vercel.
+
 La API implementa autenticación stateless con Spring Security, JWT y contraseñas BCrypt.
 Las contraseñas se guardan como hashes de una sola vía, nunca como texto plano ni como
 cifrado reversible. `RegistrationService` crea la cuenta y asigna `CLIENTE`, `LoginService`
@@ -26,7 +29,8 @@ Cada usuario tiene exactamente un rol. Los roles `ADMINISTRADOR`, `CLIENTE` y `S
 se guardan en la tabla `roles` y pueden ser compartidos por varios usuarios. La migración
 `V2__create_roles.sql` conserva el rol de los usuarios existentes.
 El cierre de sesión elimina el token guardado en el navegador; el JWT emitido conserva
-su validez hasta su vencimiento (8 horas por defecto).
+su validez hasta su vencimiento (8 horas por defecto), salvo que se restablezca
+la contraseña o un administrador cambie el correo o la contraseña de la cuenta.
 
 ### Ejecutar con Docker
 
@@ -59,7 +63,11 @@ E04 y se amplía al completar cada módulo.
 
 ### Endpoints
 
-- `POST /api/v1/auth/register`: crea una cuenta de cliente y devuelve un JWT.
+- `POST /api/v1/auth/register`: crea una cuenta pendiente y envía verificación; devuelve un mensaje, sin JWT.
+- `POST /api/v1/auth/verify-email`: consume el token, activa la cuenta y devuelve un JWT para continuar a la selección del plan.
+- `POST /api/v1/auth/resend-verification`: solicita otro enlace de confirmación.
+- `POST /api/v1/auth/forgot-password`: solicita un enlace de recuperación.
+- `POST /api/v1/auth/reset-password`: cambia la contraseña e invalida las sesiones anteriores.
 - `POST /api/v1/auth/login`: autentica por correo y contraseña.
 - `GET /api/v1/auth/me`: devuelve el usuario del token enviado como `Bearer`.
 - `GET /api/v1/usuarios`: lista las cuentas (solo `ADMINISTRADOR`).

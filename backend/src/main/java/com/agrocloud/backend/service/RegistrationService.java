@@ -1,6 +1,6 @@
 package com.agrocloud.backend.service;
 
-import com.agrocloud.backend.dto.AuthResponse;
+import com.agrocloud.backend.dto.MessageResponse;
 import com.agrocloud.backend.dto.RegisterRequest;
 import com.agrocloud.backend.entity.AccountStatus;
 import com.agrocloud.backend.entity.Role;
@@ -18,22 +18,23 @@ public class RegistrationService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthResponseFactory responseFactory;
+    private final EmailAccountService emailAccounts;
 
     public RegistrationService(
             UserRepository userRepository,
             RoleRepository roleRepository,
             PasswordEncoder passwordEncoder,
-            AuthResponseFactory responseFactory
+            EmailAccountService emailAccounts
     ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
-        this.responseFactory = responseFactory;
+        this.emailAccounts = emailAccounts;
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public MessageResponse register(RegisterRequest request) {
+        EmailAccountService.validatePassword(request.password());
         String email = EmailAddress.normalize(request.email());
         if (userRepository.existsByEmail(email)) {
             throw new EmailAlreadyRegisteredException();
@@ -46,9 +47,12 @@ public class RegistrationService {
         user.setPhone(trimToNull(request.phone()));
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRoleEntity(roleRepository.getReferenceById(Role.CLIENTE));
-        user.setStatus(AccountStatus.ACTIVO);
+        user.setStatus(AccountStatus.PENDIENTE);
+        user.setEmailVerified(false);
 
-        return responseFactory.create(userRepository.save(user));
+        User saved = userRepository.save(user);
+        emailAccounts.sendVerification(saved);
+        return new MessageResponse("Revisa tu correo y confirma el enlace para continuar con la selección de tu plan.");
     }
 
     private String trimToNull(String value) {

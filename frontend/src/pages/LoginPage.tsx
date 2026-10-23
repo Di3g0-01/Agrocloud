@@ -18,11 +18,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
   const [password, setPassword] = useState<string>('');
   const [company, setCompany] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setMessage('');
     setSubmitting(true);
 
     try {
@@ -32,8 +34,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
           setSubmitting(false);
           return;
         }
-        const role = await register(name, email, password, company);
-        onLoginSuccess(role);
+        const result = await register(name, email, password, company);
+        setMessage(result.message);
+        setPassword('');
+        setIsRegistering(false);
       } else {
         if (!email || !password) {
           setErrorMsg('Por favor ingresa tu correo y contraseña.');
@@ -85,6 +89,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateHome, onLoginSuc
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-slate-900/90 border border-slate-800 py-8 px-6 shadow-2xl rounded-2xl sm:px-10 backdrop-blur-xl">
+          {message && <p role="status" className="mb-4 rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-300">{message}</p>}
           {errorMsg && (
             <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-rose-400 text-xs font-medium">
               <AlertCircle className="w-4 h-4 shrink-0" />

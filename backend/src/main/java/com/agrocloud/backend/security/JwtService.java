@@ -33,6 +33,7 @@ public class JwtService {
                 .subject(user.getEmail())
                 .claim("uid", user.getId().toString())
                 .claim("role", user.getRole().name())
+                .claim("av", user.getAuthVersion())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(expiration)))
                 .signWith(signingKey)
@@ -47,6 +48,7 @@ public class JwtService {
         Claims claims = parseClaims(token);
         return Objects.equals(claims.getSubject(), principal.getUsername())
                 && Objects.equals(claims.get("uid", String.class), principal.id().toString())
+                && (claims.get("av", Long.class) == null ? 0L : claims.get("av", Long.class)) == principal.authVersion()
                 && claims.getExpiration() != null
                 && claims.getExpiration().after(new Date())
                 && principal.isEnabled()

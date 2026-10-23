@@ -58,6 +58,15 @@ class LoginServiceTest {
     }
 
     @Test
+    void loginRejectsUnverifiedEmailEvenIfAccountWasManuallyActivated() {
+        User user = user(AccountStatus.ACTIVO);
+        user.setEmailVerified(false);
+        when(userRepository.findByEmail("cliente@example.com")).thenReturn(Optional.of(user));
+        assertThatThrownBy(() -> service.login(new LoginRequest("cliente@example.com", "ClaveSegura123")))
+                .isInstanceOf(AccountNotActiveException.class);
+    }
+
+    @Test
     void loginRejectsWrongPassword() {
         when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("bad"));
 

@@ -14,7 +14,14 @@ public record UserPrincipal(
         String email,
         String password,
         AccountStatus status,
+        boolean emailVerified,
+        long authVersion,
         Collection<? extends GrantedAuthority> authorities) implements UserDetails {
+
+    public UserPrincipal(UUID id, String email, String password, AccountStatus status,
+            Collection<? extends GrantedAuthority> authorities) {
+        this(id, email, password, status, true, 0, authorities);
+    }
 
     public static UserPrincipal from(User user) {
         return new UserPrincipal(
@@ -22,6 +29,8 @@ public record UserPrincipal(
                 user.getEmail(),
                 user.getPasswordHash(),
                 user.getStatus(),
+                user.isEmailVerified(),
+                user.getAuthVersion(),
                 List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())));
     }
 
@@ -47,7 +56,7 @@ public record UserPrincipal(
 
     @Override
     public boolean isEnabled() {
-        return status == AccountStatus.ACTIVO;
+        return status == AccountStatus.ACTIVO && emailVerified;
     }
 
     public boolean hasRole(String roleName) {

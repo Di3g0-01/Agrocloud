@@ -61,13 +61,36 @@ export async function loginApi(email: string, password: string): Promise<AuthRes
   return toFrontendResponse(response.data);
 }
 
-export async function registerApi(data: RegistrationInput): Promise<AuthResponse> {
-  const response = await axiosClient.post<ApiAuthResponse>('/auth/register', data);
-  const result = toFrontendResponse(response.data);
-  if (result.user.rol !== 'CLIENTE') {
-    throw new Error('El registro público solo admite cuentas de cliente.');
-  }
-  return result;
+export interface MessageResponse { message: string }
+
+export async function registerApi(data: RegistrationInput): Promise<MessageResponse> {
+  const response = await axiosClient.post<MessageResponse>('/auth/register', data);
+  return response.data;
+}
+
+export async function verifyEmailApi(token: string): Promise<AuthResponse> {
+  return toFrontendResponse((await axiosClient.post<ApiAuthResponse>('/auth/verify-email', { token })).data);
+}
+
+export async function resendVerificationApi(email: string): Promise<MessageResponse> {
+  return (await axiosClient.post<MessageResponse>('/auth/resend-verification', { email })).data;
+}
+
+export async function forgotPasswordApi(email: string): Promise<MessageResponse> {
+  return (await axiosClient.post<MessageResponse>('/auth/forgot-password', { email })).data;
+}
+
+export async function resetPasswordApi(token: string, password: string): Promise<MessageResponse> {
+  return (await axiosClient.post<MessageResponse>('/auth/reset-password', { token, password })).data;
+}
+
+export interface EmailLink { action: 'verify' | 'reset'; token: string }
+
+export function readEmailLink(): EmailLink | null {
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  if (params.has('verify-email')) return { action: 'verify', token: params.get('verify-email') || '' };
+  if (params.has('reset-password')) return { action: 'reset', token: params.get('reset-password') || '' };
+  return null;
 }
 
 export async function currentUserApi(): Promise<AuthResponse['user']> {
