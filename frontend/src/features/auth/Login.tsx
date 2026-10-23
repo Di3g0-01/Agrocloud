@@ -3,7 +3,6 @@ import type { FormEvent } from "react";
 import axios from "axios";
 import { loginApi, registerApi, verifyEmailApi, resendVerificationApi, forgotPasswordApi, resetPasswordApi } from "../../api/authApi";
 import type { EmailLink } from "../../api/authApi";
-import { LogoIcon } from "../../components/ui";
 import type { AuthResponse } from "../../types";
 import { EmailSentDialog } from "./EmailSentDialog";
 import type { EmailNotice } from "./EmailSentDialog";
@@ -122,10 +121,21 @@ export function Login({ initialMode, emailLink, onAuthenticated }: LoginProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-8 font-[Inter,sans-serif]">
-      <a href="/" className="mb-7 flex items-center gap-2 text-xl font-bold text-gray-900" aria-label="Inicio de AgroCloud">
-        <LogoIcon size={9} />AgroCloud
+      {/* Logo centrado y más grande arriba del formulario */}
+      <a
+        href="/"
+        className="mb-8 flex items-center justify-center gap-3 cursor-pointer group transition-transform hover:scale-105 active:scale-95"
+        aria-label="Inicio de AgroCloud"
+      >
+        <img
+          src="/agrocloud-isotipo-green.svg"
+          alt="AgroCloud"
+          className="w-12 h-12 object-contain drop-shadow-xs"
+        />
+        <span className="text-3xl font-extrabold text-gray-950 tracking-tight">AgroCloud</span>
       </a>
-      <main className="w-full max-w-md rounded-2xl bg-white border border-gray-100 p-6 sm:p-8 shadow-sm">
+
+      <main className="w-full max-w-md rounded-2xl bg-white border border-gray-200 p-6 sm:p-8 shadow-sm">
         <h1 className="text-2xl font-bold text-gray-900">{titles[mode]}</h1>
         <p className="mt-2 mb-6 text-sm text-gray-500">{descriptions[mode]}</p>
         {error && <p role="alert" className="mb-5 rounded-xl bg-red-50 border border-red-100 p-3 text-sm text-red-700">{error}</p>}
@@ -204,6 +214,12 @@ export function Login({ initialMode, emailLink, onAuthenticated }: LoginProps) {
           <button disabled={submitting} type="button" onClick={() => switchMode(mode === "login" ? "register" : "login")} className="font-semibold text-green-800 hover:underline">
             {mode === "login" ? "¿Aún no tienes cuenta? Regístrate" : "Volver a iniciar sesión"}
           </button>
+          <a
+            href="/"
+            className="mt-2 text-xs text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-1.5"
+          >
+            <span>←</span> Regresar al sitio principal
+          </a>
         </nav>
       </main>
       {emailNotice && <EmailSentDialog {...emailNotice} onClose={() => { setEmailNotice(null); switchMode(emailNotice.purpose === "verification" ? "pending" : "login"); }} />}
