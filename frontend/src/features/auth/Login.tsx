@@ -28,6 +28,7 @@ export function Login({ initialMode, emailLink, onAuthenticated }: LoginProps) {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [registration, setRegistration] = useState({ organizationName: "", contactName: "", phone: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -41,6 +42,7 @@ export function Login({ initialMode, emailLink, onAuthenticated }: LoginProps) {
     setPassword("");
     setConfirmation("");
     setShowPassword(false);
+    setShowConfirmation(false);
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -49,7 +51,8 @@ export function Login({ initialMode, emailLink, onAuthenticated }: LoginProps) {
     setMessage("");
     if ((mode === "register" || mode === "reset")
         && (password.length < 8 || new TextEncoder().encode(password).length > 72)) {
-      setError("La contraseña debe tener al menos 8 caracteres y como máximo 72 bytes.");
+      setError(password.length < 8 ? "La contraseña debe tener al menos 8 caracteres."
+        : "La contraseña es demasiado larga. Usa una más corta.");
       return;
     }
     if ((mode === "register" || mode === "reset") && password !== confirmation) {
@@ -163,18 +166,31 @@ export function Login({ initialMode, emailLink, onAuthenticated }: LoginProps) {
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
                   minLength={mode === "login" ? undefined : 8} maxLength={72} value={password}
                   onChange={e => setPassword(e.target.value)} placeholder={mode === "login" ? "Tu contraseña" : "Al menos 8 caracteres"}
-                  className={`${inputClass}${mode !== "register" ? " pr-20" : ""}`} />
-                {mode !== "register" && <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  aria-describedby={mode === "register" || mode === "reset" ? "password-help" : undefined}
+                  className={`${inputClass} pr-20`} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"} aria-pressed={showPassword}
+                  aria-controls="password"
                   className="absolute inset-y-0 right-3 text-xs font-medium text-gray-500 hover:text-gray-800">
                   {showPassword ? "Ocultar" : "Mostrar"}
-                </button>}
+                </button>
               </div>
+              {(mode === "register" || mode === "reset") && <p id="password-help" className="mt-1.5 text-xs text-gray-500">
+                Puedes usar letras, números y símbolos. Mínimo 8 caracteres.
+              </p>}
             </div>}
             {(mode === "register" || mode === "reset") && <div>
               <label className="mb-1.5 block text-xs font-semibold text-gray-700" htmlFor="confirmation">Confirma tu contraseña *</label>
-              <input id="confirmation" type={showPassword ? "text" : "password"} autoComplete="new-password" required minLength={8} maxLength={72}
-                value={confirmation} onChange={e => setConfirmation(e.target.value)} placeholder="Repite tu contraseña" className={inputClass} />
+              <div className="relative">
+                <input id="confirmation" type={showConfirmation ? "text" : "password"} autoComplete="new-password" required minLength={8} maxLength={72}
+                  value={confirmation} onChange={e => setConfirmation(e.target.value)} placeholder="Repite tu contraseña" className={`${inputClass} pr-20`} />
+                <button type="button" onClick={() => setShowConfirmation(!showConfirmation)}
+                  aria-label={showConfirmation ? "Ocultar confirmación de contraseña" : "Mostrar confirmación de contraseña"}
+                  aria-pressed={showConfirmation} aria-controls="confirmation"
+                  className="absolute inset-y-0 right-3 text-xs font-medium text-gray-500 hover:text-gray-800">
+                  {showConfirmation ? "Ocultar" : "Mostrar"}
+                </button>
+              </div>
             </div>}
             <button type="submit" className="w-full rounded-xl bg-lime-400 hover:bg-lime-300 px-4 py-3 text-sm font-semibold text-gray-900 disabled:cursor-wait">
               {submitting ? "Procesando..." : actions[mode]}

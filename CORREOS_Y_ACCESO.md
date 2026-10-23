@@ -108,6 +108,67 @@ contraseña. Un cambio administrativo de correo o contraseña invalida los enlac
 anteriores y sus sesiones. No activar manualmente una cuenta pública pendiente:
 debe verificar el correo, ya que el acceso comprueba también esa condición.
 
+## Pruebas locales con Brevo y entrega real
+
+La integración HTTPS existente también funciona desde tu computadora. No requiere
+publicar el proyecto ni exponer un puerto local a Internet. Necesitas conexión a
+Internet para que el backend contacte a Brevo; abre los enlaces recibidos en la
+misma computadora donde ejecutas el frontend.
+
+1. Entra a [Brevo](https://app.brevo.com/) y crea tu cuenta o inicia sesión.
+2. En **Configuración > Remitentes, dominios e IP dedicadas > Remitentes**, agrega
+   un remitente con nombre `AgroCloud` y un correo que puedas abrir. Completa la
+   verificación que Brevo envíe a ese correo. Si usas un dominio propio, completa
+   también la autenticación que te indique Brevo.
+3. En **SMTP y API > Claves API**, crea una clave para `AgroCloud local` y cópiala
+   al archivo `.env` de la raíz. Usa una **clave API**, no una clave SMTP. Si Brevo
+   solicita activar los correos transaccionales, completa ese paso.
+4. Completa estas variables en `.env`, conservando las de base de datos y JWT:
+
+   ```dotenv
+   APP_FRONTEND_URL=http://localhost:5173
+   MAIL_PROVIDER=brevo
+   MAIL_FROM=AgroCloud <tu-correo-verificado@example.com>
+   BREVO_API_KEY=pega-aqui-tu-clave-api
+   ```
+
+   Sustituye ambos ejemplos por tus datos reales. La clave pertenece solo al
+   backend; no la pongas en `frontend/.env`, variables `VITE_*`, capturas ni Git.
+   Con `MAIL_PROVIDER=brevo` no necesitas configurar `MAIL_HOST`, `MAIL_USERNAME`
+   ni `MAIL_PASSWORD`.
+5. Inicia Docker Desktop y aplica los cambios con la receta que ya uses. Para
+   la instalación E04 descrita en `DOCKER.md`, desde la raíz:
+
+   ```powershell
+   docker compose -f docker-compose.e04.yml up -d --build api
+   ```
+
+   Para la instalación original con `docker-compose.yml`, compila primero el
+   JAR actual y luego recrea la API:
+
+   ```powershell
+   docker build --target artifact --output type=local,dest=build-artifacts -f backend/Dockerfile backend
+   docker compose up -d --force-recreate api
+   ```
+
+   Para un equipo nuevo usa `docker compose -f docker-compose.team.yml up -d --build api`.
+   Usa solo la receta de tu instalación. Reiniciar un contenedor sin recrearlo
+   no actualiza sus variables de entorno.
+6. Ejecuta el frontend en `http://localhost:5173` con la API local
+   (`VITE_API_URL=http://localhost:8080/api/v1`). Registra una cuenta de prueba
+   con un buzón que controles, confirma el correo recibido y prueba **Olvidé mi
+   contraseña**. El correo debe contener un enlace a `localhost:5173`.
+
+Si no llega, revisa spam y los registros de **Transaccional > Email** en Brevo.
+Revisa también los registros de la API: la respuesta genérica del formulario no
+confirma que Brevo haya aceptado el envío. Comprueba la clave, la verificación del
+remitente y la activación transaccional. Si Brevo pide autorizar la IP de tu
+conexión local, sigue su aviso. Tras corregir la configuración, solicita otro
+enlace respetando el intervalo de 60 segundos.
+
+Esta configuración envía correos reales. Para probar sin entrega, usa el buzón
+local de la siguiente sección.
+
 ## Pruebas locales sin enviar correos a personas
 
 Se puede usar un buzón SMTP de desarrollo como Mailpit en `localhost:1025`.
