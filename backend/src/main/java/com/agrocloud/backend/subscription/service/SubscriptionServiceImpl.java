@@ -5,6 +5,8 @@ import com.agrocloud.backend.exception.SubscriptionNotFoundException;
 import com.agrocloud.backend.exception.UserNotFoundException;
 import com.agrocloud.backend.instance.repository.InstanceRepository;
 import com.agrocloud.backend.payment.service.PaymentService;
+import com.agrocloud.backend.plan.decorator.PlanContratable;
+import com.agrocloud.backend.plan.decorator.PlanCotizador;
 import com.agrocloud.backend.plan.entity.PlanEntity;
 import com.agrocloud.backend.plan.service.PlanService;
 import com.agrocloud.backend.repository.UserRepository;
@@ -30,19 +32,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final PlanService planService;
     private final PaymentService paymentService;
     private final InstanceRepository instanceRepository;
+    private final PlanCotizador planCotizador;
 
     public SubscriptionServiceImpl(
             SubscriptionRepository repository,
             UserRepository userRepository,
             PlanService planService,
             PaymentService paymentService,
-            InstanceRepository instanceRepository
+            InstanceRepository instanceRepository,
+            PlanCotizador planCotizador
     ) {
         this.repository = repository;
         this.userRepository = userRepository;
         this.planService = planService;
         this.paymentService = paymentService;
         this.instanceRepository = instanceRepository;
+        this.planCotizador = planCotizador;
     }
 
     @Override
@@ -55,9 +60,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             throw new IllegalArgumentException("Este plan no está disponible para contratar");
         }
 
+        // Patrón Decorator: plan base + complementos elegidos por el cliente
+        PlanContratable planContratado = planCotizador.cotizar(plan, request.complementos());
+
         long currentInstancesCount = instanceRepository.countByOwnerId(userId);
-        if (currentInstancesCount > plan.getMaxInstances()) {
-            throw new IllegalArgumentException("Para cambiar a este plan debes eliminar las instancias restantes. Actualmente tienes " + currentInstancesCount + " instancia" + (currentInstancesCount > 1 ? "s" : "") + " y el plan '" + plan.getName() + "' solo permite " + plan.getMaxInstances() + ".");
+        if (currentInstancesCount > planContratado.instanciasPermitidas()) {
+            throw new IllegalArgumentException("Para cambiar a este plan debes eliminar las instancias restantes. Actualmente tienes " + currentInstancesCount + " instancia" + (currentInstancesCount > 1 ? "s" : "") + " y el plan '" + planContratado.descripcion() + "' solo permite " + planContratado.instanciasPermitidas() + ".");
         }
 
         // Cancel previous active subscription if changing plans
@@ -70,13 +78,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         SubscriptionEntity newSubscription = new SubscriptionEntity();
         newSubscription.setUser(user);
         newSubscription.setPlan(plan);
-        newSubscription.setAmount(plan.getMonthlyPrice());
+        newSubscription.setAmount(planContratado.precioMensual());
         newSubscription.setStatus(SubscriptionStatus.active);
         newSubscription.setStartDate(LocalDate.now());
         newSubscription.setNextBillingDate(LocalDate.now().plusMonths(1));
 
         SubscriptionEntity saved = repository.save(newSubscription);
-        paymentService.registerAutomaticPayment(saved.getId(), "Contratación de plan - " + plan.getName());
+        paymentService.registerAutomaticPayment(saved.getId(), "Contratación de plan - " + planContratado.descripcion());
 
         return SubscriptionResponse.from(saved);
     }
