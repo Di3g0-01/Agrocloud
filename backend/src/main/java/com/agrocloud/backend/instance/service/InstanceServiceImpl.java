@@ -53,6 +53,21 @@ public class InstanceServiceImpl implements InstanceService {
     @Value("${spring.datasource.password:}")
     private String datasourcePassword;
 
+    @Value("${app.public-db.host:ep-cool-bonus-b4dogngv.c-6.us-east-2.aws.neon.tech}")
+    private String publicDbHost;
+
+    @Value("${app.public-db.port:5432}")
+    private Integer publicDbPort;
+
+    @Value("${app.public-db.database:neondb}")
+    private String publicDbName;
+
+    @Value("${app.public-db.user:neondb_owner}")
+    private String publicDbUser;
+
+    @Value("${app.public-db.password:npg_gnKk6U7mePhX}")
+    private String publicDbPass;
+
     public InstanceServiceImpl(
             InstanceRepository repository,
             UserRepository userRepository,
@@ -279,39 +294,56 @@ public class InstanceServiceImpl implements InstanceService {
 
         String decryptedPassword = encryptionService.decrypt(entity.getEncryptedPassword());
 
-        // Si el host almacenado es simulado (*.agrocloud.gt), resolver las credenciales reales
-        // a partir del clúster PostgreSQL activo configurado en el backend (ej. Neon o Docker)
+        // Si el host almacenado es simulado (*.agrocloud.gt) o local, resolver las credenciales reales conectables
         String effectiveHost = entity.getHost();
         Integer effectivePort = entity.getPort();
         String effectiveDb = entity.getDatabaseName();
         String effectiveUser = entity.getDbUser();
         String effectivePass = decryptedPassword;
 
-        if (datasourceUrl != null && (effectiveHost == null || effectiveHost.contains(".agrocloud.gt"))) {
-            try {
-                String cleanUrl = datasourceUrl.replace("jdbc:postgresql://", "");
-                int slashIdx = cleanUrl.indexOf('/');
-                String hostPort = slashIdx > 0 ? cleanUrl.substring(0, slashIdx) : cleanUrl;
-                if (hostPort.contains(":")) {
-                    String[] parts = hostPort.split(":");
-                    effectiveHost = parts[0];
-                    effectivePort = Integer.parseInt(parts[1].split("/")[0].split("\\?")[0]);
-                } else if (!hostPort.isEmpty()) {
-                    effectiveHost = hostPort;
+        boolean isSimulatedOrLocal = effectiveHost == null 
+                || effectiveHost.contains(".agrocloud.gt") 
+                || effectiveHost.equals("localhost") 
+                || effectiveHost.equals("127.0.0.1");
+
+        if (isSimulatedOrLocal) {
+            // 1. Intentar resolver desde spring.datasource.url si es una BD remota (ej. Neon en prod)
+            boolean resolvedFromDatasource = false;
+            if (datasourceUrl != null && !datasourceUrl.isBlank() && !datasourceUrl.contains("localhost") && !datasourceUrl.contains("127.0.0.1")) {
+                try {
+                    String cleanUrl = datasourceUrl.replace("jdbc:postgresql://", "");
+                    int slashIdx = cleanUrl.indexOf('/');
+                    String hostPort = slashIdx > 0 ? cleanUrl.substring(0, slashIdx) : cleanUrl;
+                    if (hostPort.contains(":")) {
+                        String[] parts = hostPort.split(":");
+                        effectiveHost = parts[0];
+                        effectivePort = Integer.parseInt(parts[1].split("/")[0].split("\\?")[0]);
+                    } else if (!hostPort.isEmpty()) {
+                        effectiveHost = hostPort;
+                    }
+                    if (slashIdx > 0) {
+                        String dbPart = cleanUrl.substring(slashIdx + 1);
+                        int qIdx = dbPart.indexOf('?');
+                        effectiveDb = qIdx > 0 ? dbPart.substring(0, qIdx) : dbPart;
+                    }
+                    if (datasourceUsername != null && !datasourceUsername.isBlank()) {
+                        effectiveUser = datasourceUsername;
+                    }
+                    if (datasourcePassword != null && !datasourcePassword.isBlank()) {
+                        effectivePass = datasourcePassword;
+                    }
+                    resolvedFromDatasource = true;
+                } catch (Exception ignored) {
                 }
-                if (slashIdx > 0) {
-                    String dbPart = cleanUrl.substring(slashIdx + 1);
-                    int qIdx = dbPart.indexOf('?');
-                    effectiveDb = qIdx > 0 ? dbPart.substring(0, qIdx) : dbPart;
-                }
-                if (datasourceUsername != null && !datasourceUsername.isBlank()) {
-                    effectiveUser = datasourceUsername;
-                }
-                if (datasourcePassword != null && !datasourcePassword.isBlank()) {
-                    effectivePass = datasourcePassword;
-                }
-            } catch (Exception ignored) {
-                // Si falla el parsing, conserva los valores de la entidad
+            }
+
+            // 2. Si no provino de un datasource remoto, usar la configuración pública de Neon configurada
+            if (!resolvedFromDatasource && publicDbHost != null && !publicDbHost.isBlank()) {
+                effectiveHost = publicDbHost;
+                effectivePort = publicDbPort != null ? publicDbPort : 5432;
+                if (publicDbName != null && !publicDbName.isBlank()) effectiveDb = publicDbName;
+                if (publicDbUser != null && !publicDbUser.isBlank()) effectiveUser = publicDbUser;
+                if (publicDbPass != null && !publicDbPass.isBlank()) effectivePass = publicDbPass;
             }
         }
 

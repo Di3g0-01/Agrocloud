@@ -36,6 +36,7 @@ export const mapDbInstanceToClientInstance = (dbInst: DbInstance): any => {
     host: dbInst.host || `${dbInst.nombre}.agrocloud.gt`,
     puerto: dbInst.puerto ? String(dbInst.puerto) : "5432",
     baseDatos: dbInst.databaseName || dbInst.nombre.replace(/-/g, "_"),
+    esquema: (dbInst as any).dbSchema || "inst_" + dbInst.nombre.replace(/-/g, "_"),
     usuario: dbInst.dbUser || "agro_db_user",
     password: "",
     cpu: dbInst.cpu || 5,

@@ -25,6 +25,7 @@ public record InstanceResponse(
         @JsonProperty("host") String host,
         @JsonProperty("puerto") Integer port,
         @JsonProperty("databaseName") String databaseName,
+        @JsonProperty("dbSchema") String dbSchema,
         @JsonProperty("dbUser") String dbUser,
         @JsonProperty("fechaCreacion") LocalDate createdAt
 ) {
@@ -51,6 +52,7 @@ public record InstanceResponse(
                 entity.getHost(),
                 entity.getPort(),
                 entity.getDatabaseName(),
+                entity.getDbSchema(),
                 entity.getDbUser(),
                 createdLocalDate
         );
