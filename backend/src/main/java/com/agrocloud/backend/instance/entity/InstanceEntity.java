@@ -61,6 +61,9 @@ public class InstanceEntity {
     @Column(name = "database_name", nullable = false, length = 100)
     private String databaseName;
 
+    @Column(name = "db_schema", length = 100)
+    private String dbSchema;
+
     @Column(name = "db_user", nullable = false, length = 100)
     private String dbUser;
 
@@ -138,6 +141,9 @@ public class InstanceEntity {
 
     public String getDatabaseName() { return databaseName; }
     public void setDatabaseName(String databaseName) { this.databaseName = databaseName; }
+
+    public String getDbSchema() { return dbSchema; }
+    public void setDbSchema(String dbSchema) { this.dbSchema = dbSchema; }
 
     public String getDbUser() { return dbUser; }
     public void setDbUser(String dbUser) { this.dbUser = dbUser; }
