@@ -206,6 +206,7 @@ export function ClientInstances({
             host: creds.host || prev.host,
             puerto: creds.puerto ? String(creds.puerto) : prev.puerto,
             baseDatos: creds.databaseName || prev.baseDatos,
+            esquema: creds.dbSchema || (prev as any).esquema,
             usuario: creds.dbUser || prev.usuario,
             password: creds.password || prev.password
           } : prev);
@@ -523,7 +524,14 @@ export function ClientInstances({
                 <svg className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                 <p className="text-xs text-amber-700">Mantén estas credenciales seguras. No las compartas ni las expongas en código fuente público.</p>
               </div>
-              {([["Host", credModal.host], ["Puerto", credModal.puerto], ["Base de datos", credModal.baseDatos], ["Usuario", credModal.usuario]] as [string, string][]).map(([label, value]) => (
+              {([
+                ["Host", credModal.host],
+                ["Puerto", credModal.puerto],
+                ["Base de datos", credModal.baseDatos],
+                ["Esquema", (credModal as any).esquema || "public"],
+                ["Usuario", credModal.usuario],
+                ["SSL", "Habilitado (require)"]
+              ] as [string, string][]).map(([label, value]) => (
                 <div key={label}>
                   <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
                   <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">

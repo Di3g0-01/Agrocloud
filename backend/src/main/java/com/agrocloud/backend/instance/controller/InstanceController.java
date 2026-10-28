@@ -111,5 +111,54 @@ public class InstanceController {
     ) {
         return ResponseEntity.ok(service.getInstanceMetrics(id, principal.id(), principal.isAdminOrSupport()));
     }
+
+    @GetMapping("/{id}/tablas")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getTables(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(service.getInstanceTables(id, principal.id(), principal.isAdminOrSupport()));
+    }
+
+    @GetMapping("/{id}/tablas/{tableName}/datos")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getTableData(
+            @PathVariable UUID id,
+            @PathVariable String tableName,
+            @RequestParam(defaultValue = "50") int limit,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(service.getInstanceTableRows(id, tableName, limit, principal.id(), principal.isAdminOrSupport()));
+    }
+
+    @GetMapping("/{id}/tablas/{tableName}/columnas")
+    public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getTableColumns(
+            @PathVariable UUID id,
+            @PathVariable String tableName,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(service.getInstanceTableColumns(id, tableName, principal.id(), principal.isAdminOrSupport()));
+    }
+
+    @PostMapping("/{id}/tablas/{tableName}/filas")
+    public ResponseEntity<java.util.Map<String, Object>> insertTableRow(
+            @PathVariable UUID id,
+            @PathVariable String tableName,
+            @RequestBody java.util.Map<String, Object> data,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(service.insertInstanceTableRow(id, tableName, data, principal.id(), principal.isAdminOrSupport()));
+    }
+
+    @PostMapping("/{id}/tablas")
+    public ResponseEntity<java.util.Map<String, String>> createCustomTable(
+            @PathVariable UUID id,
+            @jakarta.validation.Valid @RequestBody com.agrocloud.backend.instance.dto.CreateCustomTableRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        service.createCustomTable(id, request, principal.id(), principal.isAdminOrSupport());
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(java.util.Map.of("message", "Tabla '" + request.tableName() + "' creada exitosamente"));
+    }
 }
 

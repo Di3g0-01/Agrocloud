@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { LogOut, Sprout, LayoutDashboard, ChevronRight } from 'lucide-react';
+import { LogOut, LayoutDashboard, ChevronRight } from 'lucide-react';
 
 interface NavbarProps {
   currentView: string;
@@ -13,24 +13,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
   return (
     <nav className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3.5 transition-all">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        {/* Brand Logo */}
+        {/* Brand Logo Oficial */}
         <div
           onClick={() => onNavigate('landing')}
           className="flex items-center gap-3 cursor-pointer group"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-lime-400 p-0.5 shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
-            <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <Sprout className="w-6 h-6 text-emerald-400" />
-            </div>
-          </div>
-          <div>
-            <span className="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-emerald-400 bg-clip-text text-transparent">
-              AgroCloud
-            </span>
-            <span className="block text-[10px] font-semibold text-emerald-400/90 tracking-wider uppercase">
-              DBaaS Agrícola
-            </span>
-          </div>
+          <img 
+            src="/agrocloud-logo.svg" 
+            alt="AgroCloud" 
+            className="h-10 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-sm" 
+          />
         </div>
 
         {/* Navigation Links */}

@@ -11,6 +11,7 @@ interface LoginProps {
   initialMode: "login" | "register";
   emailLink?: EmailLink | null;
   onAuthenticated: (response: AuthResponse) => void;
+  onCancel?: () => void;
 }
 type Mode = "login" | "register" | "pending" | "forgot" | "resend" | "verify" | "reset";
 
@@ -21,7 +22,7 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Ocurrió un error inesperado.";
 }
 
-export function Login({ initialMode, emailLink, onAuthenticated }: LoginProps) {
+export function Login({ initialMode, emailLink, onAuthenticated, onCancel }: LoginProps) {
   const [mode, setMode] = useState<Mode>(emailLink?.action || initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -214,12 +215,22 @@ export function Login({ initialMode, emailLink, onAuthenticated }: LoginProps) {
           <button disabled={submitting} type="button" onClick={() => switchMode(mode === "login" ? "register" : "login")} className="font-semibold text-green-800 hover:underline">
             {mode === "login" ? "¿Aún no tienes cuenta? Regístrate" : "Volver a iniciar sesión"}
           </button>
-          <a
-            href="/"
-            className="mt-2 text-xs text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-1.5"
-          >
-            <span>←</span> Regresar al sitio principal
-          </a>
+          {onCancel ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="mt-2 text-xs text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-1.5"
+            >
+              <span>←</span> Regresar al sitio principal
+            </button>
+          ) : (
+            <a
+              href="/"
+              className="mt-2 text-xs text-gray-500 hover:text-gray-800 transition-colors flex items-center gap-1.5"
+            >
+              <span>←</span> Regresar al sitio principal
+            </a>
+          )}
         </nav>
       </main>
       {emailNotice && <EmailSentDialog {...emailNotice} onClose={() => { setEmailNotice(null); switchMode(emailNotice.purpose === "verification" ? "pending" : "login"); }} />}

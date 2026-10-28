@@ -9,6 +9,7 @@ public record InstanceCredentialResponse(
         @JsonProperty("host") String host,
         @JsonProperty("puerto") Integer port,
         @JsonProperty("databaseName") String databaseName,
+        @JsonProperty("dbSchema") String dbSchema,
         @JsonProperty("dbUser") String dbUser,
         @JsonProperty("password") String password,
         @JsonProperty("region") String region,

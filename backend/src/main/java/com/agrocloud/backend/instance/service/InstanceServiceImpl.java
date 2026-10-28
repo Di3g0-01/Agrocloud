@@ -24,8 +24,10 @@ import com.agrocloud.backend.template.repository.TemplateRepository;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,16 @@ public class InstanceServiceImpl implements InstanceService {
     private final NotificationService notifications;
     private final EncryptionService encryptionService;
     private final InstanceMetricRepository metricRepository;
+    private final InstanceSchemaProvisioningService provisioningService;
+
+    @Value("${spring.datasource.url:}")
+    private String datasourceUrl;
+
+    @Value("${spring.datasource.username:}")
+    private String datasourceUsername;
+
+    @Value("${spring.datasource.password:}")
+    private String datasourcePassword;
 
     public InstanceServiceImpl(
             InstanceRepository repository,
@@ -48,7 +60,8 @@ public class InstanceServiceImpl implements InstanceService {
             TemplateRepository templateRepository,
             NotificationService notifications,
             EncryptionService encryptionService,
-            InstanceMetricRepository metricRepository
+            InstanceMetricRepository metricRepository,
+            InstanceSchemaProvisioningService provisioningService
     ) {
         this.repository = repository;
         this.userRepository = userRepository;
@@ -57,6 +70,7 @@ public class InstanceServiceImpl implements InstanceService {
         this.notifications = notifications;
         this.encryptionService = encryptionService;
         this.metricRepository = metricRepository;
+        this.provisioningService = provisioningService;
     }
 
     @Override
@@ -80,6 +94,11 @@ public class InstanceServiceImpl implements InstanceService {
     }
 
     private void updateDynamicMetrics(InstanceEntity entity) {
+        if (entity.getDbSchema() != null && !entity.getDbSchema().isBlank()) {
+            double actualGb = provisioningService.calculateSchemaStorageGb(entity.getDbSchema());
+            entity.setUsedStorageGb(actualGb);
+        }
+
         if (entity.getStatus() == InstanceStatus.active) {
             double randomCpu = Math.min(95.0, Math.max(5.0, 14.0 + (Math.random() * 12.0 - 6.0)));
             double randomRam = Math.min(95.0, Math.max(10.0, 30.0 + (Math.random() * 8.0 - 4.0)));
@@ -143,6 +162,8 @@ public class InstanceServiceImpl implements InstanceService {
         String rawPassword = "AgroPass_" + UUID.randomUUID().toString().substring(0, 8) + "!";
         String encryptedPassword = encryptionService.encrypt(rawPassword);
 
+        String schemaName = provisioningService.sanitizeSchemaName(sanitizedName + "_" + UUID.randomUUID().toString().substring(0, 6));
+
         InstanceEntity entity = new InstanceEntity();
         entity.setName(request.name());
         entity.setTemplate(template.getNombre());
@@ -153,6 +174,7 @@ public class InstanceServiceImpl implements InstanceService {
         entity.setHost("db-" + sanitizedName + ".agrocloud.gt");
         entity.setPort(5432);
         entity.setDatabaseName(databaseName);
+        entity.setDbSchema(schemaName);
         entity.setDbUser(dbUser);
         entity.setEncryptedPassword(encryptedPassword);
         entity.setUsedStorageGb(0.1);
@@ -160,6 +182,9 @@ public class InstanceServiceImpl implements InstanceService {
         entity.setCpuUsagePercentage(5.0);
         entity.setMemoryUsagePercentage(12.0);
         entity.setUptime("100%");
+
+        // Aprovisionamiento real de tablas y datos demo en PostgreSQL
+        provisioningService.provisionSchema(schemaName, template.getNombre());
 
         InstanceEntity saved = repository.save(entity);
         notifications.create(owner, "INSTANCIA_CREADA", "Instancia creada",
@@ -223,6 +248,9 @@ public class InstanceServiceImpl implements InstanceService {
         }
 
         metricRepository.deleteByInstanceId(id);
+        if (entity.getDbSchema() != null) {
+            provisioningService.dropSchema(entity.getDbSchema());
+        }
         repository.delete(entity);
         notifications.create(entity.getOwner(), "INSTANCIA_ELIMINADA", "Instancia eliminada",
                 "La instancia " + entity.getName() + " fue eliminada.", null);
@@ -251,14 +279,51 @@ public class InstanceServiceImpl implements InstanceService {
 
         String decryptedPassword = encryptionService.decrypt(entity.getEncryptedPassword());
 
+        // Si el host almacenado es simulado (*.agrocloud.gt), resolver las credenciales reales
+        // a partir del clúster PostgreSQL activo configurado en el backend (ej. Neon o Docker)
+        String effectiveHost = entity.getHost();
+        Integer effectivePort = entity.getPort();
+        String effectiveDb = entity.getDatabaseName();
+        String effectiveUser = entity.getDbUser();
+        String effectivePass = decryptedPassword;
+
+        if (datasourceUrl != null && (effectiveHost == null || effectiveHost.contains(".agrocloud.gt"))) {
+            try {
+                String cleanUrl = datasourceUrl.replace("jdbc:postgresql://", "");
+                int slashIdx = cleanUrl.indexOf('/');
+                String hostPort = slashIdx > 0 ? cleanUrl.substring(0, slashIdx) : cleanUrl;
+                if (hostPort.contains(":")) {
+                    String[] parts = hostPort.split(":");
+                    effectiveHost = parts[0];
+                    effectivePort = Integer.parseInt(parts[1].split("/")[0].split("\\?")[0]);
+                } else if (!hostPort.isEmpty()) {
+                    effectiveHost = hostPort;
+                }
+                if (slashIdx > 0) {
+                    String dbPart = cleanUrl.substring(slashIdx + 1);
+                    int qIdx = dbPart.indexOf('?');
+                    effectiveDb = qIdx > 0 ? dbPart.substring(0, qIdx) : dbPart;
+                }
+                if (datasourceUsername != null && !datasourceUsername.isBlank()) {
+                    effectiveUser = datasourceUsername;
+                }
+                if (datasourcePassword != null && !datasourcePassword.isBlank()) {
+                    effectivePass = datasourcePassword;
+                }
+            } catch (Exception ignored) {
+                // Si falla el parsing, conserva los valores de la entidad
+            }
+        }
+
         return new InstanceCredentialResponse(
                 entity.getId(),
                 entity.getName(),
-                entity.getHost(),
-                entity.getPort(),
-                entity.getDatabaseName(),
-                entity.getDbUser(),
-                decryptedPassword,
+                effectiveHost,
+                effectivePort,
+                effectiveDb,
+                entity.getDbSchema(),
+                effectiveUser,
+                effectivePass,
                 entity.getRegion(),
                 entity.getVersion()
         );
@@ -320,4 +385,101 @@ public class InstanceServiceImpl implements InstanceService {
                 historyResponses
         );
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getInstanceTables(UUID instanceId, UUID requestingUserId, boolean isAdminOrSupport) {
+        InstanceEntity entity;
+        if (isAdminOrSupport) {
+            entity = repository.findById(instanceId)
+                    .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada"));
+        } else {
+            entity = repository.findByIdAndOwnerId(instanceId, requestingUserId)
+                    .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada o no pertenece a la cuenta"));
+        }
+
+        String schema = entity.getDbSchema();
+        if (schema == null || schema.isBlank()) {
+            return List.of();
+        }
+        return provisioningService.getTablesInSchema(schema);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getInstanceTableRows(UUID instanceId, String tableName, int limit, UUID requestingUserId, boolean isAdminOrSupport) {
+        InstanceEntity entity;
+        if (isAdminOrSupport) {
+            entity = repository.findById(instanceId)
+                    .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada"));
+        } else {
+            entity = repository.findByIdAndOwnerId(instanceId, requestingUserId)
+                    .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada o no pertenece a la cuenta"));
+        }
+
+        String schema = entity.getDbSchema();
+        if (schema == null || schema.isBlank()) {
+            return List.of();
+        }
+        return provisioningService.getTableRows(schema, tableName, limit);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getInstanceTableColumns(UUID instanceId, String tableName, UUID requestingUserId, boolean isAdminOrSupport) {
+        InstanceEntity entity;
+        if (isAdminOrSupport) {
+            entity = repository.findById(instanceId)
+                    .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada"));
+        } else {
+            entity = repository.findByIdAndOwnerId(instanceId, requestingUserId)
+                    .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada o no pertenece a la cuenta"));
+        }
+
+        String schema = entity.getDbSchema();
+        if (schema == null || schema.isBlank()) {
+            return List.of();
+        }
+        return provisioningService.getTableColumns(schema, tableName);
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> insertInstanceTableRow(UUID instanceId, String tableName, Map<String, Object> data, UUID requestingUserId, boolean isAdminOrSupport) {
+        InstanceEntity entity;
+        if (isAdminOrSupport) {
+            entity = repository.findById(instanceId)
+                    .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada"));
+        } else {
+            entity = repository.findByIdAndOwnerId(instanceId, requestingUserId)
+                    .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada o no pertenece a la cuenta"));
+        }
+
+        String schema = entity.getDbSchema();
+        if (schema == null || schema.isBlank()) {
+            throw new IllegalStateException("La instancia no tiene un esquema de base de datos asignado");
+        }
+        return provisioningService.insertTableRow(schema, tableName, data);
+    }
+
+    @Override
+    @Transactional
+    public void createCustomTable(UUID instanceId, com.agrocloud.backend.instance.dto.CreateCustomTableRequest request, UUID requestingUserId, boolean isAdminOrSupport) {
+        InstanceEntity entity;
+        if (isAdminOrSupport) {
+            entity = repository.findById(instanceId)
+                    .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada"));
+        } else {
+            entity = repository.findByIdAndOwnerId(instanceId, requestingUserId)
+                    .orElseThrow(() -> new InstanceNotFoundException("Instancia no encontrada o no pertenece a la cuenta"));
+        }
+
+        String schema = entity.getDbSchema();
+        if (schema == null || schema.isBlank()) {
+            throw new IllegalStateException("La instancia no tiene un esquema de base de datos asignado");
+        }
+
+        provisioningService.createCustomTable(schema, request.tableName(), request.columns());
+    }
 }
+

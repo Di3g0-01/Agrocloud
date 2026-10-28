@@ -1,5 +1,7 @@
 package com.agrocloud.backend.plan.service;
 
+import com.agrocloud.backend.plan.dto.CotizacionPlanResponse;
+import com.agrocloud.backend.plan.dto.CotizarPlanRequest;
 import com.agrocloud.backend.plan.dto.PlanResponse;
 import com.agrocloud.backend.plan.entity.PlanEntity;
 import com.agrocloud.backend.plan.dto.UpsertPlanRequest;
@@ -12,4 +14,5 @@ public interface PlanService {
     PlanResponse createPlan(UpsertPlanRequest request);
     PlanResponse updatePlan(String id, UpsertPlanRequest request);
     void deletePlan(String id);
+    CotizacionPlanResponse cotizarPlan(String id, CotizarPlanRequest request);
 }

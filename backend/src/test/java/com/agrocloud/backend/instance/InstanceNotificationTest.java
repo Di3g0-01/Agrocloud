@@ -13,6 +13,7 @@ import com.agrocloud.backend.instance.entity.InstanceEntity;
 import com.agrocloud.backend.instance.entity.InstanceStatus;
 import com.agrocloud.backend.instance.repository.InstanceMetricRepository;
 import com.agrocloud.backend.instance.repository.InstanceRepository;
+import com.agrocloud.backend.instance.service.InstanceSchemaProvisioningService;
 import com.agrocloud.backend.instance.service.InstanceServiceImpl;
 import com.agrocloud.backend.notification.NotificationService;
 import com.agrocloud.backend.repository.UserRepository;
@@ -40,10 +41,11 @@ class InstanceNotificationTest {
     @Mock NotificationService notifications;
     @Mock EncryptionService encryptionService;
     @Mock InstanceMetricRepository instanceMetricRepository;
+    @Mock InstanceSchemaProvisioningService provisioningService;
     InstanceServiceImpl service;
 
     @BeforeEach void setUp() {
-        service = new InstanceServiceImpl(instances, users, subscriptions, templates, notifications, encryptionService, instanceMetricRepository);
+        service = new InstanceServiceImpl(instances, users, subscriptions, templates, notifications, encryptionService, instanceMetricRepository, provisioningService);
     }
 
     @Test void creationNotifiesOwner() {

@@ -1,6 +1,10 @@
 package com.agrocloud.backend.plan.service;
 
 import com.agrocloud.backend.exception.PlanNotFoundException;
+import com.agrocloud.backend.plan.decorator.PlanContratable;
+import com.agrocloud.backend.plan.decorator.PlanCotizador;
+import com.agrocloud.backend.plan.dto.CotizacionPlanResponse;
+import com.agrocloud.backend.plan.dto.CotizarPlanRequest;
 import com.agrocloud.backend.plan.dto.PlanResponse;
 import com.agrocloud.backend.plan.dto.UpsertPlanRequest;
 import com.agrocloud.backend.plan.entity.PlanEntity;
@@ -15,9 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class PlanServiceImpl implements PlanService {
 
     private final PlanRepository repository;
+    private final PlanCotizador cotizador;
 
-    public PlanServiceImpl(PlanRepository repository) {
+    public PlanServiceImpl(PlanRepository repository, PlanCotizador cotizador) {
         this.repository = repository;
+        this.cotizador = cotizador;
     }
 
     @Override
@@ -59,6 +65,13 @@ public class PlanServiceImpl implements PlanService {
     @Transactional
     public void deletePlan(String id) {
         repository.delete(findEntityById(id));
+    }
+
+    @Override
+    public CotizacionPlanResponse cotizarPlan(String id, CotizarPlanRequest request) {
+        PlanEntity plan = findEntityById(id);
+        PlanContratable cotizado = cotizador.cotizar(plan, request == null ? null : request.complementos());
+        return CotizacionPlanResponse.from(plan.getId(), cotizado);
     }
 
     private void apply(PlanEntity plan, UpsertPlanRequest request) {

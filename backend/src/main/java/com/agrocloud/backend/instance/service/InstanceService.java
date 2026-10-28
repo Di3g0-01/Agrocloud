@@ -19,5 +19,11 @@ public interface InstanceService {
 
     InstanceCredentialResponse getInstanceCredentials(UUID instanceId, UUID requestingUserId, boolean isAdminOrSupport);
     InstanceMonitoringResponse getInstanceMetrics(UUID instanceId, UUID requestingUserId, boolean isAdminOrSupport);
+
+    java.util.List<java.util.Map<String, Object>> getInstanceTables(UUID instanceId, UUID requestingUserId, boolean isAdminOrSupport);
+    java.util.List<java.util.Map<String, Object>> getInstanceTableRows(UUID instanceId, String tableName, int limit, UUID requestingUserId, boolean isAdminOrSupport);
+    java.util.List<java.util.Map<String, Object>> getInstanceTableColumns(UUID instanceId, String tableName, UUID requestingUserId, boolean isAdminOrSupport);
+    java.util.Map<String, Object> insertInstanceTableRow(UUID instanceId, String tableName, java.util.Map<String, Object> data, UUID requestingUserId, boolean isAdminOrSupport);
+    void createCustomTable(UUID instanceId, com.agrocloud.backend.instance.dto.CreateCustomTableRequest request, UUID requestingUserId, boolean isAdminOrSupport);
 }
 
