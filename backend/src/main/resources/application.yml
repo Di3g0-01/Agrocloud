@@ -1,4 +1,17 @@
 spring:
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:false}
+      mail.smtp.starttls.enable: ${MAIL_STARTTLS:false}
+      mail.smtp.starttls.required: ${MAIL_STARTTLS:false}
+      mail.smtp.ssl.enable: ${MAIL_SSL:false}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
   application:
     name: agrocloud-backend
   web:
@@ -26,6 +39,10 @@ server:
   port: ${SERVER_PORT:8080}
 
 management:
+  # SMTP is optional (production can use the HTTPS provider).
+  health:
+    mail:
+      enabled: false
   endpoints:
     web:
       exposure:
@@ -36,6 +53,11 @@ management:
         enabled: true
 
 app:
+  frontend-url: ${APP_FRONTEND_URL:http://localhost:5173}
+  mail:
+    from: ${MAIL_FROM:AgroCloud <no-reply@agrocloud.local>}
+    provider: ${MAIL_PROVIDER:smtp}
+    brevo-api-key: ${BREVO_API_KEY:}
   jwt:
     secret: ${JWT_SECRET:dGhpc0lzQVNlY3JldEtleUZvckFncm9DbG91ZEpXVEF1dGhlbnRpY2F0aW9uT25seTIwMjY=}
     expiration: ${JWT_EXPIRATION:PT8H}

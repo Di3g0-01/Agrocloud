@@ -15,6 +15,8 @@ import com.agrocloud.backend.exception.EmailAlreadyRegisteredException;
 import com.agrocloud.backend.repository.RoleRepository;
 import com.agrocloud.backend.repository.UserRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -29,11 +31,11 @@ class RegistrationServiceTest {
     @Mock
     private RoleRepository roleRepository;
     @Mock
-    private AuthResponseFactory responseFactory;
+    private EmailAccountService emailAccounts;
 
-    @Test
-    void registrationStoresBcryptHashAndAssignsClientRole() {
-        String password = "ClaveSegura123";
+    @ParameterizedTest
+    @ValueSource(strings = {"12345678", "SoloLetras", "!@#$%&*?", "Clave123!@#$%&*", "ContraseñaÁgil!2026"})
+    void registrationStoresBcryptHashAndAssignsClientRole(String password) {
         RegisterRequest request = new RegisterRequest(
                 "Finca Los Pinos", " Carlos Monterroso ", " CARLOS@Example.COM ",
                 "+502 4455-6677", password
@@ -41,7 +43,7 @@ class RegistrationServiceTest {
         when(roleRepository.getReferenceById(Role.CLIENTE)).thenReturn(new RoleEntity(Role.CLIENTE));
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        new RegistrationService(userRepository, roleRepository, new BCryptPasswordEncoder(4), responseFactory)
+        new RegistrationService(userRepository, roleRepository, new BCryptPasswordEncoder(4), emailAccounts)
                 .register(request);
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
@@ -52,8 +54,9 @@ class RegistrationServiceTest {
         assertThat(saved.getPasswordHash()).isNotEqualTo(password).startsWith("$2a$");
         assertThat(new BCryptPasswordEncoder().matches(password, saved.getPasswordHash())).isTrue();
         assertThat(saved.getRole()).isEqualTo(Role.CLIENTE);
-        assertThat(saved.getStatus()).isEqualTo(AccountStatus.ACTIVO);
-        verify(responseFactory).create(saved);
+        assertThat(saved.getStatus()).isEqualTo(AccountStatus.PENDIENTE);
+        assertThat(saved.isEmailVerified()).isFalse();
+        verify(emailAccounts).sendVerification(saved);
     }
 
     @Test
@@ -64,7 +67,7 @@ class RegistrationServiceTest {
         when(userRepository.existsByEmail("cliente@example.com")).thenReturn(true);
 
         RegistrationService service = new RegistrationService(
-                userRepository, roleRepository, new BCryptPasswordEncoder(4), responseFactory
+                userRepository, roleRepository, new BCryptPasswordEncoder(4), emailAccounts
         );
         assertThatThrownBy(() -> service.register(request))
                 .isInstanceOf(EmailAlreadyRegisteredException.class);

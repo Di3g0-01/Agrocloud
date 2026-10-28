@@ -22,6 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @EnabledIfEnvironmentVariable(named = "RUN_DB_INTEGRATION_TESTS", matches = "true")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -33,6 +35,7 @@ class AdminSecurityPostgresIntegrationTest {
     @Autowired UserRepository users;
     @Autowired RoleRepository roles;
     @Autowired PasswordEncoder passwords;
+    @MockitoBean JavaMailSender mailSender;
 
     @Test
     void rolePermissionsAndAdminUserLifecycle() throws Exception {
@@ -66,8 +69,13 @@ class AdminSecurityPostgresIntegrationTest {
                     "password", clientPassword, "role", "ADMINISTRADOR"
             )), null);
             assertThat(registration.statusCode()).isEqualTo(201);
-            assertThat(json.readTree(registration.body()).path("user").path("role").asText()).isEqualTo("CLIENTE");
-            String clientToken = json.readTree(registration.body()).path("token").asText();
+            assertThat(json.readTree(registration.body()).has("token")).isFalse();
+            User client = users.findByEmail(clientEmail).orElseThrow();
+            assertThat(client.getRole()).isEqualTo(Role.CLIENTE);
+            client.setEmailVerified(true);
+            client.setStatus(AccountStatus.ACTIVO);
+            users.saveAndFlush(client);
+            String clientToken = login(clientEmail, clientPassword);
             assertThat(get("/api/v1/usuarios", clientToken).statusCode()).isEqualTo(403);
             assertThat(post("/api/v1/usuarios", "{}", clientToken).statusCode()).isEqualTo(403);
 

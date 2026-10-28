@@ -62,6 +62,18 @@
     {
       "key": "plantillaNombre",
       "value": "Cultivos y parcelas"
+    },
+    {
+      "key": "verificationToken",
+      "value": ""
+    },
+    {
+      "key": "resetToken",
+      "value": ""
+    },
+    {
+      "key": "email",
+      "value": "cliente@ejemplo.com"
     }
   ],
   "item": [
@@ -72,7 +84,7 @@
           "name": "Registrar cliente",
           "request": {
             "method": "POST",
-            "description": "Rol: Público. La lista se limita según el rol del token autenticado.",
+            "description": "Público. Crea una cuenta pendiente y envía un enlace al correo. No devuelve JWT. Confirmar el correo antes de iniciar sesión.",
             "url": "{{baseUrl}}/auth/register",
             "auth": {
               "type": "noauth"
@@ -86,6 +98,124 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"organizationName\": \"Finca Los Pinos\",\n  \"contactName\": \"Carlos Monterroso\",\n  \"email\": \"cliente@ejemplo.com\",\n  \"phone\": \"+502 4455 6677\",\n  \"password\": \"ClaveSegura123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Confirmar correo",
+          "request": {
+            "method": "POST",
+            "description": "Público. Consume el enlace de verificación, activa la cuenta y devuelve un JWT para seleccionar el primer plan. El token de correo dura 24 horas y es de un solo uso.",
+            "url": "{{baseUrl}}/auth/verify-email",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{verificationToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code >= 200 && pm.response.code < 300) {",
+                  "  const result = pm.response.json();",
+                  "  if (result.token) pm.collectionVariables.set('token', result.token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reenviar verificación",
+          "request": {
+            "method": "POST",
+            "description": "Respuesta genérica. Máximo un envío por cuenta cada 60 segundos.",
+            "url": "{{baseUrl}}/auth/resend-verification",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Solicitar recuperación",
+          "request": {
+            "method": "POST",
+            "description": "Respuesta genérica. El enlace dura 30 minutos.",
+            "url": "{{baseUrl}}/auth/forgot-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Restablecer contraseña",
+          "request": {
+            "method": "POST",
+            "description": "Invalida el enlace y las sesiones anteriores. Iniciar sesión con la nueva contraseña.",
+            "url": "{{baseUrl}}/auth/reset-password",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"password\": \"NuevaClave2026!\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -755,11 +885,20 @@
             "method": "PATCH",
             "description": "Rol: Admin. El agente debe tener rol SOPORTE y estar activo.",
             "url": "{{baseUrl}}/incidencias/{{incidentId}}/asignacion",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"agenteId\": \"{{agenteId}}\"\n}",
-              "options": {"raw": {"language": "json"}}
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [
@@ -795,11 +934,20 @@
             "method": "PATCH",
             "description": "Rol: Agente asignado o Admin. Transición ABIERTA a EN_REVISION.",
             "url": "{{baseUrl}}/incidencias/{{incidentId}}/estado",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"estado\": \"EN_REVISION\"\n}",
-              "options": {"raw": {"language": "json"}}
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [
@@ -823,11 +971,20 @@
             "method": "PATCH",
             "description": "Rol: Agente asignado o Admin. Transición EN_REVISION a RESUELTA; el mensaje al cliente es obligatorio.",
             "url": "{{baseUrl}}/incidencias/{{incidentId}}/estado",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"estado\": \"RESUELTA\",\n  \"mensajeResolucion\": \"Se restauró la conexión y se verificó que la instancia funciona correctamente.\"\n}",
-              "options": {"raw": {"language": "json"}}
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [
@@ -851,11 +1008,20 @@
             "method": "PATCH",
             "description": "Rol: Cliente propietario o Admin. CERRADA es estado final; no se reabre.",
             "url": "{{baseUrl}}/incidencias/{{incidentId}}/estado",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"estado\": \"CERRADA\"\n}",
-              "options": {"raw": {"language": "json"}}
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [
@@ -913,11 +1079,20 @@
             "method": "POST",
             "description": "Cliente propietario, soporte asignado o Admin. Máximo 2000 caracteres; un ticket cerrado no admite comentarios. Avisa a los otros participantes.",
             "url": "{{baseUrl}}/incidencias/{{incidentId}}/comentarios",
-            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"texto\": \"Ya probé reiniciar la instancia y el problema continúa.\"\n}",
-              "options": {"raw": {"language": "json"}}
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "response": [
@@ -1022,4 +1197,3 @@
     }
   ]
 }
-

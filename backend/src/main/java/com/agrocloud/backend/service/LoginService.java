@@ -47,7 +47,7 @@ public class LoginService {
         }
 
         User user = userRepository.findByEmail(email).orElseThrow(InvalidCredentialsException::new);
-        if (user.getStatus() != AccountStatus.ACTIVO) {
+        if (user.getStatus() != AccountStatus.ACTIVO || !user.isEmailVerified()) {
             throw new AccountNotActiveException();
         }
         return responseFactory.create(user);

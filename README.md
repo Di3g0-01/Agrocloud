@@ -1,5 +1,8 @@
 # AgroCloud - Plataforma SaaS Cloud & Database Management
 
+Para configurar la verificación de correo y recuperación de contraseña en el
+despliegue, consulta [Correos y acceso](CORREOS_Y_ACCESO.md).
+
 **AgroCloud** es una plataforma web integral tipo SaaS diseñada para la gestión, aprovisionamiento, monitoreo y soporte de instancias de bases de datos e infraestructura en la nube. Ofrece un portal para clientes con aprovisionamiento automático y seguro, y una consola de administración global.
 
 ---
