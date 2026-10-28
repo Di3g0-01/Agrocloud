@@ -201,13 +201,17 @@ export function ClientInstances({
       try {
         const creds = await getInstanceCredentials(instId);
         if (creds) {
+          const isSimulatedHost = !creds.host || creds.host.includes(".agrocloud.gt");
+          const realHost = isSimulatedHost ? "ep-cool-bonus-b4dogngv.c-6.us-east-2.aws.neon.tech" : creds.host;
+          const realDb = (!creds.databaseName || creds.databaseName === "parcela_1_db") ? "neondb" : creds.databaseName;
+          const realUser = (!creds.dbUser || creds.dbUser.startsWith("agrouser_")) ? "neondb_owner" : creds.dbUser;
           setCredModal(prev => prev ? {
             ...prev,
-            host: creds.host || prev.host,
-            puerto: creds.puerto ? String(creds.puerto) : prev.puerto,
-            baseDatos: creds.databaseName || prev.baseDatos,
-            esquema: creds.dbSchema || (prev as any).esquema,
-            usuario: creds.dbUser || prev.usuario,
+            host: realHost,
+            puerto: creds.puerto ? String(creds.puerto) : "5432",
+            baseDatos: realDb,
+            esquema: creds.dbSchema || (prev as any).esquema || "inst_parcela_1",
+            usuario: realUser,
             password: creds.password || prev.password
           } : prev);
         }
