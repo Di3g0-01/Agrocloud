@@ -5,6 +5,7 @@ import com.agrocloud.backend.payment.dto.InvoiceResponse;
 import com.agrocloud.backend.payment.entity.InvoiceEntity;
 import com.agrocloud.backend.payment.entity.PaymentEntity;
 import com.agrocloud.backend.payment.repository.InvoiceRepository;
+import com.agrocloud.backend.payment.repository.PaymentRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -19,12 +20,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class InvoiceServiceImpl implements InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
+    private final PaymentRepository paymentRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public InvoiceResponse getInvoiceByPaymentId(UUID paymentId) {
         InvoiceEntity invoice = invoiceRepository.findByPaymentId(paymentId)
-                .orElseThrow(() -> new IllegalArgumentException("No se encontró factura para el pago indicado: " + paymentId));
+                .orElseGet(() -> {
+                    PaymentEntity payment = paymentRepository.findById(paymentId)
+                            .orElseThrow(() -> new IllegalArgumentException("No se encontró pago para el ID indicado: " + paymentId));
+                    return generateInvoiceForPayment(payment);
+                });
         return InvoiceResponse.from(invoice);
     }
 
