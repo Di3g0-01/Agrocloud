@@ -10,6 +10,8 @@ export interface BackendPayment {
   referencia: string;
   metodoPago: string;
   concepto: string;
+  clienteNombre?: string;
+  clienteEmail?: string;
 }
 
 export interface BackendInvoice {
