@@ -15,9 +15,21 @@ public record PaymentResponse(
         PaymentStatus estado,
         String referencia,
         String metodoPago,
-        String concepto
+        String concepto,
+        String clienteNombre,
+        String clienteEmail
 ) {
     public static PaymentResponse from(PaymentEntity entity) {
+        String clientName = "Cliente";
+        String clientEmail = "";
+        if (entity.getSubscription() != null && entity.getSubscription().getUser() != null) {
+            var user = entity.getSubscription().getUser();
+            clientName = user.getOrganizationName() != null && !user.getOrganizationName().isBlank()
+                    ? user.getOrganizationName()
+                    : (user.getContactName() != null && !user.getContactName().isBlank() ? user.getContactName() : user.getEmail());
+            clientEmail = user.getEmail();
+        }
+
         return new PaymentResponse(
                 entity.getId(),
                 entity.getSubscription().getId(),
@@ -27,7 +39,9 @@ public record PaymentResponse(
                 entity.getStatus(),
                 entity.getReference(),
                 entity.getPaymentMethod(),
-                entity.getConcept() != null ? entity.getConcept() : "Pago de suscripción - " + entity.getSubscription().getPlan().getName()
+                entity.getConcept() != null ? entity.getConcept() : "Pago de suscripción - " + entity.getSubscription().getPlan().getName(),
+                clientName,
+                clientEmail
         );
     }
 }
