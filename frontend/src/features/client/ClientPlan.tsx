@@ -30,12 +30,16 @@ export function ClientPlan({
 }) {
   const [currentPlan, setCurrentPlan] = useState<PlanAvailable>({ id: "", nombre: "Sin plan", precio: "Q 0.00", precioNum: 0, storage: "10 GB", storageGB: 10, instancias: "1", maxInstancias: 1, caracteristicas: [] });
   const [availablePlans, setAvailablePlans] = useState<PlanAvailable[]>([]);
-  const [loadError, setLoadError] = useState("");
   const [modalChangeOpen, setModalChangeOpen] = useState(false);
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<PlanAvailable | null>(null);
-  const [notificationMsg, setNotificationMsg] = useState<string | null>(null);
   const [loadingSub, setLoadingSub] = useState(false);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+
+  const [floatingToast, setFloatingToast] = useState<{ type: "error" | "success" | "warning"; message: string } | null>(null);
+
+  const showFloatingToast = (message: string, type: "error" | "success" | "warning" = "error") => {
+    setFloatingToast({ type, message });
+  };
 
   useEffect(() => {
     Promise.all([getMyActiveSubscription(), getPlans()]).then(([sub, catalog]) => {
@@ -59,7 +63,7 @@ export function ClientPlan({
           CLIENT_PLAN.estado = "Activa";
         }
       }
-    }).catch(() => setLoadError("No se pudieron cargar los planes o la suscripción."));
+    }).catch(() => showFloatingToast("No se pudieron cargar los planes o la suscripción.", "error"));
   }, []);
 
   const formatGb = (val: number) => {
@@ -71,6 +75,15 @@ export function ClientPlan({
   const instUsed = instancesList.length;
 
   const handleConfirmPlanChange = async (plan: PlanAvailable) => {
+    // Validación previa del lado del cliente (KISS / DRY)
+    if (instancesList.length > plan.maxInstancias) {
+      showFloatingToast(
+        `Para cambiar al ${plan.nombre} debes tener como máximo ${plan.maxInstancias} instancia(s). Actualmente tienes ${instancesList.length} activas. Elimina las instancias sobrantes antes de continuar.`,
+        "warning"
+      );
+      return;
+    }
+
     setLoadingSub(true);
     try {
       const saved = await subscribeToPlan(plan.id, plan.nombre, plan.precioNum);
@@ -84,20 +97,62 @@ export function ClientPlan({
       onPlanChanged?.();
       setSelectedPlanForUpgrade(null);
       setModalChangeOpen(false);
-      setNotificationMsg(`¡Plan actualizado con éxito al ${plan.nombre}! Tu límite ahora es de ${plan.maxInstancias} instancia(s) y ${plan.storage}.`);
-      setTimeout(() => setNotificationMsg(null), 5000);
+      showFloatingToast(
+        `¡Plan actualizado con éxito al ${plan.nombre}! Tu límite ahora es de ${plan.maxInstancias} instancia(s) y ${plan.storage}.`,
+        "success"
+      );
     } catch (err: any) {
       console.error(err);
       const apiMsg = err?.response?.data?.message || err?.message;
-      setLoadError(apiMsg || "No se pudo cambiar el plan. Revisa la conexión.");
+      showFloatingToast(apiMsg || "No se pudo cambiar el plan. Revisa la conexión.", "error");
     } finally {
       setLoadingSub(false);
     }
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
-      {loadError && <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</p>}
+    <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8 relative">
+      {/* Notificación Flotante / Toast (visible incluso encima de cualquier modal z-[9999]) */}
+      {floatingToast && (
+        <div className="fixed top-6 right-6 z-[9999] max-w-md w-[calc(100vw-3rem)] animate-in fade-in slide-in-from-top-4 duration-200">
+          <div
+            className={`rounded-2xl p-4 shadow-2xl border flex items-start gap-3 backdrop-blur-md ${
+              floatingToast.type === "error"
+                ? "bg-red-500/95 text-white border-red-400 shadow-red-500/20"
+                : floatingToast.type === "warning"
+                ? "bg-amber-500/95 text-white border-amber-400 shadow-amber-500/20"
+                : "bg-emerald-600/95 text-white border-emerald-400 shadow-emerald-500/20"
+            }`}
+            role="alert"
+          >
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
+              {floatingToast.type === "success" ? (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              )}
+            </div>
+            <div className="flex-1 min-w-0 pr-1">
+              <p className="text-xs font-bold uppercase tracking-wider opacity-90">
+                {floatingToast.type === "error" ? "Error al cambiar plan" : floatingToast.type === "warning" ? "Instancias excedidas" : "Operación Exitosa"}
+              </p>
+              <p className="text-xs font-medium mt-0.5 leading-relaxed">{floatingToast.message}</p>
+            </div>
+            <button
+              onClick={() => setFloatingToast(null)}
+              aria-label="Cerrar notificación"
+              className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition-colors text-sm shrink-0"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Plan y suscripción</h1>
@@ -113,18 +168,6 @@ export function ClientPlan({
           Cambiar de plan
         </button>
       </div>
-
-      {notificationMsg && (
-        <div className="mb-6 bg-lime-100 border border-lime-300 text-lime-800 rounded-xl p-4 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-lime-700 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            <p className="text-sm font-medium">{notificationMsg}</p>
-          </div>
-          <button onClick={() => setNotificationMsg(null)} className="text-lime-700 hover:text-lime-900 text-lg leading-none">×</button>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Active plan card */}
@@ -293,14 +336,29 @@ export function ClientPlan({
                       </button>
                     ) : (
                       <button
-                        onClick={() => setSelectedPlanForUpgrade(plan)}
+                        onClick={() => {
+                          if (instancesList.length > plan.maxInstancias) {
+                            showFloatingToast(
+                              `No puedes cambiar al ${plan.nombre}: tienes ${instancesList.length} instancia(s) activas y este plan solo permite ${plan.maxInstancias}. Por favor elimina las instancias restantes antes de continuar.`,
+                              "warning"
+                            );
+                            return;
+                          }
+                          setSelectedPlanForUpgrade(plan);
+                        }}
                         className={`w-full py-2.5 font-semibold rounded-xl text-xs transition-colors shadow-sm ${
-                          plan.precioNum > currentPlan.precioNum
+                          instancesList.length > plan.maxInstancias
+                            ? "bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200"
+                            : plan.precioNum > currentPlan.precioNum
                             ? "bg-lime-400 hover:bg-lime-300 text-gray-900"
                             : "bg-gray-900 hover:bg-gray-800 text-white"
                         }`}
                       >
-                        {plan.precioNum > currentPlan.precioNum ? "Actualizar plan" : "Cambiar a este plan"}
+                        {instancesList.length > plan.maxInstancias
+                          ? `Excede instancias (${instancesList.length}/${plan.maxInstancias})`
+                          : plan.precioNum > currentPlan.precioNum
+                          ? "Actualizar plan"
+                          : "Cambiar a este plan"}
                       </button>
                     )}
                   </div>
