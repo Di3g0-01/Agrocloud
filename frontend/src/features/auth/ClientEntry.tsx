@@ -44,7 +44,19 @@ export function ClientEntry({ user, onLogout }: ClientEntryProps) {
         if (!active) return;
         if (catalog.length === 0) throw new Error("No hay planes disponibles en este momento. Inténtalo más tarde.");
         setPlans(catalog);
-        setSelected((catalog.find(plan => plan.popular) || catalog[0]).id);
+        const preselectedName = localStorage.getItem("agrocloud_preselected_plan");
+        let initialSelectedId = (catalog.find(plan => plan.popular) || catalog[0]).id;
+        if (preselectedName) {
+          const matchedPlan = catalog.find(p => 
+            p.nombre.toLowerCase().includes(preselectedName.toLowerCase()) || 
+            preselectedName.toLowerCase().includes(p.nombre.toLowerCase())
+          );
+          if (matchedPlan) {
+            initialSelectedId = matchedPlan.id;
+          }
+          localStorage.removeItem("agrocloud_preselected_plan");
+        }
+        setSelected(initialSelectedId);
         setStage("plans");
       } catch (caught) {
         if (!active) return;
