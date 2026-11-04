@@ -51,8 +51,18 @@ export function CreateInstanceModal({
   const [templates, setTemplates] = useState<string[]>([]);
   const [loadError, setLoadError] = useState("");
   useEffect(() => {
-    getTemplates().then(data => setTemplates(data.filter(p => p.estado === "Activa").map(p => p.nombre)))
-      .catch(() => setLoadError("No se pudieron cargar las plantillas disponibles."));
+    getTemplates().then(data => {
+      const activeList = data.filter(p => p.estado === "Activa").map(p => p.nombre);
+      setTemplates(activeList);
+      if (!initialTemplate) {
+        const preselected = localStorage.getItem("agrocloud_preselected_template");
+        if (preselected) {
+          const match = activeList.find(p => p.toLowerCase().includes(preselected.toLowerCase()) || preselected.toLowerCase().includes(p.toLowerCase()));
+          if (match) setTemplate(match);
+          localStorage.removeItem("agrocloud_preselected_template");
+        }
+      }
+    }).catch(() => setLoadError("No se pudieron cargar las plantillas disponibles."));
   }, []);
   const hasActiveSub = CLIENT_PLAN.estado === "Activa" && maxInstances > 0;
   const atLimit = hasActiveSub ? currentCount >= maxInstances : true;
