@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ProgressBar, StatusBadge } from "../../components/ui/index";
 import { CLIENT_PLAN } from "../../data/client";
-import { subscribeToPlan, getMyActiveSubscription } from "../../api/subscriptionsApi";
+import { subscribeToPlan, getMyActiveSubscription, cancelSubscription } from "../../api/subscriptionsApi";
 import { getPlans } from "../../api/plansApi";
 import type { ClientInstance } from "../../types/client";
 import type { Subscription } from "../../types/index";
@@ -34,6 +34,8 @@ export function ClientPlan({
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<PlanAvailable | null>(null);
   const [loadingSub, setLoadingSub] = useState(false);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [modalCancelOpen, setModalCancelOpen] = useState(false);
+  const [cancellingSub, setCancellingSub] = useState(false);
 
   const [floatingToast, setFloatingToast] = useState<{ type: "error" | "success" | "warning"; message: string } | null>(null);
 
@@ -73,6 +75,24 @@ export function ClientPlan({
 
   const storageUsed = instancesList.reduce((acc, inst) => acc + (inst.usadoGB || 0), 0);
   const instUsed = instancesList.length;
+
+  const handleConfirmCancelSubscription = async () => {
+    if (!subscription?.id) return;
+    setCancellingSub(true);
+    try {
+      const res = await cancelSubscription(subscription.id);
+      setSubscription(res);
+      CLIENT_PLAN.estado = "Cancelada";
+      onPlanChanged?.();
+      setModalCancelOpen(false);
+      showFloatingToast("Tu suscripción ha sido cancelada correctamente.", "success");
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || "No se pudo cancelar la suscripción.";
+      showFloatingToast(msg, "error");
+    } finally {
+      setCancellingSub(false);
+    }
+  };
 
   const handleConfirmPlanChange = async (plan: PlanAvailable) => {
     // Validación previa del lado del cliente (KISS / DRY)
@@ -146,9 +166,7 @@ export function ClientPlan({
               onClick={() => setFloatingToast(null)}
               aria-label="Cerrar notificación"
               className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition-colors text-sm shrink-0"
-            >
-              ✕
-            </button>
+            ><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
           </div>
         </div>
       )}
@@ -415,6 +433,55 @@ export function ClientPlan({
                 className="flex-1 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-bold rounded-xl text-xs transition-colors shadow-sm disabled:opacity-50"
               >
                 {loadingSub ? "Procesando..." : "Confirmar cambio"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: confirmar cancelación de suscripción */}
+      {modalCancelOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in" onClick={e => { if (e.target === e.currentTarget && !cancellingSub) setModalCancelOpen(false); }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 text-red-600">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Cancelar suscripción</h2>
+            <p className="text-sm text-gray-600 mb-3 leading-relaxed">
+              ¿Estás seguro de que deseas cancelar tu suscripción al <span className="font-semibold text-gray-900">Plan {currentPlan.nombre}</span>?
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 space-y-1 mb-6">
+              <p className="font-semibold">Información importante:</p>
+              <p>Tu cuenta mantendrá acceso a tus instancias hasta el final del período de facturación actual ({subscription?.fechaProximoPago || "próximo ciclo"}). Después de esa fecha, no se renovará automáticamente.</p>
+            </div>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                disabled={cancellingSub}
+                onClick={() => setModalCancelOpen(false)}
+                className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Mantener suscripción
+              </button>
+              <button
+                type="button"
+                disabled={cancellingSub}
+                onClick={handleConfirmCancelSubscription}
+                className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+              >
+                {cancellingSub ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Cancelando...</span>
+                  </>
+                ) : (
+                  "Confirmar cancelación"
+                )}
               </button>
             </div>
           </div>

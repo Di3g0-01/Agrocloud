@@ -68,12 +68,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             throw new IllegalArgumentException("Para cambiar a este plan debes eliminar las instancias restantes. Actualmente tienes " + currentInstancesCount + " instancia" + (currentInstancesCount > 1 ? "s" : "") + " y el plan '" + planContratado.descripcion() + "' solo permite " + planContratado.instanciasPermitidas() + ".");
         }
 
-        // Cancel previous active subscription if changing plans
-        repository.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, SubscriptionStatus.active)
-                .ifPresent(previousSub -> {
-                    previousSub.setStatus(SubscriptionStatus.cancelled);
-                    repository.save(previousSub);
-                });
+        // Cancel all previous active or pending subscriptions for this user when changing/creating plan
+        List<SubscriptionEntity> previousSubs = repository.findByUserIdOrderByCreatedAtDesc(userId);
+        for (SubscriptionEntity oldSub : previousSubs) {
+            if (oldSub.getStatus() == SubscriptionStatus.active || oldSub.getStatus() == SubscriptionStatus.pending_payment) {
+                oldSub.setStatus(SubscriptionStatus.cancelled);
+                repository.save(oldSub);
+            }
+        }
+        repository.flush();
 
         SubscriptionEntity newSubscription = new SubscriptionEntity();
         newSubscription.setUser(user);

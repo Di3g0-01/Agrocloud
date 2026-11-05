@@ -36,17 +36,50 @@ export function AdminSubscriptions({ isDark }: { isDark?: boolean }) {
     Promise.all([listAdminUsers(), getPlans(), getAllSubscriptions()])
       .then(([users, catalog, subscriptions]) => {
         const names = new Map(users.map(u => [u.id, u.organizationName || u.contactName || u.email]));
-        const mappedSubs: Subscription[] = subscriptions.map(s => ({
-          id: s.id, cliente: names.get(s.usuarioId) || "Cliente", plan: s.planNombre,
-          precio: `Q${s.monto}`, inicio: s.fechaInicio, renovacion: s.fechaProximoPago || "—",
-          estado: ({ active: "Activa", pending_payment: "Pendiente", suspended: "Suspendida", cancelled: "Cancelada" } as const)[s.estado],
-        }));
+        // Ordenar descendentemente por fecha para priorizar la suscripción más reciente
+        const sortedSubs = [...subscriptions].sort((a, b) => {
+          const dateA = a.fechaInicio ? new Date(a.fechaInicio).getTime() : 0;
+          const dateB = b.fechaInicio ? new Date(b.fechaInicio).getTime() : 0;
+          return dateB - dateA;
+        });
+
+        // Asegurar que cada usuario tenga únicamente 1 suscripción activa (las anteriores se marcan Cancelada)
+        const activeUsers = new Set<string>();
+        const mappedSubs: Subscription[] = sortedSubs.map(s => {
+          let estadoTexto = ({ active: "Activa", pending_payment: "Pendiente", suspended: "Suspendida", cancelled: "Cancelada" } as const)[s.estado] || "Inactiva";
+          if (estadoTexto === "Activa") {
+            if (activeUsers.has(s.usuarioId)) {
+              estadoTexto = "Cancelada";
+            } else {
+              activeUsers.add(s.usuarioId);
+            }
+          }
+          return {
+            id: s.id,
+            cliente: names.get(s.usuarioId) || "Cliente",
+            plan: s.planNombre,
+            precio: `Q${s.monto}`,
+            inicio: s.fechaInicio,
+            renovacion: s.fechaProximoPago || "—",
+            estado: estadoTexto,
+          };
+        });
+
         setSubscriptionsList(mappedSubs);
         setPlans(catalog.map(plan => {
           const count = mappedSubs.filter(s => s.plan === plan.nombre && s.estado === "Activa").length;
-          return { id: plan.id, nombre: plan.nombre, descripcion: plan.descripcion, popular: Boolean(plan.popular), precio: `Q${plan.precioMensual}`,
-            storage: `${plan.almacenamientoGb} GB`, instancias: String(plan.instanciasPermitidas),
-            clientes: count, ingresos: `Q${count * plan.precioMensual}`, estado: plan.activo === false ? "Inactivo" : "Activo" };
+          return {
+            id: plan.id,
+            nombre: plan.nombre,
+            descripcion: plan.descripcion,
+            popular: Boolean(plan.popular),
+            precio: `Q${plan.precioMensual}`,
+            storage: `${plan.almacenamientoGb} GB`,
+            instancias: String(plan.instanciasPermitidas),
+            clientes: count,
+            ingresos: `Q${count * plan.precioMensual}`,
+            estado: plan.activo === false ? "Inactivo" : "Activo"
+          };
         }));
       })
       .catch(() => setError("No se pudieron cargar los planes y las suscripciones."));
@@ -291,7 +324,7 @@ export function AdminSubscriptions({ isDark }: { isDark?: boolean }) {
               },
               {
                 label: "SUSCRIPCIONES",
-                value: String(subscriptionsList.length),
+                value: String(subscriptionsList.filter(s => s.estado === "Activa").length),
                 sub: "Activas en total",
                 color: isDark ? "text-lime-400 bg-lime-950/60 border border-lime-800/40" : "text-lime-600 bg-lime-50",
                 icon: "M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z",
