@@ -25,7 +25,24 @@ export function SupportPanel({ user, onLogout }: { user: User; onLogout: () => v
   const [page, setPage] = useState<SupportPage>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setThemeState] = useState<"light" | "dark">(() => {
+    try {
+      const saved = localStorage.getItem("agrocloud_theme_support") || localStorage.getItem("agrocloud_theme");
+      return saved === "dark" || saved === "light" ? saved : "light";
+    } catch {
+      return "light";
+    }
+  });
+
+  const setTheme = (newTheme: "light" | "dark") => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem("agrocloud_theme_support", newTheme);
+      localStorage.setItem("agrocloud_theme", newTheme);
+    } catch {
+      // noop
+    }
+  };
 
   const pageLabels: Record<SupportPage, string> = { dashboard: "Panel de Soporte", incidencias: "Incidencias", instancias: "Instancias", actividad: "Actividad", documentacion: "Documentación", configuracion: "Configuración" };
   const navigate = (p: SupportPage) => { setPage(p); setSidebarOpen(false); };
@@ -100,4 +117,3 @@ export function SupportPanel({ user, onLogout }: { user: User; onLogout: () => v
     </div>
   );
 }
-

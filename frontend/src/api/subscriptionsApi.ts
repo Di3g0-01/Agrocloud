@@ -22,7 +22,11 @@ export const subscribeToPlan = async (planId: string, planName?: string, amount?
   return res.data?.data || res.data;
 };
 
+export const cancelSubscription = async (id: string): Promise<Subscription> => {
+  const res = await axiosClient.post(`/suscripciones/${id}/cancelar`);
+  return res.data?.data || res.data;
+};
+
 export const getAllSubscriptions = async (): Promise<Subscription[]> => (await axiosClient.get('/suscripciones')).data;
 export const updateSubscriptionStatus = async (id: string, status: Subscription['estado']): Promise<Subscription> =>
   (await axiosClient.patch(`/suscripciones/${id}/status`, null, { params: { status } })).data;
-

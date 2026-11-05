@@ -21,7 +21,25 @@ export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: Use
   const [page, setPage] = useState<AdminPage>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setThemeState] = useState<"light" | "dark">(() => {
+    try {
+      const saved = localStorage.getItem("agrocloud_theme_admin") || localStorage.getItem("agrocloud_theme");
+      return saved === "dark" || saved === "light" ? saved : "light";
+    } catch {
+      return "light";
+    }
+  });
+
+  const setTheme = (newTheme: "light" | "dark") => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem("agrocloud_theme_admin", newTheme);
+      localStorage.setItem("agrocloud_theme", newTheme);
+    } catch {
+      // noop
+    }
+  };
+
   const [editClientId, setEditClientId] = useState<string | null>(null);
   const navigate = (next: AdminPage) => { if (next !== 'usuarios') setEditClientId(null); setPage(next); };
 
@@ -69,4 +87,3 @@ export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: Use
     </div>
   );
 }
-
