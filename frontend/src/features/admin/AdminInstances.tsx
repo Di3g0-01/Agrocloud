@@ -11,10 +11,15 @@ export function AdminInstances({ isDark }: { isDark?: boolean }) {
   const [detail, setDetail] = useState<AdminInstance | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<AdminInstance | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [restartPrompt, setRestartPrompt] = useState<AdminInstance | null>(null);
+  const [restarting, setRestarting] = useState(false);
+  const [restartError, setRestartError] = useState("");
+  const [restartSuccess, setRestartSuccess] = useState<AdminInstance | null>(null);
   const [instancesList, setInstancesList] = useState<AdminInstance[]>([]);
   const [error, setError] = useState("");
 
   const statusMap: Record<string, string> = { active: "Activa", revision: "En revisión", suspended: "Suspendida", terminated: "Detenida" };
+
   const handleDeleteInstance = async (inst: AdminInstance) => {
     setDeleting(true);
     setError("");
@@ -30,24 +35,50 @@ export function AdminInstances({ isDark }: { isDark?: boolean }) {
     }
   };
 
+  const handleExecuteRestart = async (inst: AdminInstance) => {
+    setRestarting(true);
+    setRestartError("");
+    try {
+      await restartInstance(inst.id);
+      setInstancesList(prev => prev.map(item => item.id === inst.id ? { ...item, estado: "Activa" } : item));
+      if (detail?.id === inst.id) {
+        setDetail(prev => prev ? { ...prev, estado: "Activa" } : null);
+      }
+      setRestartPrompt(null);
+      setRestartSuccess({ ...inst, estado: "Activa" });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || `No se pudo reiniciar la instancia ${inst.nombre}.`;
+      setRestartError(msg);
+      setError(msg);
+    } finally {
+      setRestarting(false);
+    }
+  };
+
   const performAction = async (action: string, inst: AdminInstance) => {
     setMenuOpen(null);
     setError("");
-    if (action === "Ver detalles" || action === "Ver métricas") { setDetail(inst); return; }
-    if (action === "Eliminar" && !window.confirm(`¿Eliminar la instancia ${inst.nombre}?`)) return;
+    if (action === "Ver detalles" || action === "Ver métricas") {
+      setDetail(inst);
+      return;
+    }
+    if (action === "Eliminar") {
+      setDeleteConfirm(inst);
+      return;
+    }
+    if (action === "Reiniciar") {
+      setRestartError("");
+      setRestartPrompt(inst);
+      return;
+    }
     try {
-      if (action === "Eliminar") {
-        await deleteInstance(inst.id);
-        setInstancesList(prev => prev.filter(item => item.id !== inst.id));
-        setDetail(null);
-        return;
-      }
-      if (action === "Reiniciar") await restartInstance(inst.id);
-      else await updateInstanceStatus(inst.id, ({ Detener: "terminated", Iniciar: "active", Suspender: "suspended" } as const)[action as "Detener" | "Iniciar" | "Suspender"]);
-      const status = action === "Reiniciar" ? "Activa" : statusMap[({ Detener: "terminated", Iniciar: "active", Suspender: "suspended" } as const)[action as "Detener" | "Iniciar" | "Suspender"]];
+      await updateInstanceStatus(inst.id, ({ Detener: "terminated", Iniciar: "active", Suspender: "suspended" } as const)[action as "Detener" | "Iniciar" | "Suspender"]);
+      const status = statusMap[({ Detener: "terminated", Iniciar: "active", Suspender: "suspended" } as const)[action as "Detener" | "Iniciar" | "Suspender"]];
       setInstancesList(prev => prev.map(item => item.id === inst.id ? { ...item, estado: status } : item));
       setDetail(prev => prev?.id === inst.id ? { ...prev, estado: status } : prev);
-    } catch { setError(`No se pudo ${action.toLowerCase()} la instancia ${inst.nombre}.`); }
+    } catch {
+      setError(`No se pudo ${action.toLowerCase()} la instancia ${inst.nombre}.`);
+    }
   };
 
   useEffect(() => {
@@ -93,6 +124,155 @@ export function AdminInstances({ isDark }: { isDark?: boolean }) {
     (i.nombre.toLowerCase().includes(search.toLowerCase()) || i.cliente.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const renderModals = () => (
+    <>
+      {restartPrompt && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={e => { if (e.target === e.currentTarget && !restarting) setRestartPrompt(null); }}>
+          <div className={`rounded-2xl w-full max-w-sm shadow-2xl p-6 ${isDark ? "bg-slate-900 border border-slate-800" : "bg-white"}`} role="dialog" aria-modal="true" aria-label="Confirmar reinicio de instancia">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <h2 className={`font-semibold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Reiniciar instancia</h2>
+            <p className={`text-sm mb-2 ${isDark ? "text-slate-300" : "text-gray-600"}`}>
+              {"¿Deseas reiniciar la instancia"} <span className={`font-mono font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{restartPrompt.nombre}</span>{"?"}
+            </p>
+            <p className={`text-xs rounded-lg p-2.5 mb-5 leading-relaxed ${isDark ? "bg-amber-950/40 border border-amber-800/40 text-amber-300" : "bg-amber-50 border border-amber-200 text-amber-800"}`}>
+              El servicio PostgreSQL se restablecerá. Las conexiones activas se cerrarán momentáneamente y la instancia quedará disponible nuevamente en pocos segundos.
+            </p>
+            {restartError && (
+              <p role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                {restartError}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={restarting}
+                onClick={() => { setRestartPrompt(null); setRestartError(""); }}
+                className={`flex-1 py-2.5 border rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={restarting}
+                onClick={() => handleExecuteRestart(restartPrompt)}
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer shadow-sm"
+              >
+                {restarting ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Reiniciando...</span>
+                  </>
+                ) : (
+                  "Reiniciar"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {restartSuccess && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={e => { if (e.target === e.currentTarget) setRestartSuccess(null); }}>
+          <div className={`rounded-2xl w-full max-w-md shadow-2xl p-6 ${isDark ? "bg-slate-900 border border-slate-800" : "bg-white"}`} role="dialog" aria-modal="true" aria-label="Instancia reiniciada con éxito">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className={`text-lg font-bold mb-1 ${isDark ? "text-white" : "text-gray-900"}`}>Instancia reiniciada con éxito</h2>
+            <p className={`text-sm mb-4 leading-relaxed ${isDark ? "text-slate-300" : "text-gray-600"}`}>
+              La instancia <span className={`font-mono font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{restartSuccess.nombre}</span> ha sido reiniciada correctamente y ya se encuentra activa y lista para recibir consultas.
+            </p>
+
+            <div className={`border rounded-xl p-3.5 space-y-2 mb-6 text-xs ${isDark ? "bg-slate-800/60 border-slate-700 text-slate-300" : "bg-gray-50 border-gray-100 text-gray-600"}`}>
+              <div className="flex justify-between items-center">
+                <span className={isDark ? "text-slate-400" : "text-gray-500"}>Estado actual:</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Activa
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className={isDark ? "text-slate-400" : "text-gray-500"}>Motor de Base de Datos:</span>
+                <span className={`font-medium ${isDark ? "text-white" : "text-gray-800"}`}>PostgreSQL 16</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className={isDark ? "text-slate-400" : "text-gray-500"}>Plantilla agronómica:</span>
+                <span className={`font-medium ${isDark ? "text-white" : "text-gray-800"}`}>{restartSuccess.plantilla}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className={isDark ? "text-slate-400" : "text-gray-500"}>Disponibilidad del clúster:</span>
+                <span className="font-medium text-emerald-500">99.9% Uptime</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setRestartSuccess(null)}
+                className="w-full py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold rounded-xl text-sm transition-colors cursor-pointer"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={e => { if (e.target === e.currentTarget && !deleting) setDeleteConfirm(null); }}>
+          <div className={`rounded-2xl w-full max-w-sm shadow-2xl p-6 ${isDark ? "bg-slate-900 border border-slate-800" : "bg-white"}`} role="dialog" aria-modal="true" aria-label="Confirmar eliminación">
+            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h2 className={`font-semibold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Eliminar instancia</h2>
+            <p className={`text-sm mb-1 ${isDark ? "text-slate-300" : "text-gray-500"}`}>
+              {"¿Seguro que deseas eliminar"} <span className={`font-mono font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{deleteConfirm.nombre}</span>{"?"}
+            </p>
+            <p className="text-xs text-red-400 mb-6">Esta acción es irreversible. Se perderán todos los datos almacenados.</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteConfirm(null)}
+                className={`flex-1 py-2.5 border rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => handleDeleteInstance(deleteConfirm)}
+                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Eliminando...</span>
+                  </>
+                ) : (
+                  "Eliminar"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   if (detail) {
     return (
       <div className={`flex-1 overflow-auto p-4 lg:p-8 ${isDark ? "bg-slate-950 text-slate-100" : "bg-gray-50 text-gray-900"}`}>
@@ -105,15 +285,36 @@ export function AdminInstances({ isDark }: { isDark?: boolean }) {
           <span className={isDark ? "text-slate-700" : "text-gray-300"}>/</span>
           <span className={`text-sm font-mono ${isDark ? "text-slate-200" : "text-gray-800"}`}>{detail.nombre}</span>
         </div>
-        <div className="flex items-center gap-3 mb-6">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-lime-950/40" : "bg-lime-50"}`}>
-            <svg className="w-5 h-5 text-lime-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isDark ? "bg-lime-950/40" : "bg-lime-50"}`}>
+              <svg className="w-5 h-5 text-lime-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>
+            </div>
+            <div>
+              <h2 className={`font-semibold font-mono ${isDark ? "text-white" : "text-gray-900"}`}>{detail.nombre}</h2>
+              <p className={`text-xs ${isDark ? "text-slate-400" : "text-gray-400"}`}>{detail.cliente}</p>
+            </div>
+            <StatusBadge s={detail.estado} />
           </div>
-          <div>
-            <h2 className={`font-semibold font-mono ${isDark ? "text-white" : "text-gray-900"}`}>{detail.nombre}</h2>
-            <p className={`text-xs ${isDark ? "text-slate-400" : "text-gray-400"}`}>{detail.cliente}</p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setRestartError("");
+                setRestartPrompt(detail);
+              }}
+              className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors cursor-pointer ${isDark ? "border-amber-500/30 text-amber-400 hover:bg-amber-950/40" : "border-amber-200 text-amber-700 hover:bg-amber-50"}`}
+            >
+              Reiniciar
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeleteConfirm(detail)}
+              className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors cursor-pointer ${isDark ? "border-red-500/30 text-red-400 hover:bg-red-950/40" : "border-red-200 text-red-600 hover:bg-red-50"}`}
+            >
+              Eliminar
+            </button>
           </div>
-          <StatusBadge s={detail.estado} />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <div className={`lg:col-span-2 border rounded-xl p-6 ${isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-100"}`}>
@@ -166,6 +367,7 @@ export function AdminInstances({ isDark }: { isDark?: boolean }) {
             ))}
           </div>
         </div>
+        {renderModals()}
       </div>
     );
   }
@@ -232,7 +434,7 @@ export function AdminInstances({ isDark }: { isDark?: boolean }) {
                 <td className="px-5 py-4"><StatusBadge s={inst.estado} /></td>
                 <td className={`px-5 py-4 text-xs whitespace-nowrap ${isDark ? "text-slate-400" : "text-gray-400"}`}>{inst.creada}</td>
                 <td className="px-5 py-4 relative" onClick={e => e.stopPropagation()}>
-                  <button onClick={() => setMenuOpen(menuOpen === inst.id ? null : inst.id)} className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors ${isDark ? "hover:bg-slate-800 text-slate-400 hover:text-slate-200" : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"}`}>
+                  <button onClick={() => setMenuOpen(menuOpen === inst.id ? null : inst.id)} className={`w-7 h-7 flex items-center justify-center rounded-lg transition-colors cursor-pointer ${isDark ? "hover:bg-slate-800 text-slate-400 hover:text-slate-200" : "hover:bg-gray-100 text-gray-400 hover:text-gray-600"}`}>
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
                   </button>
                   {menuOpen === inst.id && (
@@ -240,7 +442,7 @@ export function AdminInstances({ isDark }: { isDark?: boolean }) {
                       <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(null)} />
                       <div className={`absolute right-4 top-10 z-20 border rounded-xl shadow-lg py-1 w-40 text-xs ${isDark ? "bg-slate-900 border-slate-800 text-slate-200" : "bg-white border-gray-200 text-gray-700"}`}>
                         {["Ver detalles", "Ver métricas", "Reiniciar", "Detener", "Iniciar", "Suspender", "Eliminar"].map((a, i) => (
-                          <button key={a} onClick={() => performAction(a, inst)} className={`w-full text-left px-4 py-2 transition-colors ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-50"} ${i >= 5 ? "text-red-500" : ""}`}>{a}</button>
+                          <button key={a} onClick={() => performAction(a, inst)} className={`w-full text-left px-4 py-2 transition-colors cursor-pointer ${isDark ? "hover:bg-slate-800" : "hover:bg-gray-50"} ${i >= 5 ? "text-red-500" : ""}`}>{a}</button>
                         ))}
                       </div>
                     </>
@@ -253,41 +455,7 @@ export function AdminInstances({ isDark }: { isDark?: boolean }) {
         <div className={`px-5 py-3 text-xs border-t ${isDark ? "border-slate-800 text-slate-400" : "border-gray-50 text-gray-400"}`}>{filtered.length} instancia{filtered.length !== 1 ? "s" : ""}</div>
       </div>
 
-      {/* Modal: confirmar eliminación */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={e => { if (e.target === e.currentTarget && !deleting) setDeleteConfirm(null); }}>
-          <div className={`rounded-2xl w-full max-w-sm shadow-2xl p-6 ${isDark ? "bg-slate-900 border border-slate-800" : "bg-white"}`} role="dialog" aria-modal="true" aria-label="Confirmar eliminación">
-            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mb-4">
-              <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </div>
-            <h2 className={`font-semibold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Eliminar instancia</h2>
-            <p className={`text-sm mb-1 ${isDark ? "text-slate-300" : "text-gray-500"}`}>
-              {"¿Seguro que deseas eliminar"} <span className={`font-mono font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{deleteConfirm.nombre}</span>{"?"}
-            </p>
-            <p className="text-xs text-red-400 mb-6">Esta acción es irreversible. Se perderán todos los datos almacenados.</p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                disabled={deleting}
-                onClick={() => setDeleteConfirm(null)}
-                className={`flex-1 py-2.5 border rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={deleting}
-                onClick={() => handleDeleteInstance(deleteConfirm)}
-                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
-              >
-                {deleting ? "Eliminando..." : "Eliminar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {renderModals()}
     </div>
   );
 }

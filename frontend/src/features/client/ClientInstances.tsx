@@ -526,18 +526,24 @@ export function ClientInstances({
                 </svg>
                 <span>Explorar Tablas y Datos</span>
               </button>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => {
                   if (drawer) handleOpenCredModal(drawer);
                   setDrawer(null);
-                }} className="flex-1 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors cursor-pointer">Credenciales</button>
+                }} className="py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors cursor-pointer">Credenciales</button>
                 <button onClick={() => {
                   if (drawer) {
                     handleOpenRestartPrompt(drawer);
                     setDrawer(null);
                   }
-                }} className="flex-1 py-2 text-sm text-amber-700 border border-amber-200 hover:bg-amber-50 rounded-lg font-medium transition-colors cursor-pointer">Reiniciar</button>
-                <button onClick={() => setDrawer(null)} className="flex-1 py-2 text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg font-medium transition-colors cursor-pointer">Cerrar</button>
+                }} className="py-2 text-sm text-amber-700 border border-amber-200 hover:bg-amber-50 rounded-lg font-medium transition-colors cursor-pointer">Reiniciar</button>
+                <button onClick={() => {
+                  if (drawer) {
+                    setDeleteConfirm(drawer);
+                    setDrawer(null);
+                  }
+                }} className="py-2 text-sm text-red-600 border border-red-200 hover:bg-red-50 rounded-lg font-medium transition-colors cursor-pointer">Eliminar</button>
+                <button onClick={() => setDrawer(null)} className="py-2 text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg font-medium transition-colors cursor-pointer">Cerrar</button>
               </div>
             </div>
           </aside>

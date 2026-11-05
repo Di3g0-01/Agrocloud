@@ -26,6 +26,11 @@ export const ClientDashboard: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [showCredsModal, setShowCredsModal] = useState<DbInstance | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
+  const [instanceToDelete, setInstanceToDelete] = useState<DbInstance | null>(null);
+  const [instanceToRestart, setInstanceToRestart] = useState<DbInstance | null>(null);
+  const [restarting, setRestarting] = useState<boolean>(false);
+  const [deleting, setDeleting] = useState<boolean>(false);
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 
   // New Instance Form
   const [newInstanceName, setNewInstanceName] = useState<string>('');
@@ -74,22 +79,44 @@ export const ClientDashboard: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       const apiMsg = err?.response?.data?.message || err?.message || 'Error al crear la instancia';
-      alert(apiMsg);
+      setFeedbackMsg(apiMsg);
     } finally {
       setCreating(false);
     }
   };
 
-  const handleRestart = async (id: string) => {
-    await restartInstance(id);
-    alert(`Solicitud de reinicio enviada para la instancia ${id}`);
-    fetchInstances();
+  const handleRestart = (inst: DbInstance) => {
+    setInstanceToRestart(inst);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('¿Estás seguro de que deseas eliminar esta instancia de base de datos?')) {
-      await deleteInstance(id);
-      setInstanceList(instanceList.filter((i) => i.id !== id));
+  const executeRestart = async (inst: DbInstance) => {
+    setRestarting(true);
+    try {
+      await restartInstance(inst.id);
+      setInstanceToRestart(null);
+      setFeedbackMsg(`Instancia ${inst.nombre} reiniciada correctamente.`);
+      fetchInstances();
+    } catch {
+      setFeedbackMsg(`No se pudo reiniciar la instancia ${inst.nombre}.`);
+    } finally {
+      setRestarting(false);
+    }
+  };
+
+  const handleDelete = (inst: DbInstance) => {
+    setInstanceToDelete(inst);
+  };
+
+  const executeDelete = async (inst: DbInstance) => {
+    setDeleting(true);
+    try {
+      await deleteInstance(inst.id);
+      setInstanceList(instanceList.filter((i) => i.id !== inst.id));
+      setInstanceToDelete(null);
+    } catch {
+      setFeedbackMsg(`No se pudo eliminar la instancia ${inst.nombre}.`);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -254,14 +281,14 @@ export const ClientDashboard: React.FC = () => {
                       <span>Credenciales</span>
                     </button>
                     <button
-                      onClick={() => handleRestart(inst.id)}
+                      onClick={() => handleRestart(inst)}
                       title="Reiniciar Instancia"
                       className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => handleDelete(inst.id)}
+                      onClick={() => handleDelete(inst)}
                       title="Eliminar Instancia"
                       className="p-2 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-all cursor-pointer"
                     >
@@ -411,6 +438,81 @@ export const ClientDashboard: React.FC = () => {
                 <span>{copied ? '¡Copiado al portapapeles!' : 'Copiar Credenciales'}</span>
               </button>
             </div>
+          </div>
+        )}
+
+        {instanceToRestart && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget && !restarting) setInstanceToRestart(null); }}>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-6" role="dialog" aria-modal="true">
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center mb-4 text-amber-400">
+                <RefreshCw className="w-5 h-5" />
+              </div>
+              <h2 className="font-semibold text-white mb-2">Reiniciar instancia</h2>
+              <p className="text-sm text-slate-300 mb-2">
+                {"¿Deseas reiniciar la instancia"} <span className="font-mono font-semibold text-white">{instanceToRestart.nombre}</span>{"?"}
+              </p>
+              <p className="text-xs text-amber-300 bg-amber-950/40 border border-amber-800/40 rounded-lg p-2.5 mb-5 leading-relaxed">
+                El servicio PostgreSQL se restablecerá momentáneamente.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={restarting}
+                  onClick={() => setInstanceToRestart(null)}
+                  className="flex-1 py-2.5 border border-slate-700 rounded-lg text-sm text-slate-300 hover:bg-slate-800 font-medium transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={restarting}
+                  onClick={() => executeRestart(instanceToRestart)}
+                  className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  {restarting ? "Reiniciando..." : "Reiniciar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {instanceToDelete && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget && !deleting) setInstanceToDelete(null); }}>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl p-6" role="dialog" aria-modal="true">
+              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center mb-4 text-red-400">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <h2 className="font-semibold text-white mb-2">Eliminar instancia</h2>
+              <p className="text-sm text-slate-300 mb-1">
+                {"¿Seguro que deseas eliminar"} <span className="font-mono font-semibold text-white">{instanceToDelete.nombre}</span>{"?"}
+              </p>
+              <p className="text-xs text-red-400 mb-6">Esta acción es irreversible. Se perderán todos los datos almacenados.</p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => setInstanceToDelete(null)}
+                  className="flex-1 py-2.5 border border-slate-700 rounded-lg text-sm text-slate-300 hover:bg-slate-800 font-medium transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => executeDelete(instanceToDelete)}
+                  className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer"
+                >
+                  {deleting ? "Eliminando..." : "Eliminar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {feedbackMsg && (
+          <div className="fixed bottom-6 right-6 z-50 bg-slate-800 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3">
+            <span className="text-sm">{feedbackMsg}</span>
+            <button onClick={() => setFeedbackMsg(null)} className="text-slate-400 hover:text-white text-xs font-bold">Cerrar</button>
           </div>
         )}
       </div>
