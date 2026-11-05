@@ -15,7 +15,9 @@ public record SubscriptionResponse(
         @JsonProperty("estado") SubscriptionStatus status,
         @JsonProperty("fechaInicio") LocalDate startDate,
         @JsonProperty("fechaProximoPago") LocalDate nextBillingDate,
-        @JsonProperty("monto") BigDecimal amount
+        @JsonProperty("monto") BigDecimal amount,
+        @JsonProperty("cancelacionProgramada") Boolean cancelAtPeriodEnd,
+        @JsonProperty("fechaCancelacion") LocalDate cancellationDate
 ) {
     public static SubscriptionResponse from(SubscriptionEntity subscription) {
         return new SubscriptionResponse(
@@ -26,7 +28,9 @@ public record SubscriptionResponse(
                 subscription.getStatus(),
                 subscription.getStartDate(),
                 subscription.getNextBillingDate(),
-                subscription.getAmount()
+                subscription.getAmount(),
+                Boolean.TRUE.equals(subscription.getCancelAtPeriodEnd()),
+                subscription.getCancellationDate()
         );
     }
 }

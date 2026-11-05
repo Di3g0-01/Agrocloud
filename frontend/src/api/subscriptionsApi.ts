@@ -22,8 +22,23 @@ export const subscribeToPlan = async (planId: string, planName?: string, amount?
   return res.data?.data || res.data;
 };
 
+export const preparePlanChange = async (planId: string): Promise<Subscription> => {
+  const res = await axiosClient.post('/suscripciones/cambiar', { planId });
+  return res.data?.data || res.data;
+};
+
+export const confirmPlanChangePayment = async (subscriptionId: string): Promise<Subscription> => {
+  const res = await axiosClient.post(`/suscripciones/${subscriptionId}/confirmar-pago`);
+  return res.data?.data || res.data;
+};
+
 export const cancelSubscription = async (id: string): Promise<Subscription> => {
   const res = await axiosClient.post(`/suscripciones/${id}/cancelar`);
+  return res.data?.data || res.data;
+};
+
+export const continueSubscription = async (id: string): Promise<Subscription> => {
+  const res = await axiosClient.post(`/suscripciones/${id}/continuar`);
   return res.data?.data || res.data;
 };
 

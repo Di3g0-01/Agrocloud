@@ -9,4 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity, UUID> {
     Optional<SubscriptionEntity> findFirstByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, SubscriptionStatus status);
     List<SubscriptionEntity> findByUserIdOrderByCreatedAtDesc(UUID userId);
+    List<SubscriptionEntity> findByStatusAndCancelAtPeriodEndTrueAndCancellationDateLessThanEqual(
+            SubscriptionStatus status, java.time.LocalDate cancellationDate);
 }

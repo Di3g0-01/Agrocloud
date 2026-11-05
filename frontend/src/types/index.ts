@@ -53,6 +53,8 @@ export interface Subscription {
   fechaInicio: string;
   fechaProximoPago: string;
   monto: number;
+  cancelacionProgramada?: boolean;
+  fechaCancelacion?: string | null;
 }
 
 export interface IncidentRecord {

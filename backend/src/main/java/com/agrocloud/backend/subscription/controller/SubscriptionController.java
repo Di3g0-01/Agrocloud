@@ -40,6 +40,23 @@ public class SubscriptionController {
                 .body(service.createSubscription(principal.id(), request));
     }
 
+    @PostMapping("/cambiar")
+    public ResponseEntity<SubscriptionResponse> prepareChange(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody CreateSubscriptionRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.preparePlanChange(principal.id(), request));
+    }
+
+    @PostMapping("/{id}/confirmar-pago")
+    public ResponseEntity<SubscriptionResponse> confirmChange(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID id
+    ) {
+        return ResponseEntity.ok(service.confirmPlanChange(principal.id(), id));
+    }
+
     @GetMapping("/activa")
     public ResponseEntity<SubscriptionResponse> getActive(
             @AuthenticationPrincipal UserPrincipal principal
@@ -101,12 +118,23 @@ public class SubscriptionController {
     }
 
     @PostMapping("/{id}/cancelar")
-    public ResponseEntity<SubscriptionResponse> cancelarPath(@PathVariable UUID id) {
-        return ResponseEntity.ok(service.cancelarSubscription(id));
+    public ResponseEntity<SubscriptionResponse> cancelarPath(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(service.cancelarSubscription(principal.id(), id));
     }
 
     @PostMapping("/cancelar")
-    public ResponseEntity<SubscriptionResponse> cancelarParam(@RequestParam UUID id) {
-        return ResponseEntity.ok(service.cancelarSubscription(id));
+    public ResponseEntity<SubscriptionResponse> cancelarParam(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam UUID id) {
+        return ResponseEntity.ok(service.cancelarSubscription(principal.id(), id));
+    }
+
+    @PostMapping("/{id}/continuar")
+    public ResponseEntity<SubscriptionResponse> continueSubscription(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable UUID id) {
+        return ResponseEntity.ok(service.reactivarSubscription(principal.id(), id));
     }
 }
