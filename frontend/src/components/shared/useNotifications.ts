@@ -28,6 +28,8 @@ const toItem = (notification: ApiNotification): NotificationItem => ({
   tiempo: new Date(notification.fecha).toLocaleString("es-GT"),
   leida: notification.leida,
   categoria: notification.tipo === "TICKET_RESUELTO" ? "resolucion"
+    : notification.tipo === "SUSCRIPCION_CANCELACION_PROGRAMADA" || notification.tipo === "SUSCRIPCION_CANCELADA" ? "cancelacion"
+    : notification.tipo === "SUSCRIPCION_ACTIVADA" || notification.tipo === "SUSCRIPCION_CAMBIADA" || notification.tipo === "SUSCRIPCION_REACTIVADA" ? "activacion"
     : notification.tipo === "INSTANCIA_CREADA" || notification.tipo === "INSTANCIA_REINICIADA" ? "activacion"
     : notification.tipo === "INSTANCIA_ESTADO" || notification.tipo === "INSTANCIA_ELIMINADA" ? "sistema"
     : "ticket",
@@ -38,6 +40,8 @@ function notifyChangedResources(notifications: ApiNotification[]) {
     window.dispatchEvent(new Event("agrocloud:incidents-updated"));
   if (notifications.some(item => item.tipo.startsWith("INSTANCIA_")))
     window.dispatchEvent(new Event("agrocloud:instances-updated"));
+  if (notifications.some(item => item.tipo.startsWith("SUSCRIPCION_")))
+    window.dispatchEvent(new Event("agrocloud:subscription-updated"));
 }
 
 export function useNotifications(role: RoleType) {

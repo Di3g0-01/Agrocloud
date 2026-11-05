@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ProgressBar, StatusBadge } from "../../components/ui/index";
 import { CLIENT_PLAN } from "../../data/client";
-import { subscribeToPlan, getMyActiveSubscription, cancelSubscription } from "../../api/subscriptionsApi";
+import { getMyActiveSubscription, cancelSubscription, continueSubscription, preparePlanChange, confirmPlanChangePayment } from "../../api/subscriptionsApi";
 import { getPlans } from "../../api/plansApi";
 import type { ClientInstance } from "../../types/client";
 import type { Subscription } from "../../types/index";
@@ -36,10 +36,12 @@ export function ClientPlan({
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [modalCancelOpen, setModalCancelOpen] = useState(false);
   const [cancellingSub, setCancellingSub] = useState(false);
+  const [continuingSub, setContinuingSub] = useState(false);
+  const [cardData, setCardData] = useState({ numero: "4532 •••• •••• 8821", titular: organizationName, exp: "12/28", cvv: "882" });
 
-  const [floatingToast, setFloatingToast] = useState<{ type: "error" | "success" | "warning"; message: string } | null>(null);
+  const [floatingToast, setFloatingToast] = useState<{ type: "error" | "warning"; message: string } | null>(null);
 
-  const showFloatingToast = (message: string, type: "error" | "success" | "warning" = "error") => {
+  const showFloatingToast = (message: string, type: "error" | "warning" = "error") => {
     setFloatingToast({ type, message });
   };
 
@@ -75,6 +77,18 @@ export function ClientPlan({
 
   const storageUsed = instancesList.reduce((acc, inst) => acc + (inst.usadoGB || 0), 0);
   const instUsed = instancesList.length;
+  const remainingDays = subscription?.fechaProximoPago
+    ? Math.max(0, Math.ceil((new Date(`${subscription.fechaProximoPago}T00:00:00`).getTime() - new Date().getTime()) / 86400000))
+    : 0;
+  const nextCycleDate = (() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + 1);
+    return new Intl.DateTimeFormat("es-GT", { day: "numeric", month: "long", year: "numeric" }).format(date);
+  })();
+
+  const formatDate = (date?: string | null) => date
+    ? new Intl.DateTimeFormat("es-GT", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${date}T00:00:00`))
+    : "—";
 
   const handleConfirmCancelSubscription = async () => {
     if (!subscription?.id) return;
@@ -82,10 +96,9 @@ export function ClientPlan({
     try {
       const res = await cancelSubscription(subscription.id);
       setSubscription(res);
-      CLIENT_PLAN.estado = "Cancelada";
+      CLIENT_PLAN.estado = "Activa";
       onPlanChanged?.();
       setModalCancelOpen(false);
-      showFloatingToast("Tu suscripción ha sido cancelada correctamente.", "success");
     } catch (err: any) {
       const msg = err?.response?.data?.message || err?.message || "No se pudo cancelar la suscripción.";
       showFloatingToast(msg, "error");
@@ -94,7 +107,25 @@ export function ClientPlan({
     }
   };
 
+  const handleContinueSubscription = async () => {
+    if (!subscription?.id) return;
+    setContinuingSub(true);
+    try {
+      const res = await continueSubscription(subscription.id);
+      setSubscription(res);
+      onPlanChanged?.();
+    } catch (err: any) {
+      showFloatingToast(err?.response?.data?.message || "No se pudo retirar la cancelación programada.", "error");
+    } finally {
+      setContinuingSub(false);
+    }
+  };
+
   const handleConfirmPlanChange = async (plan: PlanAvailable) => {
+    if (!cardData.numero.trim() || !cardData.titular.trim() || !cardData.exp.trim() || !cardData.cvv.trim()) {
+      showFloatingToast("Completa todos los datos de la tarjeta simulada para continuar.", "warning");
+      return;
+    }
     // Validación previa del lado del cliente (KISS / DRY)
     if (instancesList.length > plan.maxInstancias) {
       showFloatingToast(
@@ -103,10 +134,18 @@ export function ClientPlan({
       );
       return;
     }
+    if (storageUsed > plan.storageGB) {
+      showFloatingToast(
+        `Para cambiar al ${plan.nombre} debes liberar ${(storageUsed - plan.storageGB).toFixed(2)} GB. Actualmente utilizas ${storageUsed.toFixed(2)} GB y el plan permite ${plan.storageGB} GB.`,
+        "warning"
+      );
+      return;
+    }
 
     setLoadingSub(true);
     try {
-      const saved = await subscribeToPlan(plan.id, plan.nombre, plan.precioNum);
+      const pending = await preparePlanChange(plan.id);
+      const saved = await confirmPlanChangePayment(pending.id);
       setSubscription(saved);
       setCurrentPlan(plan);
       CLIENT_PLAN.nombre = plan.nombre;
@@ -117,10 +156,6 @@ export function ClientPlan({
       onPlanChanged?.();
       setSelectedPlanForUpgrade(null);
       setModalChangeOpen(false);
-      showFloatingToast(
-        `¡Plan actualizado con éxito al ${plan.nombre}! Tu límite ahora es de ${plan.maxInstancias} instancia(s) y ${plan.storage}.`,
-        "success"
-      );
     } catch (err: any) {
       console.error(err);
       const apiMsg = err?.response?.data?.message || err?.message;
@@ -139,33 +174,25 @@ export function ClientPlan({
             className={`rounded-2xl p-4 shadow-2xl border flex items-start gap-3 backdrop-blur-md ${
               floatingToast.type === "error"
                 ? "bg-red-500/95 text-white border-red-400 shadow-red-500/20"
-                : floatingToast.type === "warning"
-                ? "bg-amber-500/95 text-white border-amber-400 shadow-amber-500/20"
-                : "bg-emerald-600/95 text-white border-emerald-400 shadow-emerald-500/20"
+                : "bg-amber-500/95 text-white border-amber-400 shadow-amber-500/20"
             }`}
             role="alert"
           >
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0 mt-0.5">
-              {floatingToast.type === "success" ? (
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              )}
+            <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-white/20">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
             </div>
             <div className="flex-1 min-w-0 pr-1">
               <p className="text-xs font-bold uppercase tracking-wider opacity-90">
-                {floatingToast.type === "error" ? "Error al cambiar plan" : floatingToast.type === "warning" ? "Instancias excedidas" : "Operación Exitosa"}
+                {floatingToast.type === "error" ? "Error al cambiar plan" : "Instancias excedidas"}
               </p>
               <p className="text-xs font-medium mt-0.5 leading-relaxed">{floatingToast.message}</p>
             </div>
             <button
               onClick={() => setFloatingToast(null)}
               aria-label="Cerrar notificación"
-              className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-white/20 text-white/80 hover:text-white transition-colors text-sm shrink-0"
+              className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors text-sm shrink-0 hover:bg-white/20 text-white/80 hover:text-white"
             ><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
           </div>
         </div>
@@ -186,6 +213,28 @@ export function ClientPlan({
           Cambiar de plan
         </button>
       </div>
+
+      {subscription?.cancelacionProgramada && (
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Cancelación programada</p>
+              <p className="text-xs text-amber-800 mt-0.5">Tu plan seguirá activo hasta el {formatDate(subscription.fechaCancelacion)} y no volverá a renovarse.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={continuingSub}
+            onClick={handleContinueSubscription}
+            className="px-4 py-2.5 rounded-xl bg-white border border-amber-300 text-xs font-semibold text-amber-900 hover:bg-amber-100 transition-colors disabled:opacity-60 shrink-0"
+          >
+            {continuingSub ? "Procesando..." : "Continuar suscripción"}
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Active plan card */}
@@ -279,6 +328,16 @@ export function ClientPlan({
           <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-xs text-gray-500">
             No hay un método de pago registrado en el sistema.
           </div>
+
+          {subscription && !subscription.cancelacionProgramada && (
+            <button
+              type="button"
+              onClick={() => setModalCancelOpen(true)}
+              className="w-full py-2.5 border border-red-200 bg-white hover:bg-red-50 text-red-600 font-semibold rounded-xl text-xs transition-colors"
+            >
+              Cancelar suscripción
+            </button>
+          )}
         </div>
       </div>
 
@@ -355,9 +414,11 @@ export function ClientPlan({
                     ) : (
                       <button
                         onClick={() => {
-                          if (instancesList.length > plan.maxInstancias) {
+                          if (instancesList.length > plan.maxInstancias || storageUsed > plan.storageGB) {
                             showFloatingToast(
-                              `No puedes cambiar al ${plan.nombre}: tienes ${instancesList.length} instancia(s) activas y este plan solo permite ${plan.maxInstancias}. Por favor elimina las instancias restantes antes de continuar.`,
+                              instancesList.length > plan.maxInstancias
+                                ? `No puedes cambiar al ${plan.nombre}: debes eliminar ${instancesList.length - plan.maxInstancias} instancia(s) antes de continuar.`
+                                : `No puedes cambiar al ${plan.nombre}: debes liberar ${(storageUsed - plan.storageGB).toFixed(2)} GB antes de continuar.`,
                               "warning"
                             );
                             return;
@@ -365,7 +426,7 @@ export function ClientPlan({
                           setSelectedPlanForUpgrade(plan);
                         }}
                         className={`w-full py-2.5 font-semibold rounded-xl text-xs transition-colors shadow-sm ${
-                          instancesList.length > plan.maxInstancias
+                          instancesList.length > plan.maxInstancias || storageUsed > plan.storageGB
                             ? "bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200"
                             : plan.precioNum > currentPlan.precioNum
                             ? "bg-lime-400 hover:bg-lime-300 text-gray-900"
@@ -374,6 +435,8 @@ export function ClientPlan({
                       >
                         {instancesList.length > plan.maxInstancias
                           ? `Excede instancias (${instancesList.length}/${plan.maxInstancias})`
+                          : storageUsed > plan.storageGB
+                          ? `Excede almacenamiento (${formatGb(storageUsed)}/${plan.storageGB} GB)`
                           : plan.precioNum > currentPlan.precioNum
                           ? "Actualizar plan"
                           : "Cambiar a este plan"}
@@ -423,6 +486,35 @@ export function ClientPlan({
               </div>
             </div>
 
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-900 leading-relaxed">
+              Tu plan actual tiene <strong>{remainingDays} día(s) restantes</strong> y está cubierto hasta el <strong>{formatDate(subscription?.fechaProximoPago)}</strong>. Al pagar, el nuevo plan se activará de inmediato, estos días se perderán y tu próxima renovación será el <strong>{nextCycleDate}</strong>.
+            </div>
+
+            <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-200 mb-5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-700">Tarjeta de crédito / débito</span>
+                <span className="text-[10px] font-bold text-lime-700 bg-lime-100 px-2 py-0.5 rounded-full">Simulación</span>
+              </div>
+              <input
+                aria-label="Número de tarjeta"
+                value={cardData.numero}
+                onChange={e => setCardData({ ...cardData, numero: e.target.value })}
+                className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-xs focus:border-lime-500 focus:outline-none focus:ring-2 focus:ring-lime-200"
+                placeholder="Número de tarjeta"
+              />
+              <input
+                aria-label="Nombre del titular"
+                value={cardData.titular}
+                onChange={e => setCardData({ ...cardData, titular: e.target.value })}
+                className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-xs focus:border-lime-500 focus:outline-none focus:ring-2 focus:ring-lime-200"
+                placeholder="Nombre del titular"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <input aria-label="Vencimiento" value={cardData.exp} onChange={e => setCardData({ ...cardData, exp: e.target.value })} className="rounded-xl border border-gray-300 px-3 py-2.5 text-xs focus:border-lime-500 focus:outline-none focus:ring-2 focus:ring-lime-200" placeholder="MM/AA" />
+                <input aria-label="CVV" value={cardData.cvv} onChange={e => setCardData({ ...cardData, cvv: e.target.value })} className="rounded-xl border border-gray-300 px-3 py-2.5 text-xs focus:border-lime-500 focus:outline-none focus:ring-2 focus:ring-lime-200" placeholder="CVV" />
+              </div>
+            </div>
+
             <div className="flex gap-3">
               <button onClick={() => setSelectedPlanForUpgrade(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
                 Cancelar
@@ -432,7 +524,7 @@ export function ClientPlan({
                 onClick={() => handleConfirmPlanChange(selectedPlanForUpgrade)}
                 className="flex-1 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-bold rounded-xl text-xs transition-colors shadow-sm disabled:opacity-50"
               >
-                {loadingSub ? "Procesando..." : "Confirmar cambio"}
+                {loadingSub ? "Procesando pago..." : `Pagar ${selectedPlanForUpgrade.precio} y cambiar`}
               </button>
             </div>
           </div>

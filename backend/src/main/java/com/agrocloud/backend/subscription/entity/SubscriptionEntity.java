@@ -57,6 +57,13 @@ public class SubscriptionEntity {
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
+    @Builder.Default
+    @Column(name = "cancel_at_period_end", nullable = false)
+    private Boolean cancelAtPeriodEnd = false;
+
+    @Column(name = "cancellation_date")
+    private LocalDate cancellationDate;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -104,6 +111,12 @@ public class SubscriptionEntity {
 
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
+
+    public Boolean getCancelAtPeriodEnd() { return cancelAtPeriodEnd; }
+    public void setCancelAtPeriodEnd(Boolean cancelAtPeriodEnd) { this.cancelAtPeriodEnd = cancelAtPeriodEnd; }
+
+    public LocalDate getCancellationDate() { return cancellationDate; }
+    public void setCancellationDate(LocalDate cancellationDate) { this.cancellationDate = cancellationDate; }
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
