@@ -5,6 +5,8 @@ export type RoleType = "admin" | "soporte" | "cliente";
 
 export interface NotificationItem {
   id: string;
+  tipo: string;
+  recursoId?: string;
   titulo: string;
   descripcion: string;
   tiempo: string;
@@ -17,12 +19,15 @@ interface ApiNotification {
   tipo: string;
   titulo: string;
   mensaje: string;
+  recursoId?: string;
   fecha: string;
   leida: boolean;
 }
 
 const toItem = (notification: ApiNotification): NotificationItem => ({
   id: notification.id,
+  tipo: notification.tipo,
+  recursoId: notification.recursoId,
   titulo: notification.titulo,
   descripcion: notification.mensaje,
   tiempo: new Date(notification.fecha).toLocaleString("es-GT"),
