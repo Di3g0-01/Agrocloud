@@ -17,16 +17,23 @@ export function GlobalSearchModal({
   onNavigate,
   placeholder = "Buscar en todo el sistema...",
   role,
+  isDark,
 }: {
   query: string;
   onQueryChange: (q: string) => void;
   onNavigate?: (targetPage: string) => void;
   placeholder?: string;
   role?: "admin" | "soporte" | "cliente";
+  isDark?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Si no se provee isDark, inferir explícitamente según el almacenamiento de tema de AgroCloud
+  const isDarkTheme = isDark !== undefined
+    ? isDark
+    : (typeof window !== "undefined" && (localStorage.getItem("agrocloud_theme_admin") === "dark" || localStorage.getItem("agrocloud_theme_support") === "dark" || localStorage.getItem("agrocloud_theme") === "dark"));
 
   useEffect(() => {
     if (query.trim().length > 0) {
@@ -199,7 +206,9 @@ export function GlobalSearchModal({
     <div className="relative flex-1 max-w-md" ref={containerRef}>
       <div className="relative">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors ${
+            isDarkTheme ? "text-slate-400" : "text-gray-400"
+          }`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -219,7 +228,11 @@ export function GlobalSearchModal({
             if (query.trim().length > 0) setIsOpen(true);
           }}
           placeholder={placeholder}
-          className="pl-9 pr-8 py-1.5 border border-gray-200 dark:border-slate-700 rounded-lg text-sm bg-gray-50 dark:bg-slate-800 text-gray-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-lime-400 w-full transition-all"
+          className={`pl-9 pr-8 py-1.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lime-400 w-full transition-all ${
+            isDarkTheme
+              ? "!bg-slate-800 !border-slate-700 !text-slate-100 placeholder-slate-400"
+              : "!bg-gray-50 !border-gray-200 !text-gray-900 placeholder-gray-400"
+          }`}
         />
         {query && (
           <button
@@ -229,7 +242,9 @@ export function GlobalSearchModal({
               setIsOpen(false);
               inputRef.current?.focus();
             }}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 text-sm leading-none"
+            className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-sm leading-none transition-colors ${
+              isDarkTheme ? "text-slate-400 hover:text-slate-200" : "text-gray-400 hover:text-gray-600"
+            }`}
           >
             ×
           </button>
@@ -237,16 +252,32 @@ export function GlobalSearchModal({
       </div>
 
       {isOpen && query.trim().length > 0 && (
-        <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-2xl z-50 max-h-96 overflow-y-auto divide-y divide-gray-50 dark:divide-slate-800">
-          <div className="p-3 bg-gray-50/70 dark:bg-slate-800/70 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+        <div
+          className={`absolute left-0 right-0 mt-2 rounded-2xl shadow-2xl z-50 max-h-96 overflow-y-auto divide-y border ${
+            isDarkTheme
+              ? "bg-slate-900 border-slate-800 divide-slate-800 text-slate-100"
+              : "bg-white border-gray-200 divide-gray-100 text-gray-900"
+          }`}
+        >
+          <div
+            className={`p-3 border-b flex items-center justify-between ${
+              isDarkTheme ? "bg-slate-800/80 border-slate-800" : "bg-gray-50/90 border-gray-100"
+            }`}
+          >
+            <span
+              className={`text-xs font-semibold uppercase tracking-wider ${
+                isDarkTheme ? "text-slate-300" : "text-gray-500"
+              }`}
+            >
               Resultados en la plataforma ({results.length})
             </span>
-            <span className="text-[10px] text-gray-400">Presiona para ir a la sección</span>
+            <span className={`text-[10px] ${isDarkTheme ? "text-slate-400" : "text-gray-400"}`}>
+              Presiona para ir a la sección
+            </span>
           </div>
 
           {results.length === 0 ? (
-            <div className="p-6 text-center text-xs text-gray-400">
+            <div className={`p-6 text-center text-xs ${isDarkTheme ? "text-slate-400" : "text-gray-400"}`}>
               No se encontraron coincidencias para &quot;{query}&quot;
             </div>
           ) : (
@@ -258,21 +289,41 @@ export function GlobalSearchModal({
                   e.preventDefault();
                 }}
                 onClick={() => handleSelectResult(item)}
-                className="p-3 hover:bg-lime-50/50 dark:hover:bg-lime-950/20 transition-colors cursor-pointer flex items-center justify-between gap-3 group"
+                className={`p-3 transition-colors cursor-pointer flex items-center justify-between gap-3 group ${
+                  isDarkTheme ? "hover:bg-slate-800/80" : "hover:bg-lime-50/60"
+                }`}
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-xs font-medium text-gray-900 dark:text-slate-100 group-hover:text-lime-700 dark:group-hover:text-lime-400 transition-colors truncate">
+                    <span
+                      className={`text-xs font-medium truncate transition-colors ${
+                        isDarkTheme
+                          ? "text-slate-100 group-hover:text-lime-400"
+                          : "text-gray-900 group-hover:text-lime-700"
+                      }`}
+                    >
                       {item.title}
                     </span>
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 shrink-0">
+                    <span
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-semibold shrink-0 ${
+                        isDarkTheme
+                          ? "bg-slate-800 text-slate-300 border border-slate-700"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
                       {item.category}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 truncate">{item.subtitle}</p>
+                  <p className={`text-xs truncate ${isDarkTheme ? "text-slate-400" : "text-gray-500"}`}>
+                    {item.subtitle}
+                  </p>
                 </div>
                 <svg
-                  className="w-4 h-4 text-gray-300 group-hover:text-lime-600 shrink-0"
+                  className={`w-4 h-4 shrink-0 transition-colors ${
+                    isDarkTheme
+                      ? "text-slate-500 group-hover:text-lime-400"
+                      : "text-gray-300 group-hover:text-lime-600"
+                  }`}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"

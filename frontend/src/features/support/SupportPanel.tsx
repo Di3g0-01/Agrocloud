@@ -100,9 +100,10 @@ export function SupportPanel({ user, onLogout }: { user: User; onLogout: () => v
               onQueryChange={setSearchQuery}
               onNavigate={(targetPage) => setPage(targetPage as SupportPage)}
               placeholder="Buscar en todo el sistema..."
+              isDark={isDark}
             />
           </div>
-          <NotificationMenu role="soporte" onNavigate={(targetPage) => setPage(targetPage as SupportPage)} activePage={page} />
+          <NotificationMenu role="soporte" onNavigate={(targetPage) => setPage(targetPage as SupportPage)} activePage={page} isDark={isDark} />
           <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-52"><div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials}</div><div className="min-w-0"><p className={`text-xs font-medium leading-none truncate ${isDark ? "text-slate-200" : "text-gray-800"}`}>{user.nombre}</p><p className={`text-[10px] ${isDark ? "text-slate-400" : "text-gray-400"}`}>Soporte</p></div></div>
         </header>
         <main className={`flex-1 overflow-auto ${isDark ? "bg-slate-950" : "bg-gray-50"}`}>

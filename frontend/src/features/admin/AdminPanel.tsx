@@ -62,9 +62,10 @@ export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: Use
               onQueryChange={setSearchQuery}
               onNavigate={(targetPage) => navigate(targetPage as AdminPage)}
               placeholder="Buscar en todo el sistema..."
+              isDark={isDark}
             />
           </div>
-          <NotificationMenu role="admin" onNavigate={(targetPage) => navigate(targetPage as AdminPage)} activePage={page} />
+          <NotificationMenu role="admin" onNavigate={(targetPage) => navigate(targetPage as AdminPage)} activePage={page} isDark={isDark} />
           <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-52">
             <div className="w-7 h-7 rounded-full bg-green-700 flex items-center justify-center text-white text-xs font-semibold shrink-0">{userInitials(user.nombre)}</div>
             <div className="min-w-0"><p className={`text-xs font-medium leading-none truncate ${isDark ? "text-slate-200" : "text-gray-800"}`}>{user.nombre}</p><p className={`text-[10px] ${isDark ? "text-slate-400" : "text-gray-400"}`}>Administrador</p></div>
