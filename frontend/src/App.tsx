@@ -7,8 +7,10 @@ import { Login } from "./features/auth/Login";
 import { AdminPanel } from "./features/admin/AdminPanel";
 import { ClientEntry } from "./features/auth/ClientEntry";
 import { SupportPanel } from "./features/support/SupportPanel";
+import { LogoSplashAnimation } from "./components/ui/LogoSplashAnimation";
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [emailLink, setEmailLink] = useState(readEmailLink);
   const [role, setRole] = useState<Role>(emailLink ? "login" : "landing");
   const [user, setUser] = useState<User | null>(null);
@@ -72,11 +74,20 @@ export default function App() {
     setRole("landing");
   };
 
-  if (restoring) return <div className="min-h-screen grid place-items-center text-sm text-gray-500">Cargando tu cuenta...</div>;
-  if (role === "landing") return <Landing onLogin={() => openAuth("login")} onRegister={() => openAuth("register")} />;
-  if (role === "login") return <Login key={emailLink ? emailLink.action + emailLink.token : "access"} initialMode={authMode} emailLink={emailLink} onAuthenticated={handleAuthenticated} onCancel={handleCancelAuth} />;
-  if (role === "admin" && user) return <AdminPanel user={user} onLogout={handleLogout} />;
-  if (role === "cliente" && user) return <ClientEntry key={user.id} user={user} onLogout={handleLogout} />;
-  if (role === "soporte" && user) return <SupportPanel user={user} onLogout={handleLogout} />;
-  return <Landing onLogin={() => openAuth("login")} onRegister={() => openAuth("register")} />;
+  const renderMainContent = () => {
+    if (restoring) return <div className="min-h-screen grid place-items-center text-sm text-gray-500">Cargando tu cuenta...</div>;
+    if (role === "landing") return <Landing onLogin={() => openAuth("login")} onRegister={() => openAuth("register")} />;
+    if (role === "login") return <Login key={emailLink ? emailLink.action + emailLink.token : "access"} initialMode={authMode} emailLink={emailLink} onAuthenticated={handleAuthenticated} onCancel={handleCancelAuth} />;
+    if (role === "admin" && user) return <AdminPanel user={user} onLogout={handleLogout} />;
+    if (role === "cliente" && user) return <ClientEntry key={user.id} user={user} onLogout={handleLogout} />;
+    if (role === "soporte" && user) return <SupportPanel user={user} onLogout={handleLogout} />;
+    return <Landing onLogin={() => openAuth("login")} onRegister={() => openAuth("register")} />;
+  };
+
+  return (
+    <>
+      {showSplash && <LogoSplashAnimation onFinish={() => setShowSplash(false)} />}
+      {renderMainContent()}
+    </>
+  );
 }

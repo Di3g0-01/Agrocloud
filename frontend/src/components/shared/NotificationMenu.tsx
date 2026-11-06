@@ -1,12 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNotifications } from "./useNotifications";
 import type { NotificationItem, RoleType } from "./useNotifications";
 
-export function NotificationMenu({ role }: { role: RoleType }) {
+export function NotificationMenu({ 
+  role, 
+  onNavigate,
+  activePage,
+}: { 
+  role: RoleType; 
+  onNavigate?: (page: string) => void;
+  activePage?: string;
+}) {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { items, error, markAllRead, markSingleRead } = useNotifications(role);
 
   const unreadCount = items.filter((i) => !i.leida).length;
+
+  // Si el usuario cambia de página/sección en el sistema, cerramos automáticamente el menú
+  useEffect(() => {
+    setOpen(false);
+  }, [activePage]);
+
+  // Cerrar al hacer clic afuera del contenedor o presionar Escape
+  useEffect(() => {
+    if (!open) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
 
   const getBadgeColor = (cat: NotificationItem["categoria"]) => {
     switch (cat) {
@@ -26,11 +64,62 @@ export function NotificationMenu({ role }: { role: RoleType }) {
     }
   };
 
+  /**
+   * Resuelve a qué vista navegar según el tipo o categoría de la notificación y el rol del usuario
+   */
+  const resolveTargetPage = (item: NotificationItem): string => {
+    const t = (item.tipo || "").toUpperCase();
+    const c = (item.categoria || "").toLowerCase();
+
+    // Incidencias / Soporte / Tickets
+    if (t.startsWith("TICKET_") || c === "soporte" || c === "ticket" || c === "resolucion") {
+      return role === "cliente" ? "soporte" : "incidencias";
+    }
+
+    // Instancias
+    if (t.startsWith("INSTANCIA_") || c === "fallo") {
+      return "instancias";
+    }
+
+    // Suscripciones y Planes
+    if (t.startsWith("SUSCRIPCION_") || c === "cancelacion" || c === "activacion") {
+      return role === "cliente" ? "plan" : "suscripciones";
+    }
+
+    // Pagos
+    if (t.startsWith("PAGO_") || c === "pago" || c === "morosidad") {
+      return "pagos";
+    }
+
+    // Clientes
+    if (c === "cliente") {
+      return role === "admin" ? "clientes" : "dashboard";
+    }
+
+    return "dashboard";
+  };
+
+  const handleNotificationClick = async (item: NotificationItem) => {
+    // 1. Marcar como leída
+    if (!item.leida) {
+      void markSingleRead(item.id);
+    }
+
+    // 2. Cerrar el menú de notificaciones
+    setOpen(false);
+
+    // 3. Redirigir a la vista de donde proviene la notificación
+    if (onNavigate) {
+      const targetPage = resolveTargetPage(item);
+      onNavigate(targetPage);
+    }
+  };
+
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors relative"
+        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors relative"
         aria-label="Abrir notificaciones"
         title="Notificaciones"
       >
@@ -50,10 +139,10 @@ export function NotificationMenu({ role }: { role: RoleType }) {
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} aria-hidden="true" />
-          <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-gray-100 rounded-2xl shadow-xl z-40 overflow-hidden">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-xl z-40 overflow-hidden">
+            <div className="p-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-gray-50/50 dark:bg-slate-800/50">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-gray-900 text-sm">Notificaciones</h3>
+                <h3 className="font-semibold text-gray-900 dark:text-slate-100 text-sm">Notificaciones</h3>
                 {unreadCount > 0 && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-lime-400 text-gray-900">
                     {unreadCount} nuevas
@@ -63,14 +152,14 @@ export function NotificationMenu({ role }: { role: RoleType }) {
               {unreadCount > 0 && (
                 <button
                   onClick={() => void markAllRead()}
-                  className="text-[11px] font-medium text-lime-700 hover:text-lime-800 transition-colors"
+                  className="text-[11px] font-medium text-lime-700 dark:text-lime-400 hover:text-lime-800 transition-colors"
                 >
                   Marcar leídas
                 </button>
               )}
             </div>
 
-            <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+            <div className="max-h-80 overflow-y-auto divide-y divide-gray-50 dark:divide-slate-800">
               {error && <p role="alert" className="p-3 text-xs text-red-600">{error}</p>}
               {items.length === 0 ? (
                 <p className="text-xs text-gray-400 p-6 text-center">No tienes notificaciones por el momento.</p>
@@ -78,25 +167,30 @@ export function NotificationMenu({ role }: { role: RoleType }) {
                 items.map((item) => (
                   <div
                     key={item.id}
-                    onClick={() => void markSingleRead(item.id)}
-                    className={`p-3.5 hover:bg-gray-50 transition-colors cursor-pointer flex gap-3 items-start ${
-                      !item.leida ? "bg-lime-50/30" : ""
+                    onClick={() => void handleNotificationClick(item)}
+                    className={`p-3.5 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition-colors cursor-pointer flex gap-3 items-start group ${
+                      !item.leida ? "bg-lime-50/30 dark:bg-lime-950/20" : ""
                     }`}
                   >
                     <div
-                      className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-                        !item.leida ? "bg-lime-500" : "bg-gray-300"
+                      className={`w-2 h-2 rounded-full mt-1.5 shrink-0 transition-transform group-hover:scale-125 ${
+                        !item.leida ? "bg-lime-500" : "bg-gray-300 dark:bg-slate-700"
                       }`}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1 gap-2">
-                        <p className="text-xs font-semibold text-gray-900 truncate">{item.titulo}</p>
+                        <p className="text-xs font-semibold text-gray-900 dark:text-slate-100 group-hover:text-lime-700 dark:group-hover:text-lime-400 transition-colors truncate">
+                          {item.titulo}
+                        </p>
                         <span className="text-[10px] text-gray-400 whitespace-nowrap">{item.tiempo}</span>
                       </div>
-                      <p className="text-xs text-gray-600 leading-snug">{item.descripcion}</p>
-                      <div className="mt-2">
+                      <p className="text-xs text-gray-600 dark:text-slate-300 leading-snug">{item.descripcion}</p>
+                      <div className="mt-2 flex items-center justify-between">
                         <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-medium border ${getBadgeColor(item.categoria)}`}>
                           {item.categoria.toUpperCase()}
+                        </span>
+                        <span className="text-[10px] text-lime-700 dark:text-lime-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                          Ver detalles →
                         </span>
                       </div>
                     </div>
