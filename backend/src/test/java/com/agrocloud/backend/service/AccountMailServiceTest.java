@@ -36,6 +36,25 @@ class AccountMailServiceTest {
     }
 
     @Test
+    void sendsBrevoRequestUsingTemplateWhenConfigured() {
+        JavaMailSender smtp = mock(JavaMailSender.class);
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        AccountMailService service = new AccountMailService(smtp, "AgroCloud <student@gmail.com>",
+                "https://agrocloud-three.vercel.app", "brevo", "test-key", 1L, 2L, builder);
+        server.expect(requestTo("https://api.brevo.com/v3/smtp/email"))
+                .andExpect(method(HttpMethod.POST)).andExpect(header("api-key", "test-key"))
+                .andExpect(jsonPath("$.to[0].email").value("recipient@example.test"))
+                .andExpect(jsonPath("$.templateId").value(1))
+                .andExpect(jsonPath("$.params.url").value(org.hamcrest.Matchers.containsString("#verify-email=")))
+                .andExpect(jsonPath("$.params.token").value("a".repeat(43)))
+                .andRespond(withStatus(HttpStatus.CREATED));
+        service.deliver(new AccountMail("recipient@example.test", "verify-email", "a".repeat(43)));
+        server.verify();
+        verifyNoInteractions(smtp);
+    }
+
+    @Test
     void sendsVerificationAndRecoveryLinksToConfiguredFrontend() {
         JavaMailSender sender = mock(JavaMailSender.class);
         AccountMailService service = new AccountMailService(sender, "AgroCloud <no-reply@example.test>",
