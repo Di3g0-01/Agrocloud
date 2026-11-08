@@ -13,6 +13,8 @@ export function AdminClients({ isDark, onNavigate, onEditClient }: { isDark?: bo
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminClient | null>(null);
   const [tab, setTab] = useState("Información");
+  const [clientToSuspend, setClientToSuspend] = useState<AdminClient | null>(null);
+  const [suspending, setSuspending] = useState(false);
   const [clientsList, setClientsList] = useState<AdminClient[]>([]);
   const [rawUsers, setRawUsers] = useState<AdminUser[]>([]);
   const [dbInstances, setDbInstances] = useState<DbInstance[]>([]);
@@ -66,13 +68,30 @@ export function AdminClients({ isDark, onNavigate, onEditClient }: { isDark?: bo
     if (action === "Ver suscripción") { onNavigate?.('suscripciones'); return; }
     if (action === "Ver pagos") { onNavigate?.('pagos'); return; }
     if (action === "Suspender") {
-      const user = rawUsers.find(u => u.id === client.id);
-      if (!user || !window.confirm(`¿Suspender a ${client.nombre}?`)) return;
-      try {
-        await updateAdminUser(user.id, { organizationName: user.organizationName, contactName: user.contactName || '',
-          email: user.email, phone: user.phone || '', role: user.role, status: 'SUSPENDIDO' });
-        setClientsList(prev => prev.map(c => c.id === client.id ? { ...c, estado: 'Inactivo' } : c));
-      } catch { setError("No se pudo suspender al cliente."); }
+      setClientToSuspend(client);
+    }
+  };
+
+  const handleExecuteSuspend = async (client: AdminClient) => {
+    const user = rawUsers.find(u => u.id === client.id);
+    if (!user) return;
+    setSuspending(true);
+    setError("");
+    try {
+      await updateAdminUser(user.id, {
+        organizationName: user.organizationName,
+        contactName: user.contactName || '',
+        email: user.email,
+        phone: user.phone || '',
+        role: user.role,
+        status: 'SUSPENDIDO'
+      });
+      setClientsList(prev => prev.map(c => c.id === client.id ? { ...c, estado: 'Inactivo' } : c));
+      setClientToSuspend(null);
+    } catch {
+      setError("No se pudo suspender al cliente.");
+    } finally {
+      setSuspending(false);
     }
   };
 
@@ -248,6 +267,41 @@ export function AdminClients({ isDark, onNavigate, onEditClient }: { isDark?: bo
         </table>
         <div className={`px-5 py-3 text-xs border-t ${isDark ? "border-slate-800 text-slate-400" : "border-gray-50 text-gray-400"}`}>{filtered.length} cliente{filtered.length !== 1 ? "s" : ""}</div>
       </div>
+
+      {clientToSuspend && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={e => { if (e.target === e.currentTarget && !suspending) setClientToSuspend(null); }}>
+          <div className={`rounded-2xl w-full max-w-sm shadow-2xl p-6 ${isDark ? "bg-slate-900 border border-slate-800" : "bg-white"}`} role="dialog" aria-modal="true" aria-label="Confirmar suspensión">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className={`font-semibold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Suspender cliente</h2>
+            <p className={`text-sm mb-1 ${isDark ? "text-slate-300" : "text-gray-600"}`}>
+              {"¿Seguro que deseas suspender a"} <span className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{clientToSuspend.nombre}</span>{"?"}
+            </p>
+            <p className="text-xs text-amber-600 mb-6">El cliente perderá el acceso temporalmente a sus instancias hasta que sea reactivado.</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={suspending}
+                onClick={() => setClientToSuspend(null)}
+                className={`flex-1 py-2.5 border rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={suspending}
+                onClick={() => handleExecuteSuspend(clientToSuspend)}
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {suspending ? "Suspendiendo..." : "Suspender"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,6 +11,8 @@ export function AdminTemplates({ isDark }: { isDark?: boolean }) {
   const [tab, setTab] = useState("Resumen");
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<AdminTemplate | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [templatesList, setTemplatesList] = useState<AdminTemplate[]>([]);
 
@@ -64,13 +66,12 @@ export function AdminTemplates({ isDark }: { isDark?: boolean }) {
       URL.revokeObjectURL(url);
       return;
     }
-    if (action === "Eliminar" && !window.confirm(`¿Eliminar la plantilla ${p.nombre}?`)) return;
+    if (action === "Eliminar") {
+      setDeleteConfirm(p);
+      return;
+    }
     try {
-      if (action === "Eliminar") {
-        await deleteTemplateApi(p.id);
-        setTemplatesList(prev => prev.filter(item => item.id !== p.id));
-        setDetail(null);
-      } else if (action === "Duplicar") {
+      if (action === "Duplicar") {
         const created = await createTemplateApi({ nombre: `${p.nombre} (copia)`, descripcion: p.descripcion, version: p.version, estado: "Inactiva", schema: p.schema });
         setTemplatesList(prev => [created, ...prev]);
       } else if (action === "Desactivar" || action === "Activar") {
@@ -79,6 +80,21 @@ export function AdminTemplates({ isDark }: { isDark?: boolean }) {
         setDetail(updated);
       }
     } catch { setError("No se pudo completar la acción. Revisa la conexión o si la plantilla está en uso."); }
+  };
+
+  const handleDeleteTemplate = async (p: AdminTemplate) => {
+    setDeleting(true);
+    setError("");
+    try {
+      await deleteTemplateApi(p.id);
+      setTemplatesList(prev => prev.filter(item => item.id !== p.id));
+      if (detail?.id === p.id) setDetail(null);
+      setDeleteConfirm(null);
+    } catch {
+      setError("No se pudo eliminar la plantilla. Revisa si está asociada a instancias activas.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleCreateTemplate = async (e: React.FormEvent) => {
@@ -199,6 +215,40 @@ export function AdminTemplates({ isDark }: { isDark?: boolean }) {
             )}
           </div>
         </div>
+        {deleteConfirm && (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={e => { if (e.target === e.currentTarget && !deleting) setDeleteConfirm(null); }}>
+            <div className={`rounded-2xl w-full max-w-sm shadow-2xl p-6 ${isDark ? "bg-slate-900 border border-slate-800" : "bg-white"}`} role="dialog" aria-modal="true" aria-label="Confirmar eliminación">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h2 className={`font-semibold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Eliminar plantilla</h2>
+              <p className={`text-sm mb-1 ${isDark ? "text-slate-300" : "text-gray-500"}`}>
+                {"¿Seguro que deseas eliminar la plantilla"} <span className={`font-mono font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{deleteConfirm.nombre}</span>{"?"}
+              </p>
+              <p className="text-xs text-red-400 mb-6">Esta acción es irreversible y no se podrá recuperar el esquema asociado.</p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => setDeleteConfirm(null)}
+                  className={`flex-1 py-2.5 border rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => handleDeleteTemplate(deleteConfirm)}
+                  className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {deleting ? "Eliminando..." : "Eliminar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -334,6 +384,41 @@ export function AdminTemplates({ isDark }: { isDark?: boolean }) {
               <button type="submit" className="flex-1 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg text-sm font-semibold transition-colors">{editingId ? "Guardar cambios" : "Crear plantilla"}</button>
             </div>
           </form>
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={e => { if (e.target === e.currentTarget && !deleting) setDeleteConfirm(null); }}>
+          <div className={`rounded-2xl w-full max-w-sm shadow-2xl p-6 ${isDark ? "bg-slate-900 border border-slate-800" : "bg-white"}`} role="dialog" aria-modal="true" aria-label="Confirmar eliminación">
+            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h2 className={`font-semibold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>Eliminar plantilla</h2>
+            <p className={`text-sm mb-1 ${isDark ? "text-slate-300" : "text-gray-500"}`}>
+              {"¿Seguro que deseas eliminar la plantilla"} <span className={`font-mono font-semibold ${isDark ? "text-white" : "text-gray-900"}`}>{deleteConfirm.nombre}</span>{"?"}
+            </p>
+            <p className="text-xs text-red-400 mb-6">Esta acción es irreversible y no se podrá recuperar el esquema asociado.</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeleteConfirm(null)}
+                className={`flex-1 py-2.5 border rounded-lg text-sm font-medium transition-colors cursor-pointer disabled:opacity-50 ${isDark ? "border-slate-700 text-slate-300 hover:bg-slate-800" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => handleDeleteTemplate(deleteConfirm)}
+                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {deleting ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

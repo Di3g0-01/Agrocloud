@@ -25,7 +25,24 @@ export function SupportPanel({ user, onLogout }: { user: User; onLogout: () => v
   const [page, setPage] = useState<SupportPage>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setThemeState] = useState<"light" | "dark">(() => {
+    try {
+      const saved = localStorage.getItem("agrocloud_theme_support") || localStorage.getItem("agrocloud_theme");
+      return saved === "dark" || saved === "light" ? saved : "light";
+    } catch {
+      return "light";
+    }
+  });
+
+  const setTheme = (newTheme: "light" | "dark") => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem("agrocloud_theme_support", newTheme);
+      localStorage.setItem("agrocloud_theme", newTheme);
+    } catch {
+      // noop
+    }
+  };
 
   const pageLabels: Record<SupportPage, string> = { dashboard: "Panel de Soporte", incidencias: "Incidencias", instancias: "Instancias", actividad: "Actividad", documentacion: "Documentación", configuracion: "Configuración" };
   const navigate = (p: SupportPage) => { setPage(p); setSidebarOpen(false); };
@@ -83,9 +100,10 @@ export function SupportPanel({ user, onLogout }: { user: User; onLogout: () => v
               onQueryChange={setSearchQuery}
               onNavigate={(targetPage) => setPage(targetPage as SupportPage)}
               placeholder="Buscar en todo el sistema..."
+              isDark={isDark}
             />
           </div>
-          <NotificationMenu role="soporte" />
+          <NotificationMenu role="soporte" onNavigate={(targetPage) => setPage(targetPage as SupportPage)} activePage={page} isDark={isDark} />
           <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-52"><div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials}</div><div className="min-w-0"><p className={`text-xs font-medium leading-none truncate ${isDark ? "text-slate-200" : "text-gray-800"}`}>{user.nombre}</p><p className={`text-[10px] ${isDark ? "text-slate-400" : "text-gray-400"}`}>Soporte</p></div></div>
         </header>
         <main className={`flex-1 overflow-auto ${isDark ? "bg-slate-950" : "bg-gray-50"}`}>
@@ -100,4 +118,3 @@ export function SupportPanel({ user, onLogout }: { user: User; onLogout: () => v
     </div>
   );
 }
-

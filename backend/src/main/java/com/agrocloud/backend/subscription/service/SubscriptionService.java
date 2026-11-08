@@ -10,13 +10,17 @@ import java.util.UUID;
 
 public interface SubscriptionService {
     SubscriptionResponse createSubscription(UUID userId, CreateSubscriptionRequest request);
+    SubscriptionResponse preparePlanChange(UUID userId, CreateSubscriptionRequest request);
+    SubscriptionResponse confirmPlanChange(UUID userId, UUID subscriptionId);
     SubscriptionResponse getActiveSubscription(UUID userId);
     List<SubscriptionResponse> getUserSubscriptions(UUID userId);
     List<SubscriptionResponse> getAllSubscriptions();
     SubscriptionResponse updateSubscriptionStatus(UUID subscriptionId, SubscriptionStatus status);
     SubscriptionResponse renovarSubscription(UUID subscriptionId);
     SubscriptionResponse suspenderSubscription(UUID subscriptionId);
-    SubscriptionResponse cancelarSubscription(UUID subscriptionId);
+    SubscriptionResponse cancelarSubscription(UUID userId, UUID subscriptionId);
+    SubscriptionResponse reactivarSubscription(UUID userId, UUID subscriptionId);
+    void processScheduledCancellations();
     Optional<SubscriptionEntity> findActiveSubscriptionEntity(UUID userId);
     SubscriptionEntity ensureActiveEnterpriseSubscription(UUID userId);
 }

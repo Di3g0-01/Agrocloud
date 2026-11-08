@@ -74,6 +74,7 @@ export function IncidentComments({
 
   // Delete State
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletePromptId, setDeletePromptId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -125,13 +126,17 @@ export function IncidentComments({
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este comentario?")) return;
+  const handleDelete = (id: string) => {
+    setDeletePromptId(id);
+  };
+
+  const handleExecuteDelete = async (id: string) => {
     setDeletingId(id);
     try {
       await deleteComment(id);
       setComments(current => current.filter(c => c.id !== id));
       setError("");
+      setDeletePromptId(null);
     } catch {
       setError("No se pudo eliminar el comentario.");
     } finally {
@@ -354,6 +359,39 @@ export function IncidentComments({
             >
               {sending ? "Enviando..." : "Enviar mensaje"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {deletePromptId && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={e => { if (e.target === e.currentTarget && !deletingId) setDeletePromptId(null); }}>
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6" role="dialog" aria-modal="true" aria-label="Confirmar eliminación">
+            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h2 className="font-semibold text-gray-900 mb-2">Eliminar comentario</h2>
+            <p className="text-sm text-gray-600 mb-2">¿Seguro que deseas eliminar este comentario?</p>
+            <p className="text-xs text-red-400 mb-6">Esta acción es irreversible y no se podrá recuperar el mensaje.</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={Boolean(deletingId)}
+                onClick={() => setDeletePromptId(null)}
+                className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 font-medium transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={Boolean(deletingId)}
+                onClick={() => handleExecuteDelete(deletePromptId)}
+                className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {deletingId ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
           </div>
         </div>
       )}

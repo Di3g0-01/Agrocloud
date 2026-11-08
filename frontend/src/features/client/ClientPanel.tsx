@@ -125,9 +125,10 @@ export function ClientPanel({ user, onLogout }: { user: User; onLogout: () => vo
               onNavigate={(targetPage) => setPage(targetPage as ClientPage)}
               placeholder="Buscar en todo el sistema..."
               role="cliente"
+              isDark={false}
             />
           </div>
-          <NotificationMenu role="cliente" />
+          <NotificationMenu role="cliente" onNavigate={(targetPage) => setPage(targetPage as ClientPage)} activePage={page} isDark={false} />
           <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-52">
             <div className="w-7 h-7 rounded-full bg-lime-600 flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials}</div>
             <div className="min-w-0"><p className="text-xs font-medium text-gray-800 leading-none truncate">{user.nombre}</p><p className="text-[10px] text-gray-400">Cliente</p></div>

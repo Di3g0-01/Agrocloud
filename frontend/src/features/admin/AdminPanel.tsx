@@ -21,7 +21,25 @@ export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: Use
   const [page, setPage] = useState<AdminPage>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setThemeState] = useState<"light" | "dark">(() => {
+    try {
+      const saved = localStorage.getItem("agrocloud_theme_admin") || localStorage.getItem("agrocloud_theme");
+      return saved === "dark" || saved === "light" ? saved : "light";
+    } catch {
+      return "light";
+    }
+  });
+
+  const setTheme = (newTheme: "light" | "dark") => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem("agrocloud_theme_admin", newTheme);
+      localStorage.setItem("agrocloud_theme", newTheme);
+    } catch {
+      // noop
+    }
+  };
+
   const [editClientId, setEditClientId] = useState<string | null>(null);
   const navigate = (next: AdminPage) => { if (next !== 'usuarios') setEditClientId(null); setPage(next); };
 
@@ -44,9 +62,10 @@ export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: Use
               onQueryChange={setSearchQuery}
               onNavigate={(targetPage) => navigate(targetPage as AdminPage)}
               placeholder="Buscar en todo el sistema..."
+              isDark={isDark}
             />
           </div>
-          <NotificationMenu role="admin" />
+          <NotificationMenu role="admin" onNavigate={(targetPage) => navigate(targetPage as AdminPage)} activePage={page} isDark={isDark} />
           <div className="hidden sm:flex items-center gap-2 min-w-0 max-w-52">
             <div className="w-7 h-7 rounded-full bg-green-700 flex items-center justify-center text-white text-xs font-semibold shrink-0">{userInitials(user.nombre)}</div>
             <div className="min-w-0"><p className={`text-xs font-medium leading-none truncate ${isDark ? "text-slate-200" : "text-gray-800"}`}>{user.nombre}</p><p className={`text-[10px] ${isDark ? "text-slate-400" : "text-gray-400"}`}>Administrador</p></div>
@@ -69,4 +88,3 @@ export function AdminPanel({ onLogout, user }: { onLogout: () => void; user: Use
     </div>
   );
 }
-

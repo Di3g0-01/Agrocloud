@@ -10,14 +10,14 @@ import { InstanceDataExplorerModal } from "./InstanceDataExplorerModal";
 export function ClientInstanceStatusBadge({ s }: { s: ClientInstance["estado"] | string }) {
   const label =
     s === "active" || s === "Activa" || s === "OPERATIVA" || s === "Operativa" ? "Operativa"
-    : s === "revision" || s === "EN_REVISION" || s === "Reiniciando" || s === "En revisión" ? "En revisión"
-    : s === "suspended" || s === "SUSPENDIDA" || s === "Suspendida" ? "Suspendida"
-    : s === "terminated" || s === "DETENIDA" || s === "Detenida" || s === "Error" ? "Detenida"
-    : s;
+      : s === "revision" || s === "EN_REVISION" || s === "Reiniciando" || s === "En revisión" ? "En revisión"
+        : s === "suspended" || s === "SUSPENDIDA" || s === "Suspendida" ? "Suspendida"
+          : s === "terminated" || s === "DETENIDA" || s === "Detenida" || s === "Error" ? "Detenida"
+            : s;
   const cls = s === "Activa" || s === "active" || s === "OPERATIVA" || s === "Operativa" ? "bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium"
     : s === "Reiniciando" || s === "revision" || s === "EN_REVISION" || s === "En revisión" ? "bg-amber-50 text-amber-700 border border-amber-200 font-medium"
-    : s === "Suspendida" || s === "suspended" || s === "SUSPENDIDA" ? "bg-slate-100 text-slate-600 border border-slate-200 font-medium"
-    : "bg-rose-50 text-rose-600 border border-rose-200 font-medium";
+      : s === "Suspendida" || s === "suspended" || s === "SUSPENDIDA" ? "bg-slate-100 text-slate-600 border border-slate-200 font-medium"
+        : "bg-rose-50 text-rose-600 border border-rose-200 font-medium";
   return <span className={`px-2 py-0.5 rounded text-xs ${cls}`}>{label}</span>;
 }
 
@@ -200,6 +200,10 @@ export function ClientInstances({
   const [explorerModal, setExplorerModal] = useState<ClientInstance | null>(null);
   const [showPass, setShowPass] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<ClientInstance | null>(null);
+  const [restartPrompt, setRestartPrompt] = useState<ClientInstance | null>(null);
+  const [restarting, setRestarting] = useState(false);
+  const [restartSuccess, setRestartSuccess] = useState<ClientInstance | null>(null);
+  const [restartError, setRestartError] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [actionError, setActionError] = useState("");
 
@@ -244,12 +248,28 @@ export function ClientInstances({
     setShowCreate(false);
   };
 
-  const handleRestart = async (fullName: string, id?: string) => {
+  const handleOpenRestartPrompt = (inst: ClientInstance) => {
+    setRestartError("");
+    setRestartPrompt(inst);
+  };
+
+  const executeRestart = async (inst: ClientInstance) => {
+    const id = (inst as any).id;
     if (!id) return;
+    setRestarting(true);
+    setRestartError("");
     try {
       await restartInstance(id);
-      setInstancesList(prev => prev.map(inst => inst.id === id ? { ...inst, estado: "Activa" } : inst));
-    } catch { setActionError(`No se pudo reiniciar ${fullName}.`); }
+      setInstancesList(prev => prev.map(item => item.id === id ? { ...item, estado: "Activa" } : item));
+      setRestartPrompt(null);
+      setRestartSuccess({ ...inst, estado: "Activa" });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || `No se pudo reiniciar la instancia ${inst.nombre}.`;
+      setRestartError(msg);
+      setActionError(msg);
+    } finally {
+      setRestarting(false);
+    }
   };
 
   const handleDelete = async (itemName: string, id?: string) => {
@@ -278,7 +298,6 @@ export function ClientInstances({
   return (
     <div className="flex-1 overflow-auto bg-gray-50 p-4 lg:p-8">
       {actionError && <p role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{actionError}</p>}
-      {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Instancias</h1>
@@ -290,7 +309,6 @@ export function ClientInstances({
         </button>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Total instancias", value: `${instancesList.length} / ${CLIENT_PLAN.maxInstancias}`, sub: "Plan " + CLIENT_PLAN.nombre, icon: "M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4", color: "text-lime-600 bg-lime-50" },
@@ -311,7 +329,6 @@ export function ClientInstances({
         ))}
       </div>
 
-      {/* Toolbar */}
       <div className="flex items-center gap-3 mb-5 flex-wrap">
         <div className="relative max-w-xs flex-1">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -335,7 +352,6 @@ export function ClientInstances({
         </div>
       </div>
 
-      {/* Empty / no results */}
       {filtered.length === 0 && (
         <div className="bg-white border border-gray-100 rounded-xl p-16 flex flex-col items-center text-center">
           <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mb-4">
@@ -347,7 +363,6 @@ export function ClientInstances({
         </div>
       )}
 
-      {/* List view */}
       {view === "list" && filtered.length > 0 && (
         <div className="bg-white border border-gray-100 rounded-xl overflow-x-auto">
           <table className="min-w-max w-full text-sm">
@@ -389,7 +404,7 @@ export function ClientInstances({
                       </button>
                       <button onClick={() => setDrawer(inst)} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Detalles</button>
                       <button onClick={() => handleOpenCredModal(inst)} className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors">Credenciales</button>
-                      <button onClick={() => handleRestart(inst.nombre, (inst as any).id)} className="px-2 py-1 text-xs text-amber-600 hover:bg-amber-50 rounded transition-colors">Reiniciar</button>
+                      <button onClick={() => handleOpenRestartPrompt(inst)} className="px-2 py-1 text-xs text-amber-600 hover:bg-amber-50 rounded transition-colors cursor-pointer">Reiniciar</button>
                       <button onClick={() => setDeleteConfirm(inst)} className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded transition-colors">Eliminar</button>
                     </div>
                   </td>
@@ -400,7 +415,6 @@ export function ClientInstances({
         </div>
       )}
 
-      {/* Grid view */}
       {view === "grid" && filtered.length > 0 && (
         <div className="grid grid-cols-2 gap-4">
           {filtered.map(inst => (
@@ -434,7 +448,7 @@ export function ClientInstances({
                 </button>
                 <button onClick={() => setDrawer(inst)} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Detalles</button>
                 <button onClick={() => handleOpenCredModal(inst)} className="py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Credenciales</button>
-                <button onClick={() => handleRestart(inst.nombre, (inst as any).id)} className="py-1.5 text-xs font-medium text-amber-600 border border-amber-100 rounded-lg hover:bg-amber-50 transition-colors">Reiniciar</button>
+                <button onClick={() => handleOpenRestartPrompt(inst)} className="py-1.5 text-xs font-medium text-amber-600 border border-amber-100 rounded-lg hover:bg-amber-50 transition-colors cursor-pointer">Reiniciar</button>
                 <button onClick={() => setDeleteConfirm(inst)} className="py-1.5 text-xs font-medium text-red-500 border border-red-100 rounded-lg hover:bg-red-50 transition-colors">Eliminar</button>
               </div>
             </div>
@@ -442,7 +456,6 @@ export function ClientInstances({
         </div>
       )}
 
-      {/* Drawer: detalles */}
       {drawer && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setDrawer(null)} aria-hidden="true" />
@@ -513,19 +526,30 @@ export function ClientInstances({
                 </svg>
                 <span>Explorar Tablas y Datos</span>
               </button>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => {
                   if (drawer) handleOpenCredModal(drawer);
                   setDrawer(null);
-                }} className="flex-1 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors">Credenciales</button>
-                <button onClick={() => setDrawer(null)} className="flex-1 py-2 text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg font-medium transition-colors">Cerrar</button>
+                }} className="py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium transition-colors cursor-pointer">Credenciales</button>
+                <button onClick={() => {
+                  if (drawer) {
+                    handleOpenRestartPrompt(drawer);
+                    setDrawer(null);
+                  }
+                }} className="py-2 text-sm text-amber-700 border border-amber-200 hover:bg-amber-50 rounded-lg font-medium transition-colors cursor-pointer">Reiniciar</button>
+                <button onClick={() => {
+                  if (drawer) {
+                    setDeleteConfirm(drawer);
+                    setDrawer(null);
+                  }
+                }} className="py-2 text-sm text-red-600 border border-red-200 hover:bg-red-50 rounded-lg font-medium transition-colors cursor-pointer">Eliminar</button>
+                <button onClick={() => setDrawer(null)} className="py-2 text-sm bg-lime-400 hover:bg-lime-300 text-gray-900 rounded-lg font-medium transition-colors cursor-pointer">Cerrar</button>
               </div>
             </div>
           </aside>
         </>
       )}
 
-      {/* Modal: credenciales */}
       {credModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setCredModal(null); }}>
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl" role="dialog" aria-modal="true" aria-label="Credenciales de conexión">
@@ -580,7 +604,106 @@ export function ClientInstances({
         </div>
       )}
 
-      {/* Modal: confirmar eliminación */}
+      {restartPrompt && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={e => { if (e.target === e.currentTarget && !restarting) setRestartPrompt(null); }}>
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6" role="dialog" aria-modal="true" aria-label="Confirmar reinicio de instancia">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mb-4">
+              <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <h2 className="font-semibold text-gray-900 mb-2">Reiniciar instancia</h2>
+            <p className="text-sm text-gray-600 mb-2">
+              {"¿Deseas reiniciar la instancia"} <span className="font-mono font-semibold text-gray-900">{restartPrompt.nombre}</span>{"?"}
+            </p>
+            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2.5 mb-5 leading-relaxed">
+              El servicio PostgreSQL se restablecerá. Las conexiones activas se cerrarán momentáneamente y la instancia quedará disponible nuevamente en pocos segundos.
+            </p>
+            {restartError && (
+              <p role="alert" className="mb-4 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">
+                {restartError}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={restarting}
+                onClick={() => { setRestartPrompt(null); setRestartError(""); }}
+                className="flex-1 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 font-medium transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={restarting}
+                onClick={() => executeRestart(restartPrompt)}
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer shadow-sm"
+              >
+                {restarting ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Reiniciando...</span>
+                  </>
+                ) : (
+                  "Reiniciar"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {restartSuccess && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={e => { if (e.target === e.currentTarget) setRestartSuccess(null); }}>
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6" role="dialog" aria-modal="true" aria-label="Instancia reiniciada con éxito">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
+              <svg className="w-6 h-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Instancia reiniciada con éxito</h2>
+            <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+              La instancia <span className="font-mono font-semibold text-gray-900">{restartSuccess.nombre}</span> ha sido reiniciada correctamente y ya se encuentra activa y lista para recibir consultas.
+            </p>
+
+            <div className="bg-gray-50 border border-gray-100 rounded-xl p-3.5 space-y-2 mb-6 text-xs text-gray-600">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Estado actual:</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  Activa
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Motor de Base de Datos:</span>
+                <span className="font-medium text-gray-800">{restartSuccess.version || "PostgreSQL 16"}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Plantilla agronómica:</span>
+                <span className="font-medium text-gray-800">{restartSuccess.plantilla}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500">Disponibilidad del clúster:</span>
+                <span className="font-medium text-emerald-700">99.9% Uptime</span>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setRestartSuccess(null)}
+                className="w-full py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold rounded-xl text-sm transition-colors cursor-pointer"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setDeleteConfirm(null); }}>
           <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6" role="dialog" aria-modal="true" aria-label="Confirmar eliminación">
