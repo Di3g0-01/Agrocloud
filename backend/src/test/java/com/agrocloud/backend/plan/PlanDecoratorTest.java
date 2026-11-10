@@ -45,7 +45,7 @@ class PlanDecoratorTest {
         assertEquals(new BigDecimal("225.00"), plan.precioMensual());
         assertEquals(150.0, plan.almacenamientoGb());
         assertEquals(4, plan.instanciasPermitidas());
-        assertEquals("Agro Pro + 50 GB extra + 1 instancia extra + Respaldo diario", plan.descripcion());
+        assertEquals("Agro Pro + 50 GB extra + 1 extra instance + Daily backup", plan.descripcion());
     }
 
     @Test

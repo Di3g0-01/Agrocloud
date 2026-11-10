@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ProgressBar, StatusBadge } from "../../components/ui/index";
 import { CLIENT_PLAN } from "../../data/client";
 import { getMyActiveSubscription, cancelSubscription, continueSubscription, preparePlanChange, confirmPlanChangePayment } from "../../api/subscriptionsApi";
-import { getPlans } from "../../api/plansApi";
+import { getPlans, cotizarPlan, type ComplementoEnum, type CotizacionPlan } from "../../api/plansApi";
 import type { ClientInstance } from "../../types/client";
 import type { Subscription } from "../../types/index";
 
@@ -38,6 +38,13 @@ export function ClientPlan({
   const [cancellingSub, setCancellingSub] = useState(false);
   const [continuingSub, setContinuingSub] = useState(false);
   const [cardData, setCardData] = useState({ numero: "4532 •••• •••• 8821", titular: organizationName, exp: "12/28", cvv: "882" });
+
+  // Estado para el Cotizador Dinámico (Patrón Decorator GoF en vivo)
+  const [cotizadorOpen, setCotizadorOpen] = useState(false);
+  const [cotizadorPlan, setCotizadorPlan] = useState<PlanAvailable | null>(null);
+  const [selectedComplementos, setSelectedComplementos] = useState<ComplementoEnum[]>([]);
+  const [cotizacionResult, setCotizacionResult] = useState<CotizacionPlan | null>(null);
+  const [loadingCotizacion, setLoadingCotizacion] = useState(false);
 
   const [floatingToast, setFloatingToast] = useState<{ type: "error" | "warning"; message: string } | null>(null);
 
@@ -89,6 +96,36 @@ export function ClientPlan({
   const formatDate = (date?: string | null) => date
     ? new Intl.DateTimeFormat("es-GT", { day: "numeric", month: "long", year: "numeric" }).format(new Date(`${date}T00:00:00`))
     : "—";
+
+  const handleOpenCotizador = (plan: PlanAvailable) => {
+    setCotizadorPlan(plan);
+    setSelectedComplementos([]);
+    setCotizacionResult(null);
+    setCotizadorOpen(true);
+    // Cotizar base
+    setLoadingCotizacion(true);
+    cotizarPlan(plan.id, [])
+      .then(res => setCotizacionResult(res))
+      .catch(() => showFloatingToast("No se pudo obtener la cotización base.", "warning"))
+      .finally(() => setLoadingCotizacion(false));
+  };
+
+  const handleToggleComplemento = async (comp: ComplementoEnum) => {
+    if (!cotizadorPlan) return;
+    const next = selectedComplementos.includes(comp)
+      ? selectedComplementos.filter(c => c !== comp)
+      : [...selectedComplementos, comp];
+    setSelectedComplementos(next);
+    setLoadingCotizacion(true);
+    try {
+      const res = await cotizarPlan(cotizadorPlan.id, next);
+      setCotizacionResult(res);
+    } catch {
+      showFloatingToast("Error al recalcular el plan decorado en el backend.", "warning");
+    } finally {
+      setLoadingCotizacion(false);
+    }
+  };
 
   const handleConfirmCancelSubscription = async () => {
     if (!subscription?.id) return;
@@ -317,12 +354,26 @@ export function ClientPlan({
             <p className="text-xs text-gray-300 leading-relaxed mb-4">
               Cambia de plan en cualquier momento para obtener más instancias y almacenamiento sin interrumpir tus servicios.
             </p>
-            <button
-              onClick={() => setModalChangeOpen(true)}
-              className="w-full py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold rounded-xl text-xs transition-colors shadow-sm"
-            >
-              Ver planes disponibles
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => setModalChangeOpen(true)}
+                className="w-full py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-semibold rounded-xl text-xs transition-colors shadow-sm cursor-pointer"
+              >
+                Ver planes disponibles
+              </button>
+              {currentPlan.id && (
+                <button
+                  onClick={() => handleOpenCotizador(currentPlan)}
+                  className="w-full py-2 bg-white/10 hover:bg-white/20 text-lime-300 border border-lime-400/40 font-semibold rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  title="Demuestra la aplicación de decoradores dinámicos GoF"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  <span>Cotizador con Complementos (Decorator)</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4 text-xs text-gray-500">
@@ -408,39 +459,65 @@ export function ClientPlan({
                     </div>
 
                     {isCurrent ? (
-                      <button disabled className="w-full py-2 bg-gray-100 text-gray-400 font-semibold rounded-xl text-xs cursor-default">
-                        Plan actual
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        <button disabled className="w-full py-2 bg-gray-100 text-gray-400 font-semibold rounded-xl text-xs cursor-default">
+                          Plan actual
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModalChangeOpen(false);
+                            handleOpenCotizador(plan);
+                          }}
+                          className="w-full py-2 bg-lime-50 text-lime-800 border border-lime-300 hover:bg-lime-100 font-semibold rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          <span>Personalizar (Add-ons)</span>
+                          <span className="text-[10px] bg-lime-200 px-1.5 py-0.2 rounded font-mono">GoF</span>
+                        </button>
+                      </div>
                     ) : (
-                      <button
-                        onClick={() => {
-                          if (instancesList.length > plan.maxInstancias || storageUsed > plan.storageGB) {
-                            showFloatingToast(
-                              instancesList.length > plan.maxInstancias
-                                ? `No puedes cambiar al ${plan.nombre}: debes eliminar ${instancesList.length - plan.maxInstancias} instancia(s) antes de continuar.`
-                                : `No puedes cambiar al ${plan.nombre}: debes liberar ${(storageUsed - plan.storageGB).toFixed(2)} GB antes de continuar.`,
-                              "warning"
-                            );
-                            return;
-                          }
-                          setSelectedPlanForUpgrade(plan);
-                        }}
-                        className={`w-full py-2.5 font-semibold rounded-xl text-xs transition-colors shadow-sm ${
-                          instancesList.length > plan.maxInstancias || storageUsed > plan.storageGB
-                            ? "bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200"
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => {
+                            if (instancesList.length > plan.maxInstancias || storageUsed > plan.storageGB) {
+                              showFloatingToast(
+                                instancesList.length > plan.maxInstancias
+                                  ? `No puedes cambiar al ${plan.nombre}: debes eliminar ${instancesList.length - plan.maxInstancias} instancia(s) antes de continuar.`
+                                  : `No puedes cambiar al ${plan.nombre}: debes liberar ${(storageUsed - plan.storageGB).toFixed(2)} GB antes de continuar.`,
+                                "warning"
+                              );
+                              return;
+                            }
+                            setSelectedPlanForUpgrade(plan);
+                          }}
+                          className={`w-full py-2.5 font-semibold rounded-xl text-xs transition-colors shadow-sm ${
+                            instancesList.length > plan.maxInstancias || storageUsed > plan.storageGB
+                              ? "bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200"
+                              : plan.precioNum > currentPlan.precioNum
+                              ? "bg-lime-400 hover:bg-lime-300 text-gray-900"
+                              : "bg-gray-900 hover:bg-gray-800 text-white"
+                          }`}
+                        >
+                          {instancesList.length > plan.maxInstancias
+                            ? `Excede instancias (${instancesList.length}/${plan.maxInstancias})`
+                            : storageUsed > plan.storageGB
+                            ? `Excede almacenamiento (${formatGb(storageUsed)}/${plan.storageGB} GB)`
                             : plan.precioNum > currentPlan.precioNum
-                            ? "bg-lime-400 hover:bg-lime-300 text-gray-900"
-                            : "bg-gray-900 hover:bg-gray-800 text-white"
-                        }`}
-                      >
-                        {instancesList.length > plan.maxInstancias
-                          ? `Excede instancias (${instancesList.length}/${plan.maxInstancias})`
-                          : storageUsed > plan.storageGB
-                          ? `Excede almacenamiento (${formatGb(storageUsed)}/${plan.storageGB} GB)`
-                          : plan.precioNum > currentPlan.precioNum
-                          ? "Actualizar plan"
-                          : "Cambiar a este plan"}
-                      </button>
+                            ? "Actualizar plan"
+                            : "Cambiar a este plan"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModalChangeOpen(false);
+                            handleOpenCotizador(plan);
+                          }}
+                          className="w-full py-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg text-[11px] font-medium transition-colors cursor-pointer flex items-center justify-center gap-1"
+                        >
+                          <span>Simular con Decorator</span>
+                          <span>→</span>
+                        </button>
+                      </div>
                     )}
                   </div>
                 );
@@ -525,6 +602,184 @@ export function ClientPlan({
                 className="flex-1 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-bold rounded-xl text-xs transition-colors shadow-sm disabled:opacity-50"
               >
                 {loadingSub ? "Procesando pago..." : `Pagar ${selectedPlanForUpgrade.precio} y cambiar`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Cotizador Interactivo de Decorator (GoF) */}
+      {cotizadorOpen && cotizadorPlan && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in"
+          onClick={(e) => { if (e.target === e.currentTarget) setCotizadorOpen(false); }}
+        >
+          <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl p-6 sm:p-8 relative max-h-[92vh] overflow-y-auto border border-gray-100">
+            <button
+              onClick={() => setCotizadorOpen(false)}
+              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
+            >
+              ✕
+            </button>
+
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-lime-900 bg-lime-300 px-2.5 py-0.5 rounded-full">
+                Patrón GoF Decorator
+              </span>
+              <span className="text-xs text-gray-400">Spring Boot Backend API: /planes/{cotizadorPlan.id}/cotizar</span>
+            </div>
+
+            <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">
+              Personalizador de Plan: <span className="text-emerald-700">{cotizadorPlan.nombre}</span>
+            </h3>
+            <p className="text-xs text-gray-500 mt-1 mb-5">
+              Demostración visual del patrón de diseño <strong>Decorator</strong>. Cada complemento añade responsabilidades y costos de forma dinámica en el backend sin modificar la clase base del plan.
+            </p>
+
+            {/* Comparativa Visual: Base vs Decorado */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              {/* Plan Base */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Plan Base (Wrappee)</span>
+                <h4 className="font-bold text-gray-800 text-base mt-0.5">{cotizadorPlan.nombre}</h4>
+                <div className="mt-2 text-2xl font-black text-gray-900">{cotizadorPlan.precio} <span className="text-xs font-normal text-gray-400">/ mes</span></div>
+                <div className="mt-3 text-xs text-gray-600 space-y-1">
+                  <div>💾 Almacenamiento base: <strong>{cotizadorPlan.storage}</strong></div>
+                  <div>🗄️ Instancias permitidas: <strong>{cotizadorPlan.instancias}</strong></div>
+                </div>
+              </div>
+
+              {/* Plan Decorado Resultante */}
+              <div className="bg-gradient-to-br from-gray-900 to-slate-900 text-white rounded-2xl p-4 relative overflow-hidden shadow-lg border border-lime-400/40">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-lime-400 uppercase tracking-wider">Plan Decorado (Calculado)</span>
+                  {loadingCotizacion && (
+                    <span className="text-[10px] bg-lime-400/20 text-lime-300 px-2 py-0.5 rounded-full animate-pulse">
+                      Recalculando...
+                    </span>
+                  )}
+                </div>
+                <h4 className="font-bold text-white text-base mt-0.5">
+                  {cotizacionResult ? cotizacionResult.descripcion : cotizadorPlan.nombre}
+                </h4>
+                <div className="mt-2 text-2xl font-black text-lime-400">
+                  Q {cotizacionResult ? cotizacionResult.precioMensual.toFixed(2) : cotizadorPlan.precioNum.toFixed(2)}
+                  <span className="text-xs font-normal text-white/50"> / mes</span>
+                </div>
+                <div className="mt-3 text-xs text-gray-300 space-y-1">
+                  <div>💾 Almacenamiento total: <strong className="text-white">{cotizacionResult ? cotizacionResult.almacenamientoGb : cotizadorPlan.storageGB} GB</strong></div>
+                  <div>🗄️ Instancias totales: <strong className="text-white">{cotizacionResult ? cotizacionResult.instanciasPermitidas : cotizadorPlan.maxInstancias}</strong></div>
+                  {cotizacionResult && cotizacionResult.complementos.length > 0 && (
+                    <div className="pt-1 text-[11px] text-lime-300">
+                      Capas activas: {cotizacionResult.complementos.join(" + ")}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Selector de Decoradores Concretos */}
+            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-3 flex items-center justify-between">
+              <span>Selecciona los decoradores a aplicar:</span>
+              <span className="text-gray-400 font-normal">{selectedComplementos.length} seleccionados</span>
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              {[
+                {
+                  code: "ALMACENAMIENTO_EXTRA" as ComplementoEnum,
+                  name: "AlmacenamientoExtra (+50 GB)",
+                  price: "+Q 40.00/mes",
+                  desc: "Añade 50 GB de cuota al esquema sin downtime.",
+                  icon: "💾",
+                },
+                {
+                  code: "INSTANCIA_EXTRA" as ComplementoEnum,
+                  name: "InstanciaExtra (+1 BD)",
+                  price: "+Q 60.00/mes",
+                  desc: "Incrementa el cupo para una base de datos PostgreSQL extra.",
+                  icon: "🗄️",
+                },
+                {
+                  code: "RESPALDO_DIARIO" as ComplementoEnum,
+                  name: "RespaldoDiario (Automático)",
+                  price: "+Q 25.00/mes",
+                  desc: "Ejecuta snapshots programados cada noche.",
+                  icon: "🛡️",
+                },
+                {
+                  code: "SOPORTE_PRIORITARIO" as ComplementoEnum,
+                  name: "SoportePrioritario (24/7 SLA)",
+                  price: "+Q 35.00/mes",
+                  desc: "Atención prioritaria y monitoreo preventivo continuo.",
+                  icon: "⚡",
+                },
+              ].map((item) => {
+                const isSelected = selectedComplementos.includes(item.code);
+                return (
+                  <div
+                    key={item.code}
+                    onClick={() => handleToggleComplemento(item.code)}
+                    className={`border rounded-2xl p-3.5 flex items-start gap-3 cursor-pointer transition-all ${
+                      isSelected
+                        ? "border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-200"
+                        : "border-gray-200 hover:border-gray-300 bg-white"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {}}
+                      className="mt-1 h-4 w-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-900">{item.icon} {item.name}</span>
+                        <span className="text-xs font-bold text-emerald-700">{item.price}</span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">{item.desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="bg-lime-50 border border-lime-200 rounded-xl p-3 text-xs text-emerald-950 mb-6 flex items-start gap-2">
+              <span className="text-base">💡</span>
+              <p>
+                <strong>Explicación para la terna:</strong> Al pulsar cada casilla, React llama a <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">POST /api/v1/planes/{cotizadorPlan.id}/cotizar</code>. En Spring Boot, la clase <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">PlanCotizador</code> envuelve sucesivamente a <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">PlanBase</code> con cada decorador solicitado.
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setCotizadorOpen(false)}
+                className="px-5 py-2.5 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCotizadorOpen(false);
+                  if (cotizacionResult) {
+                    setSelectedPlanForUpgrade({
+                      ...cotizadorPlan,
+                      precio: `Q ${cotizacionResult.precioMensual.toFixed(2)}`,
+                      precioNum: cotizacionResult.precioMensual,
+                      storage: `${cotizacionResult.almacenamientoGb} GB`,
+                      storageGB: cotizacionResult.almacenamientoGb,
+                      instancias: String(cotizacionResult.instanciasPermitidas),
+                      maxInstancias: cotizacionResult.instanciasPermitidas,
+                    });
+                  } else {
+                    setSelectedPlanForUpgrade(cotizadorPlan);
+                  }
+                }}
+                className="px-6 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-bold rounded-xl text-xs transition-colors shadow-sm cursor-pointer"
+              >
+                Continuar al pago con esta configuración
               </button>
             </div>
           </div>

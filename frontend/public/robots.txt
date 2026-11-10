@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://agrocloud-three.vercel.app/sitemap.xml
+
