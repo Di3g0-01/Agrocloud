@@ -12,8 +12,6 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "127.0.0.1:15432:5432"
-    networks:
-      - agrocloud
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -22,21 +20,19 @@ services:
     restart: unless-stopped
 
   api:
-    # Mail credentials are used only by the backend, never by the web build.
-    image: agrocloud-backend:original-2026-09-22
-    pull_policy: never
+    image: agrocloud-backend:local
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: agrocloud-api
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://agrocloud-db:5432/${POSTGRES_DB:?Define POSTGRES_DB en .env}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
-      DB_URL: jdbc:postgresql://agrocloud-db:5432/${POSTGRES_DB:?Define POSTGRES_DB en .env}
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:?Define POSTGRES_DB en .env}
       DB_USERNAME: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
       DB_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
       JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:8443}
       APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:5173}
-      MAIL_PROVIDER: ${MAIL_PROVIDER:-smtp}
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-brevo}
       MAIL_FROM: ${MAIL_FROM:-AgroCloud <no-reply@agrocloud.local>}
       BREVO_API_KEY: ${BREVO_API_KEY:-}
       BREVO_VERIFICATION_TEMPLATE_ID: ${BREVO_VERIFICATION_TEMPLATE_ID:-}
@@ -48,17 +44,8 @@ services:
       MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
       MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
       MAIL_SSL: ${MAIL_SSL:-false}
-    volumes:
-      - type: bind
-        source: ./build-artifacts/app.jar
-        target: /app/app.jar
-        read_only: true
-        bind:
-          create_host_path: false
     ports:
-      - "8080:8080"
-    networks:
-      - agrocloud
+      - "127.0.0.1:8080:8080"
     depends_on:
       db:
         condition: service_healthy
@@ -66,10 +53,4 @@ services:
 
 volumes:
   postgres_data:
-    external: true
     name: agrocloud-postgres-data
-
-networks:
-  agrocloud:
-    external: true
-    name: agrocloud-net
