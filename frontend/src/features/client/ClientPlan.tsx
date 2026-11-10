@@ -644,8 +644,8 @@ export function ClientPlan({
                 <h4 className="font-bold text-gray-800 text-base mt-0.5">{cotizadorPlan.nombre}</h4>
                 <div className="mt-2 text-2xl font-black text-gray-900">{cotizadorPlan.precio} <span className="text-xs font-normal text-gray-400">/ mes</span></div>
                 <div className="mt-3 text-xs text-gray-600 space-y-1">
-                  <div>💾 Almacenamiento base: <strong>{cotizadorPlan.storage}</strong></div>
-                  <div>🗄️ Instancias permitidas: <strong>{cotizadorPlan.instancias}</strong></div>
+                  <div>Almacenamiento base: <strong>{cotizadorPlan.storage}</strong></div>
+                  <div>Instancias permitidas: <strong>{cotizadorPlan.instancias}</strong></div>
                 </div>
               </div>
 
@@ -667,8 +667,8 @@ export function ClientPlan({
                   <span className="text-xs font-normal text-white/50"> / mes</span>
                 </div>
                 <div className="mt-3 text-xs text-gray-300 space-y-1">
-                  <div>💾 Almacenamiento total: <strong className="text-white">{cotizacionResult ? cotizacionResult.almacenamientoGb : cotizadorPlan.storageGB} GB</strong></div>
-                  <div>🗄️ Instancias totales: <strong className="text-white">{cotizacionResult ? cotizacionResult.instanciasPermitidas : cotizadorPlan.maxInstancias}</strong></div>
+                  <div>Almacenamiento total: <strong className="text-white">{cotizacionResult ? cotizacionResult.almacenamientoGb : cotizadorPlan.storageGB} GB</strong></div>
+                  <div>Instancias totales: <strong className="text-white">{cotizacionResult ? cotizacionResult.instanciasPermitidas : cotizadorPlan.maxInstancias}</strong></div>
                   {cotizacionResult && cotizacionResult.complementos.length > 0 && (
                     <div className="pt-1 text-[11px] text-lime-300">
                       Capas activas: {cotizacionResult.complementos.join(" + ")}
@@ -691,28 +691,24 @@ export function ClientPlan({
                   name: "AlmacenamientoExtra (+50 GB)",
                   price: "+Q 40.00/mes",
                   desc: "Añade 50 GB de cuota al esquema sin downtime.",
-                  icon: "💾",
                 },
                 {
                   code: "INSTANCIA_EXTRA" as ComplementoEnum,
                   name: "InstanciaExtra (+1 BD)",
                   price: "+Q 60.00/mes",
                   desc: "Incrementa el cupo para una base de datos PostgreSQL extra.",
-                  icon: "🗄️",
                 },
                 {
                   code: "RESPALDO_DIARIO" as ComplementoEnum,
                   name: "RespaldoDiario (Automático)",
                   price: "+Q 25.00/mes",
                   desc: "Ejecuta snapshots programados cada noche.",
-                  icon: "🛡️",
                 },
                 {
                   code: "SOPORTE_PRIORITARIO" as ComplementoEnum,
                   name: "SoportePrioritario (24/7 SLA)",
                   price: "+Q 35.00/mes",
                   desc: "Atención prioritaria y monitoreo preventivo continuo.",
-                  icon: "⚡",
                 },
               ].map((item) => {
                 const isSelected = selectedComplementos.includes(item.code);
@@ -734,7 +730,7 @@ export function ClientPlan({
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-gray-900">{item.icon} {item.name}</span>
+                        <span className="text-xs font-bold text-gray-900">{item.name}</span>
                         <span className="text-xs font-bold text-emerald-700">{item.price}</span>
                       </div>
                       <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">{item.desc}</p>
@@ -745,9 +741,11 @@ export function ClientPlan({
             </div>
 
             <div className="bg-lime-50 border border-lime-200 rounded-xl p-3 text-xs text-emerald-950 mb-6 flex items-start gap-2">
-              <span className="text-base">💡</span>
+              <svg className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               <p>
-                <strong>Explicación para la terna:</strong> Al pulsar cada casilla, React llama a <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">POST /api/v1/planes/{cotizadorPlan.id}/cotizar</code>. En Spring Boot, la clase <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">PlanCotizador</code> envuelve sucesivamente a <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">PlanBase</code> con cada decorador solicitado.
+                <strong>Explicación para la terna:</strong> Al pulsar cada casilla, React llama a <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">POST /api/v1/planes/{cotizadorPlan.id}/quote</code>. En Spring Boot, la clase <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">PlanQuoter</code> envuelve sucesivamente a <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">BasePlan</code> con cada decorador solicitado.
               </p>
             </div>
 
