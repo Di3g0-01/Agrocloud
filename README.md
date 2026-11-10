@@ -33,8 +33,9 @@ despliegue, consulta [Correos y acceso](CORREOS_Y_ACCESO.md).
 * **Seguridad:** Spring Security con Tokens JWT
 * **Persistencia:** Spring Data JPA / Hibernate
 * **Base de Datos:** PostgreSQL
-* **Migraciones:** Flyway Database Migrations (V1 a V15)
-* **Cifrado:** Algoritmo AES-256 / GCM / NoPadding con clave simétrica configurable.
+* **Migraciones:** Flyway Database Migrations (V1 a V19)
+* **Patrones GoF:** Patrón Decorator para cotización y composición dinámica de planes (`ContractablePlan`, `BasePlan`, `PlanDecorator`, `PlanAddon`, `PlanQuoter`).
+* **Cifrado:** Algoritmo AES-256 / GCM / NoPadding con clave simétrica configurable para credenciales de bases de datos.
 
 ### **Frontend**
 * **Framework:** React 19
@@ -45,7 +46,9 @@ despliegue, consulta [Correos y acceso](CORREOS_Y_ACCESO.md).
 * **Cliente HTTP:** Axios (con interceptores para manejo de tokens JWT)
 
 ### **Infraestructura y Contenedores**
-* **Docker & Docker Compose:** Archivos de orquestación para entornos de prueba (`docker-compose.e04.yml`) y desarrollo (`docker-compose.yml`).
+* **Docker & Docker Compose:** Archivo unificado de orquestación local (`docker-compose.yml`) con PostgreSQL 16 y Spring Boot 3 compilado desde el código fuente.
+* **Nube:** Frontend en Vercel Edge Network, Backend en Render PaaS y PostgreSQL 16 en Neon Cloud SSL.
+* **Mailing:** Integración transaccional con Brevo API HTTPS (puerto 443).
 
 ---
 
