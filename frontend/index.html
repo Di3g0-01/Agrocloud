@@ -1,15 +1,80 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Metadatos Básicos de SEO -->
+    <title>AgroCloud | Bases de Datos en la Nube para el Sector Agrícola de Guatemala</title>
+    <meta 
+      name="description" 
+      content="AgroCloud es la plataforma de Base de Datos como Servicio (DBaaS) especializada para el sector agrícola de Guatemala. Aprovisiona PostgreSQL 16 con plantillas para cultivos, cosechas e inventarios." 
+    />
+    <meta 
+      name="keywords" 
+      content="AgroCloud, base de datos agricola, DBaaS Guatemala, software agricola Guatemala, PostgreSQL campo, gestion de fincas, cooperativas de cafe, agricultura digital" 
+    />
+    <meta name="author" content="AgroCloud Team - Universidad Rafael Landívar" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://agrocloud-three.vercel.app/" />
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://agrocloud-three.vercel.app/" />
+    <meta property="og:title" content="AgroCloud | Plataforma Cloud de Bases de Datos Agrícolas" />
+    <meta property="og:description" content="Aprovisiona bases de datos PostgreSQL optimizadas para parcelas, cosechas, insumos y cooperativas agrícolas en Guatemala. Planes en Quetzales desde Q25/mes." />
+    <meta property="og:image" content="https://agrocloud-three.vercel.app/agrocloud-logo.svg" />
+    <meta property="og:locale" content="es_GT" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://agrocloud-three.vercel.app/" />
+    <meta name="twitter:title" content="AgroCloud | Bases de Datos para la Agricultura" />
+    <meta name="twitter:description" content="Plataforma DBaaS en la nube para fincas y cooperativas agrícolas en Guatemala. Comienza gratis." />
+    <meta name="twitter:image" content="https://agrocloud-three.vercel.app/agrocloud-logo.svg" />
+
+    <!-- Favicons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=3" />
     <link rel="shortcut icon" href="/favicon.svg?v=3" />
     <link rel="apple-touch-icon" href="/favicon.svg?v=3" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AgroCloud - Plataforma Cloud de Bases de Datos Agrícolas</title>
+
+    <!-- Structured Data (JSON-LD) para Buscadores (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "AgroCloud",
+      "operatingSystem": "Web, Cloud",
+      "applicationCategory": "BusinessApplication, DatabaseApplication",
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "GTQ",
+        "lowPrice": "25.00",
+        "highPrice": "250.00"
+      },
+      "description": "Plataforma PaaS/DBaaS para aprovisionamiento de bases de datos PostgreSQL 16 con esquemas optimizados para el sector agropecuario de Guatemala."
+    }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Fallback accesible e indexable mientras carga la SPA de React -->
+      <noscript>
+        <div style="font-family: sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; line-height: 1.6;">
+          <h1>AgroCloud - Plataforma Cloud de Bases de Datos Agrícolas</h1>
+          <p>
+            AgroCloud es la solución de Base de Datos como Servicio (DBaaS) diseñada para productores, fincas, cooperativas y agroempresas en Guatemala.
+          </p>
+          <h2>Características principales</h2>
+          <ul>
+            <li>Instancias PostgreSQL 16 aisladas por esquema multi-tenant.</li>
+            <li>Plantillas de datos para cultivos, parcelas, cosechas, insumos y maquinaria.</li>
+            <li>Planes en Quetzales desde Q25/mes.</li>
+          </ul>
+          <p>Por favor, habilita JavaScript en tu navegador para interactuar con la plataforma completa.</p>
+        </div>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -39,8 +39,8 @@ public class PlanController {
         return ResponseEntity.ok(service.getPlanById(id));
     }
 
-    /** Calcula precio, almacenamiento e instancias de un plan con complementos (patrón Decorator). */
-    @PostMapping("/{id}/cotizar")
+    /** Quotes monthly price, storage and instance quotas with dynamic GoF decorators. */
+    @PostMapping(value = {"/{id}/quote", "/{id}/cotizar"})
     public ResponseEntity<CotizacionPlanResponse> cotizar(@PathVariable String id, @RequestBody(required = false) CotizarPlanRequest request) {
         return ResponseEntity.ok(service.cotizarPlan(id, request));
     }

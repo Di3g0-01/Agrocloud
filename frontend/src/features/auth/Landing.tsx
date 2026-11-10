@@ -238,24 +238,27 @@ export function Landing({ onLogin, onRegister }: { onLogin: () => void; onRegist
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600 flex-1 justify-center">
-            <button
-              onClick={() => scrollToSection("plataforma-section")}
+            <a
+              href="#plataforma-section"
+              onClick={(e) => { e.preventDefault(); scrollToSection("plataforma-section"); }}
               className="relative py-1 hover:text-emerald-700 transition-colors after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#76d322] hover:after:w-full after:transition-all after:duration-300 cursor-pointer"
             >
               Plataforma
-            </button>
-            <button
-              onClick={() => scrollToSection("plantillas-section")}
+            </a>
+            <a
+              href="#plantillas-section"
+              onClick={(e) => { e.preventDefault(); scrollToSection("plantillas-section"); }}
               className="relative py-1 hover:text-emerald-700 transition-colors after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#76d322] hover:after:w-full after:transition-all after:duration-300 cursor-pointer"
             >
               Plantillas
-            </button>
-            <button
-              onClick={() => scrollToSection("planes-section")}
+            </a>
+            <a
+              href="#planes-section"
+              onClick={(e) => { e.preventDefault(); scrollToSection("planes-section"); }}
               className="relative py-1 hover:text-emerald-700 transition-colors after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#76d322] hover:after:w-full after:transition-all after:duration-300 cursor-pointer"
             >
               Planes
-            </button>
+            </a>
             <button
               onClick={() => setActiveModal("doc")}
               className="relative py-1 hover:text-emerald-700 transition-colors after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#76d322] hover:after:w-full after:transition-all after:duration-300 cursor-pointer flex items-center gap-1.5"
@@ -302,27 +305,30 @@ export function Landing({ onLogin, onRegister }: { onLogin: () => void; onRegist
 
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-gray-100 bg-white/95 px-6 py-4 flex flex-col gap-3 backdrop-blur-md animate-in slide-in-from-top-2">
-            <button
-              onClick={() => scrollToSection("plataforma-section")}
+            <a
+              href="#plataforma-section"
+              onClick={(e) => { e.preventDefault(); scrollToSection("plataforma-section"); }}
               className="text-sm font-medium text-gray-700 hover:text-emerald-700 text-left py-2 transition-colors flex items-center justify-between"
             >
               <span>Plataforma</span>
               <span className="text-xs text-gray-400">→</span>
-            </button>
-            <button
-              onClick={() => scrollToSection("plantillas-section")}
+            </a>
+            <a
+              href="#plantillas-section"
+              onClick={(e) => { e.preventDefault(); scrollToSection("plantillas-section"); }}
               className="text-sm font-medium text-gray-700 hover:text-emerald-700 text-left py-2 transition-colors flex items-center justify-between"
             >
               <span>Plantillas DB</span>
               <span className="text-xs text-gray-400">→</span>
-            </button>
-            <button
-              onClick={() => scrollToSection("planes-section")}
+            </a>
+            <a
+              href="#planes-section"
+              onClick={(e) => { e.preventDefault(); scrollToSection("planes-section"); }}
               className="text-sm font-medium text-gray-700 hover:text-emerald-700 text-left py-2 transition-colors flex items-center justify-between"
             >
               <span>Planes y Precios</span>
               <span className="text-xs text-gray-400">→</span>
-            </button>
+            </a>
             <button
               onClick={() => { setMobileMenuOpen(false); setActiveModal("doc"); }}
               className="text-sm font-medium text-emerald-800 font-semibold text-left py-2 transition-colors flex items-center justify-between"
@@ -370,10 +376,7 @@ export function Landing({ onLogin, onRegister }: { onLogin: () => void; onRegist
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight tracking-tight mb-6">
-            Bases de datos en la nube <br className="hidden sm:block" />
-            <span className="bg-gradient-to-r from-white via-lime-200 to-[#76d322] bg-clip-text text-transparent animate-gradient-text">
-              para el sector agrícola.
-            </span>
+            Bases de datos en la nube para el sector agrícola de Guatemala
           </h1>
 
           <p className="text-white/70 text-sm sm:text-lg leading-relaxed mb-8 sm:mb-10 max-w-xl mx-auto font-normal">
@@ -392,12 +395,13 @@ export function Landing({ onLogin, onRegister }: { onLogin: () => void; onRegist
               <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/40 to-transparent" />
             </button>
 
-            <button
-              onClick={() => scrollToSection("planes-section")}
+            <a
+              href="#planes-section"
+              onClick={(e) => { e.preventDefault(); scrollToSection("planes-section"); }}
               className="border border-white/20 hover:border-[#76d322]/60 hover:bg-white/5 active:scale-95 text-white font-medium px-6 py-3 rounded-xl text-sm transition-all duration-300 hover:-translate-y-1 cursor-pointer backdrop-blur-sm w-full sm:w-auto touch-scale"
             >
-              Ver planes
-            </button>
+              Ver planes y precios
+            </a>
 
             <button
               onClick={() => setActiveModal("doc")}
@@ -667,33 +671,33 @@ export function Landing({ onLogin, onRegister }: { onLogin: () => void; onRegist
         <div className="max-w-5xl mx-auto flex flex-col items-center">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10 mb-10 w-full text-center">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Producto</p>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Producto y Nube</h3>
               <ul className="space-y-2">
                 <li>
-                  <button onClick={() => scrollToSection("plataforma-section")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
+                  <a href="#plataforma-section" onClick={(e) => { e.preventDefault(); scrollToSection("plataforma-section"); }} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
                     Plataforma Cloud
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button onClick={() => scrollToSection("plataforma-section")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
+                  <a href="#plataforma-section" onClick={(e) => { e.preventDefault(); scrollToSection("plataforma-section"); }} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
                     Características Técnicas
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button onClick={() => scrollToSection("planes-section")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
-                    Planes y Tarifas
-                  </button>
+                  <a href="#planes-section" onClick={(e) => { e.preventDefault(); scrollToSection("planes-section"); }} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
+                    Planes y Tarifas en Quetzales
+                  </a>
                 </li>
                 <li>
-                  <button onClick={() => scrollToSection("plantillas-section")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
-                    Soluciones por Cultivo
-                  </button>
+                  <a href="#plantillas-section" onClick={(e) => { e.preventDefault(); scrollToSection("plantillas-section"); }} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
+                    Plantillas DB para Cultivos
+                  </a>
                 </li>
               </ul>
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Recursos</p>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Recursos y Documentación</h3>
               <ul className="space-y-2">
                 <li>
                   <button onClick={() => setActiveModal("doc")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
@@ -702,7 +706,7 @@ export function Landing({ onLogin, onRegister }: { onLogin: () => void; onRegist
                 </li>
                 <li>
                   <button onClick={() => setActiveModal("manual")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
-                    Manual de Usuario
+                    Manual de Usuario por Roles
                   </button>
                 </li>
                 <li>
@@ -714,21 +718,21 @@ export function Landing({ onLogin, onRegister }: { onLogin: () => void; onRegist
             </div>
 
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Empresa</p>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Empresa e Información</h3>
               <ul className="space-y-2">
                 <li>
                   <button onClick={() => setActiveModal("nosotros")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
-                    Acerca de Nosotros
+                    Acerca de Nosotros (URL)
                   </button>
                 </li>
                 <li>
                   <button onClick={() => setActiveModal("contacto")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
-                    Contacto y Asistencia
+                    Contacto y Asistencia Agrícola
                   </button>
                 </li>
                 <li>
                   <button onClick={() => setActiveModal("privacidad")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
-                    Seguridad y Privacidad
+                    Seguridad y Privacidad de Datos
                   </button>
                 </li>
               </ul>
