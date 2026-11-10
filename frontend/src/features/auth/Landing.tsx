@@ -700,14 +700,34 @@ export function Landing({ onLogin, onRegister }: { onLogin: () => void; onRegist
               <h3 className="text-xs font-bold uppercase tracking-wider text-gray-900 mb-3">Recursos y Documentación</h3>
               <ul className="space-y-2">
                 <li>
-                  <button onClick={() => setActiveModal("doc")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
-                    Documentación Técnica
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setActiveModal("doc")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
+                      Documentación Técnica
+                    </button>
+                    <a
+                      href="/documentation/AgroCloud_Manual_Tecnico.pdf"
+                      download="AgroCloud_Manual_Tecnico.pdf"
+                      className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                      title="Descargar Manual Técnico PDF"
+                    >
+                      PDF
+                    </a>
+                  </div>
                 </li>
                 <li>
-                  <button onClick={() => setActiveModal("manual")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
-                    Manual de Usuario por Roles
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setActiveModal("manual")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
+                      Manual de Usuario por Roles
+                    </button>
+                    <a
+                      href="/documentation/AgroCloud_Manual_Usuario.pdf"
+                      download="AgroCloud_Manual_Usuario.pdf"
+                      className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                      title="Descargar Manual de Usuario PDF"
+                    >
+                      PDF
+                    </a>
+                  </div>
                 </li>
                 <li>
                   <button onClick={() => setActiveModal("soporte")} className="text-sm text-gray-500 hover:text-emerald-800 transition-colors cursor-pointer">
@@ -987,7 +1007,30 @@ print(cursor.fetchall())`}
               )}
             </div>
 
-            <div className="border-t border-gray-100 pt-4 mt-2 flex justify-end">
+            <div className="border-t border-gray-100 pt-4 mt-2 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <a
+                  href="/documentation/AgroCloud_Manual_Tecnico.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  <span>Abrir PDF</span>
+                </a>
+                <a
+                  href="/documentation/AgroCloud_Manual_Tecnico.pdf"
+                  download="AgroCloud_Manual_Tecnico.pdf"
+                  className="px-4 py-2 text-xs font-semibold bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Descargar Manual Técnico (PDF 3.5 MB)</span>
+                </a>
+              </div>
               <button
                 onClick={() => setActiveModal(null)}
                 className="px-5 py-2 text-xs font-semibold bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
@@ -1083,7 +1126,30 @@ print(cursor.fetchall())`}
               )}
             </div>
 
-            <div className="border-t border-gray-100 pt-4 mt-2 flex justify-end">
+            <div className="border-t border-gray-100 pt-4 mt-2 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <a
+                  href="/documentation/AgroCloud_Manual_Usuario.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  <span>Abrir PDF</span>
+                </a>
+                <a
+                  href="/documentation/AgroCloud_Manual_Usuario.pdf"
+                  download="AgroCloud_Manual_Usuario.pdf"
+                  className="px-4 py-2 text-xs font-semibold bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Descargar Manual de Usuario (PDF 4.4 MB)</span>
+                </a>
+              </div>
               <button
                 onClick={() => setActiveModal(null)}
                 className="px-5 py-2 text-xs font-semibold bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors cursor-pointer"
