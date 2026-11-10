@@ -22,8 +22,8 @@ export const subscribeToPlan = async (planId: string, planName?: string, amount?
   return res.data?.data || res.data;
 };
 
-export const preparePlanChange = async (planId: string): Promise<Subscription> => {
-  const res = await axiosClient.post('/suscripciones/cambiar', { planId });
+export const preparePlanChange = async (planId: string, complementos?: string[]): Promise<Subscription> => {
+  const res = await axiosClient.post('/suscripciones/cambiar', { planId, complementos });
   return res.data?.data || res.data;
 };
 

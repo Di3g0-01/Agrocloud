@@ -85,8 +85,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .orElseThrow(() -> new UserNotFoundException("Usuario no encontrado"));
         SubscriptionEntity active = findActiveSubscriptionEntity(userId)
                 .orElseThrow(() -> new SubscriptionNotFoundException("El usuario no posee una suscripción activa"));
-        if (active.getPlan().getId().equals(request.planId())) {
-            throw new IllegalArgumentException("El plan seleccionado ya es tu plan actual");
+        
+        boolean samePlan = active.getPlan().getId().equals(request.planId());
+        boolean hasAddons = request.complementos() != null && !request.complementos().isEmpty();
+        if (samePlan && !hasAddons) {
+            throw new IllegalArgumentException("El plan seleccionado ya es tu plan actual sin complementos nuevos");
         }
 
         PlanContratable planContratado = validateAndQuotePlan(userId, request);

@@ -46,6 +46,10 @@ export function ClientPlan({
   const [cotizacionResult, setCotizacionResult] = useState<CotizacionPlan | null>(null);
   const [loadingCotizacion, setLoadingCotizacion] = useState(false);
 
+  const [selectedAddonsForUpgrade, setSelectedAddonsForUpgrade] = useState<ComplementoEnum[]>([]);
+  const [differentialAmount, setDifferentialAmount] = useState<number>(0);
+  const [isSamePlanAddonUpgrade, setIsSamePlanAddonUpgrade] = useState<boolean>(false);
+
   const [floatingToast, setFloatingToast] = useState<{ type: "error" | "warning"; message: string } | null>(null);
 
   const showFloatingToast = (message: string, type: "error" | "warning" = "error") => {
@@ -181,7 +185,10 @@ export function ClientPlan({
 
     setLoadingSub(true);
     try {
-      const pending = await preparePlanChange(plan.id);
+      const pending = await preparePlanChange(
+        plan.id,
+        selectedAddonsForUpgrade.length > 0 ? selectedAddonsForUpgrade : undefined
+      );
       const saved = await confirmPlanChangePayment(pending.id);
       setSubscription(saved);
       setCurrentPlan(plan);
@@ -192,6 +199,9 @@ export function ClientPlan({
       CLIENT_PLAN.estado = "Activa";
       onPlanChanged?.();
       setSelectedPlanForUpgrade(null);
+      setSelectedAddonsForUpgrade([]);
+      setIsSamePlanAddonUpgrade(false);
+      setDifferentialAmount(0);
       setModalChangeOpen(false);
     } catch (err: any) {
       console.error(err);
@@ -543,16 +553,39 @@ export function ClientPlan({
               </svg>
             </div>
 
-            <h3 className="text-lg font-bold text-gray-900 mb-1">Confirmar cambio de plan</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">
+              {isSamePlanAddonUpgrade ? "Confirmar adquisición de complementos" : "Confirmar cambio de plan"}
+            </h3>
             <p className="text-xs text-gray-500 mb-4">
-              Estás a punto de cambiar tu suscripción del <span className="font-semibold text-gray-800">Plan {currentPlan.nombre}</span> al <span className="font-semibold text-gray-900">Plan {selectedPlanForUpgrade.nombre}</span>.
+              {isSamePlanAddonUpgrade ? (
+                <>Estás agregando complementos a tu suscripción activa del <span className="font-semibold text-gray-900">Plan {currentPlan.nombre}</span>.</>
+              ) : (
+                <>Estás a punto de cambiar tu suscripción del <span className="font-semibold text-gray-800">Plan {currentPlan.nombre}</span> al <span className="font-semibold text-gray-900">Plan {selectedPlanForUpgrade.nombre}</span>.</>
+              )}
             </p>
 
             <div className="bg-gray-50 rounded-xl p-4 mb-5 space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Nuevo costo mensual:</span>
-                <span className="font-bold text-gray-900">{selectedPlanForUpgrade.precio}</span>
-              </div>
+              {isSamePlanAddonUpgrade ? (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Costo mensual base:</span>
+                    <span className="font-medium text-gray-700">{currentPlan.precio}</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-800 font-semibold bg-emerald-50 px-2 py-1 rounded">
+                    <span>Monto a pagar hoy (Diferencia de extras):</span>
+                    <span>Q {differentialAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Nuevo canon a partir del próximo ciclo:</span>
+                    <span className="font-bold text-gray-900">{selectedPlanForUpgrade.precio} / mes</span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Nuevo costo mensual:</span>
+                  <span className="font-bold text-gray-900">{selectedPlanForUpgrade.precio}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-500">Nuevas instancias permitidas:</span>
                 <span className="font-bold text-gray-900">{selectedPlanForUpgrade.maxInstancias}</span>
@@ -564,7 +597,15 @@ export function ClientPlan({
             </div>
 
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-900 leading-relaxed">
-              Tu plan actual tiene <strong>{remainingDays} día(s) restantes</strong> y está cubierto hasta el <strong>{formatDate(subscription?.fechaProximoPago)}</strong>. Al pagar, el nuevo plan se activará de inmediato, estos días se perderán y tu próxima renovación será el <strong>{nextCycleDate}</strong>.
+              {isSamePlanAddonUpgrade ? (
+                <>
+                  Solo pagas hoy la diferencia de los complementos solicitados (<strong>Q {differentialAmount.toFixed(2)}</strong>). Tu ciclo se mantiene y tu próxima cuota mensual se actualizará a <strong>{selectedPlanForUpgrade.precio}</strong> el <strong>{formatDate(subscription?.fechaProximoPago)}</strong>.
+                </>
+              ) : (
+                <>
+                  Tu plan actual tiene <strong>{remainingDays} día(s) restantes</strong> y está cubierto hasta el <strong>{formatDate(subscription?.fechaProximoPago)}</strong>. Al pagar, el nuevo plan se activará de inmediato y tu próxima renovación será el <strong>{nextCycleDate}</strong>.
+                </>
+              )}
             </div>
 
             <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-200 mb-5">
@@ -601,7 +642,11 @@ export function ClientPlan({
                 onClick={() => handleConfirmPlanChange(selectedPlanForUpgrade)}
                 className="flex-1 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-bold rounded-xl text-xs transition-colors shadow-sm disabled:opacity-50"
               >
-                {loadingSub ? "Procesando pago..." : `Pagar ${selectedPlanForUpgrade.precio} y cambiar`}
+                {loadingSub
+                  ? "Procesando pago..."
+                  : isSamePlanAddonUpgrade
+                  ? `Pagar diferencia de Q ${differentialAmount.toFixed(2)} y aplicar`
+                  : `Pagar ${selectedPlanForUpgrade.precio} y cambiar`}
               </button>
             </div>
           </div>
@@ -740,15 +785,6 @@ export function ClientPlan({
               })}
             </div>
 
-            <div className="bg-lime-50 border border-lime-200 rounded-xl p-3 text-xs text-emerald-950 mb-6 flex items-start gap-2">
-              <svg className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p>
-                <strong>Explicación para la terna:</strong> Al pulsar cada casilla, React llama a <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">POST /api/v1/planes/{cotizadorPlan.id}/quote</code>. En Spring Boot, la clase <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">PlanQuoter</code> envuelve sucesivamente a <code className="bg-lime-100 px-1 py-0.5 rounded font-mono text-[11px]">BasePlan</code> con cada decorador solicitado.
-              </p>
-            </div>
-
             <div className="flex gap-3 justify-end pt-2 border-t border-gray-100">
               <button
                 type="button"
@@ -761,6 +797,14 @@ export function ClientPlan({
                 type="button"
                 onClick={() => {
                   setCotizadorOpen(false);
+                  const isSame = currentPlan.id === cotizadorPlan.id;
+                  const newTotal = cotizacionResult ? cotizacionResult.precioMensual : cotizadorPlan.precioNum;
+                  const diff = Math.max(0, newTotal - currentPlan.precioNum);
+
+                  setIsSamePlanAddonUpgrade(isSame && selectedComplementos.length > 0);
+                  setDifferentialAmount(diff);
+                  setSelectedAddonsForUpgrade(selectedComplementos);
+
                   if (cotizacionResult) {
                     setSelectedPlanForUpgrade({
                       ...cotizadorPlan,
@@ -777,7 +821,9 @@ export function ClientPlan({
                 }}
                 className="px-6 py-2.5 bg-lime-400 hover:bg-lime-300 text-gray-900 font-bold rounded-xl text-xs transition-colors shadow-sm cursor-pointer"
               >
-                Continuar al pago con esta configuración
+                {currentPlan.id === cotizadorPlan.id && selectedComplementos.length > 0
+                  ? `Pagar diferencia (Q ${Math.max(0, (cotizacionResult ? cotizacionResult.precioMensual : cotizadorPlan.precioNum) - currentPlan.precioNum).toFixed(2)}) y activar`
+                  : "Continuar al pago con esta configuración"}
               </button>
             </div>
           </div>
