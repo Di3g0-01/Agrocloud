@@ -55,6 +55,9 @@ export interface Subscription {
   monto: number;
   cancelacionProgramada?: boolean;
   fechaCancelacion?: string | null;
+  complementos?: string[];
+  maxInstancias?: number;
+  almacenamientoGb?: number;
 }
 
 export interface IncidentRecord {

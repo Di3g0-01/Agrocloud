@@ -154,8 +154,12 @@ public class InstanceServiceImpl implements InstanceService {
         SubscriptionEntity activeSub = subscriptionService.findActiveSubscriptionEntity(ownerId)
                 .orElseThrow(() -> new IllegalArgumentException("Debes contratar una suscripción activa para poder crear instancias."));
 
-        int maxAllowedInstances = activeSub.getPlan().getMaxInstances();
-        double maxStorageGb = activeSub.getPlan().getStorageGb();
+        int maxAllowedInstances = activeSub.getMaxInstances() != null
+                ? activeSub.getMaxInstances()
+                : activeSub.getPlan().getMaxInstances();
+        double maxStorageGb = activeSub.getStorageGb() != null
+                ? activeSub.getStorageGb()
+                : activeSub.getPlan().getStorageGb();
 
         if (currentCount >= maxAllowedInstances) {
             throw new InstanceLimitExceededException(

@@ -56,17 +56,32 @@ export function ClientPanel({ user, onLogout }: { user: User; onLogout: () => vo
     };
   }, []);
 
-  useEffect(() => {
+  const refreshPlan = () => {
     Promise.all([getMyActiveSubscription(), getPlans()]).then(([subscription, plans]) => {
       const plan = plans.find(p => p.id === subscription?.planId);
       const isSubActive = Boolean(subscription && subscription.estado === "active");
       CLIENT_PLAN.nombre = isSubActive && plan ? plan.nombre : "Sin suscripción";
-      CLIENT_PLAN.maxInstancias = isSubActive && plan ? plan.instanciasPermitidas : 0;
-      CLIENT_PLAN.totalGB = isSubActive && plan ? plan.almacenamientoGb : 0;
-      CLIENT_PLAN.precio = isSubActive && plan ? plan.precioMensual : 0;
+      CLIENT_PLAN.maxInstancias = isSubActive
+        ? (subscription?.maxInstancias ?? plan?.instanciasPermitidas ?? 0)
+        : 0;
+      CLIENT_PLAN.totalGB = isSubActive
+        ? (subscription?.almacenamientoGb ?? plan?.almacenamientoGb ?? 0)
+        : 0;
+      CLIENT_PLAN.precio = isSubActive
+        ? (subscription?.monto ?? plan?.precioMensual ?? 0)
+        : 0;
       CLIENT_PLAN.estado = isSubActive ? "Activa" : "Sin suscripción";
+      CLIENT_PLAN.complementos = isSubActive ? (subscription?.complementos ?? []) : [];
       setPlanRevision(n => n + 1);
     }).catch(() => setLoadError("No se pudo cargar tu plan y suscripción."));
+  };
+
+  useEffect(() => {
+    refreshPlan();
+    window.addEventListener("agrocloud:plan-updated", refreshPlan);
+    return () => {
+      window.removeEventListener("agrocloud:plan-updated", refreshPlan);
+    };
   }, []);
 
   const organizationName = user.empresa || user.nombre;

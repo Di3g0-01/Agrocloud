@@ -49,6 +49,14 @@ public class SubscriptionController {
                 .body(service.preparePlanChange(principal.id(), request));
     }
 
+    @PostMapping("/complementos")
+    public ResponseEntity<SubscriptionResponse> updateAddons(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @Valid @RequestBody CreateSubscriptionRequest request
+    ) {
+        return ResponseEntity.ok(service.updateSubscriptionAddons(principal.id(), request));
+    }
+
     @PostMapping("/{id}/confirmar-pago")
     public ResponseEntity<SubscriptionResponse> confirmChange(
             @AuthenticationPrincipal UserPrincipal principal,
