@@ -22,13 +22,26 @@ export const subscribeToPlan = async (planId: string, planName?: string, amount?
   return res.data?.data || res.data;
 };
 
+const normalizeAddons = (addons?: string[]): string[] | undefined => {
+  if (!addons) return undefined;
+  return addons.map((c) => {
+    switch (c) {
+      case 'EXTRA_STORAGE': return 'ALMACENAMIENTO_EXTRA';
+      case 'EXTRA_INSTANCE': return 'INSTANCIA_EXTRA';
+      case 'DAILY_BACKUP': return 'RESPALDO_DIARIO';
+      case 'PRIORITY_SUPPORT': return 'SOPORTE_PRIORITARIO';
+      default: return c;
+    }
+  });
+};
+
 export const preparePlanChange = async (planId: string, complementos?: string[]): Promise<Subscription> => {
-  const res = await axiosClient.post('/suscripciones/cambiar', { planId, complementos });
+  const res = await axiosClient.post('/suscripciones/cambiar', { planId, complementos: normalizeAddons(complementos) });
   return res.data?.data || res.data;
 };
 
 export const updateSubscriptionAddons = async (complementos: string[]): Promise<Subscription> => {
-  const res = await axiosClient.post('/suscripciones/complementos', { complementos });
+  const res = await axiosClient.post('/suscripciones/complementos', { complementos: normalizeAddons(complementos) });
   return res.data?.data || res.data;
 };
 

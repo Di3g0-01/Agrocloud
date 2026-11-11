@@ -10,7 +10,13 @@ public enum Complemento {
     ALMACENAMIENTO_EXTRA(ExtraStorageDecorator::new),
     INSTANCIA_EXTRA(ExtraInstanceDecorator::new),
     RESPALDO_DIARIO(DailyBackupDecorator::new),
-    SOPORTE_PRIORITARIO(PrioritySupportDecorator::new);
+    SOPORTE_PRIORITARIO(PrioritySupportDecorator::new),
+
+    // English aliases for seamless interoperability
+    EXTRA_STORAGE(ExtraStorageDecorator::new),
+    EXTRA_INSTANCE(ExtraInstanceDecorator::new),
+    DAILY_BACKUP(DailyBackupDecorator::new),
+    PRIORITY_SUPPORT(PrioritySupportDecorator::new);
 
     private final UnaryOperator<ContractablePlan> decorador;
 
