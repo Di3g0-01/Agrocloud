@@ -59,6 +59,20 @@
   <body>
     <!-- Contenido semántico inicial renderizado en HTML puro para indexación y crawlers SEO sin JavaScript -->
     <div id="root">
+      <!-- Splash Screen de carga inicial para transiciones limpias y Hard Reloads (Ctrl+Shift+R) -->
+      <div id="agrocloud-splash" style="position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #0f172a; color: #ffffff; z-index: 999999; font-family: system-ui, -apple-system, sans-serif;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
+          <img src="/agrocloud-logo.svg" alt="AgroCloud" style="height: 44px; width: auto;" />
+        </div>
+        <div style="width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.15); border-top-color: #84cc16; border-radius: 50%; animation: agrocloud-spin 0.8s linear infinite;"></div>
+        <p style="margin-top: 1.25rem; font-size: 0.875rem; color: #94a3b8; font-weight: 500; letter-spacing: 0.025em;">Cargando AgroCloud...</p>
+      </div>
+      <style>
+        @keyframes agrocloud-spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
+
       <main style="font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 0 auto; padding: 2.5rem 1.5rem; color: #1f2937; line-height: 1.7;">
         <header style="margin-bottom: 2rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 1.5rem;">
           <h1 style="color: #14532d; font-size: 2.2rem; line-height: 1.25; margin-bottom: 1rem; font-weight: 800;">

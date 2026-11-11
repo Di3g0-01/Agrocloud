@@ -101,6 +101,7 @@ export function ClientPlan({
     caracteristicas: [],
   });
   const [availablePlans, setAvailablePlans] = useState<PlanAvailable[]>([]);
+  const [loadingInitial, setLoadingInitial] = useState(true);
   const [modalChangeOpen, setModalChangeOpen] = useState(false);
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<PlanAvailable | null>(null);
   const [loadingSub, setLoadingSub] = useState(false);
@@ -186,7 +187,8 @@ export function ClientPlan({
           }
         }
       })
-      .catch(() => showFloatingToast("No se pudieron cargar los planes o la suscripción.", "error"));
+      .catch(() => showFloatingToast("No se pudieron cargar los planes o la suscripción.", "error"))
+      .finally(() => setLoadingInitial(false));
   };
 
   useEffect(() => {
@@ -554,7 +556,38 @@ export function ClientPlan({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      {loadingInitial ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-pulse">
+          <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-gray-200 rounded-xl" />
+              <div className="space-y-2">
+                <div className="h-5 bg-gray-200 rounded w-36" />
+                <div className="h-3 bg-gray-200 rounded w-28" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-16 bg-gray-50 border border-gray-100 rounded-xl" />
+              ))}
+            </div>
+            <div className="space-y-4 pt-5 border-t border-gray-100">
+              <div className="h-3 bg-gray-100 rounded w-full" />
+              <div className="h-2 bg-gray-200 rounded-full w-full" />
+              <div className="h-3 bg-gray-100 rounded w-full mt-4" />
+              <div className="h-2 bg-gray-200 rounded-full w-full" />
+            </div>
+          </div>
+          <div className="flex flex-col gap-5">
+            <div className="bg-gray-900 rounded-2xl p-6 h-48 flex flex-col justify-between">
+              <div className="h-5 bg-gray-700 rounded w-1/2" />
+              <div className="h-10 bg-gray-800 rounded-xl w-full" />
+            </div>
+            <div className="bg-white border border-gray-100 rounded-2xl p-5 h-28" />
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Active plan card */}
         <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
           <div className="flex items-start justify-between mb-6">
@@ -642,7 +675,7 @@ export function ClientPlan({
                   </span>
                 </div>
                 <ProgressBar
-                  value={(instUsed / currentPlan.maxInstancias) * 100}
+                  value={currentPlan.maxInstancias > 0 ? (instUsed / currentPlan.maxInstancias) * 100 : 100}
                   color={instUsed >= currentPlan.maxInstancias ? "bg-amber-400" : "bg-lime-400"}
                 />
                 {instUsed >= currentPlan.maxInstancias ? (
@@ -759,6 +792,7 @@ export function ClientPlan({
           </div>
         </div>
       </div>
+      )}
 
       {/* Modal / Section for Plan Selector */}
       {modalChangeOpen && (
