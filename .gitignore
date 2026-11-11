@@ -122,3 +122,7 @@ application-local.yaml
 # Local database backups
 backups/
 build-artifacts/
+
+# Defense and temporary documentation
+DEFENSA_*.md
+
