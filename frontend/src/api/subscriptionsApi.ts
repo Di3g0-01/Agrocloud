@@ -27,6 +27,11 @@ export const preparePlanChange = async (planId: string, complementos?: string[])
   return res.data?.data || res.data;
 };
 
+export const updateSubscriptionAddons = async (complementos: string[]): Promise<Subscription> => {
+  const res = await axiosClient.post('/suscripciones/complementos', { complementos });
+  return res.data?.data || res.data;
+};
+
 export const confirmPlanChangePayment = async (subscriptionId: string): Promise<Subscription> => {
   const res = await axiosClient.post(`/suscripciones/${subscriptionId}/confirmar-pago`);
   return res.data?.data || res.data;

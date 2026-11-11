@@ -57,6 +57,21 @@ public class SubscriptionEntity {
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
+    @Column(name = "addons", length = 500)
+    private String addons;
+
+    @Column(name = "max_instances")
+    private Integer maxInstances;
+
+    @Column(name = "storage_gb")
+    private Double storageGb;
+
+    @Column(name = "pending_payment_amount", precision = 10, scale = 2)
+    private BigDecimal pendingPaymentAmount;
+
+    @Column(name = "payment_concept", length = 255)
+    private String paymentConcept;
+
     @Builder.Default
     @Column(name = "cancel_at_period_end", nullable = false)
     private Boolean cancelAtPeriodEnd = false;
@@ -111,6 +126,39 @@ public class SubscriptionEntity {
 
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
+
+    public String getAddons() { return addons; }
+    public void setAddons(String addons) { this.addons = addons; }
+
+    public Integer getMaxInstances() { return maxInstances; }
+    public void setMaxInstances(Integer maxInstances) { this.maxInstances = maxInstances; }
+
+    public Double getStorageGb() { return storageGb; }
+    public void setStorageGb(Double storageGb) { this.storageGb = storageGb; }
+
+    public BigDecimal getPendingPaymentAmount() { return pendingPaymentAmount; }
+    public void setPendingPaymentAmount(BigDecimal pendingPaymentAmount) { this.pendingPaymentAmount = pendingPaymentAmount; }
+
+    public String getPaymentConcept() { return paymentConcept; }
+    public void setPaymentConcept(String paymentConcept) { this.paymentConcept = paymentConcept; }
+
+    public java.util.List<String> getAddonsList() {
+        if (addons == null || addons.isBlank()) {
+            return java.util.List.of();
+        }
+        return java.util.Arrays.stream(addons.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+    }
+
+    public void setAddonsList(java.util.List<String> list) {
+        if (list == null || list.isEmpty()) {
+            this.addons = null;
+        } else {
+            this.addons = String.join(",", list);
+        }
+    }
 
     public Boolean getCancelAtPeriodEnd() { return cancelAtPeriodEnd; }
     public void setCancelAtPeriodEnd(Boolean cancelAtPeriodEnd) { this.cancelAtPeriodEnd = cancelAtPeriodEnd; }

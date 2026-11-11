@@ -9,6 +9,7 @@ import java.util.UUID;
 public interface PaymentService {
     PaymentResponse registerPayment(CreatePaymentRequest request);
     PaymentEntity registerAutomaticPayment(UUID subscriptionId, String concept);
+    PaymentEntity registerAutomaticPayment(UUID subscriptionId, java.math.BigDecimal amount, String concept);
     List<PaymentResponse> getPaymentsBySubscription(UUID subscriptionId);
     List<PaymentResponse> getPaymentsByUser(UUID userId);
     List<PaymentResponse> getAllPayments();

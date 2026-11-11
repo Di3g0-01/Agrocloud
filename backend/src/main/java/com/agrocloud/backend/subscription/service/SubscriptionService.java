@@ -11,6 +11,7 @@ import java.util.UUID;
 public interface SubscriptionService {
     SubscriptionResponse createSubscription(UUID userId, CreateSubscriptionRequest request);
     SubscriptionResponse preparePlanChange(UUID userId, CreateSubscriptionRequest request);
+    SubscriptionResponse updateSubscriptionAddons(UUID userId, CreateSubscriptionRequest request);
     SubscriptionResponse confirmPlanChange(UUID userId, UUID subscriptionId);
     SubscriptionResponse getActiveSubscription(UUID userId);
     List<SubscriptionResponse> getUserSubscriptions(UUID userId);

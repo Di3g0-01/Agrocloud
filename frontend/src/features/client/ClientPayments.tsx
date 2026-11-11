@@ -37,6 +37,9 @@ function PaymentReceiptModal({ payment, organizationName, onClose }: PaymentRece
   const isInitialPayment = payment.concepto.toLowerCase().includes("contratación") ||
     payment.concepto.toLowerCase().includes("inicial") ||
     payment.concepto.toLowerCase().includes("alta");
+  const isAddonPayment = payment.concepto.toLowerCase().includes("complemento") ||
+    payment.concepto.toLowerCase().includes("extra") ||
+    payment.concepto.toLowerCase().includes("ajuste");
 
   const total = invoice ? invoice.total : payment.monto;
   const subtotal = invoice ? invoice.subtotal : Number((payment.monto / 1.12).toFixed(2));
@@ -58,12 +61,14 @@ function PaymentReceiptModal({ payment, organizationName, onClose }: PaymentRece
               <span className="font-mono text-sm font-bold text-gray-900">{invoiceNumber}</span>
               <span
                 className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
-                  isInitialPayment
+                  isAddonPayment
+                    ? "bg-purple-100 text-purple-800 border border-purple-300"
+                    : isInitialPayment
                     ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
                     : "bg-blue-100 text-blue-800 border border-blue-300"
                 }`}
               >
-                {isInitialPayment ? "Pago Inicial" : "Pago Mensual"}
+                {isAddonPayment ? "Complemento Extra" : isInitialPayment ? "Pago Inicial" : "Pago Mensual"}
               </span>
             </div>
             <p className="text-xs text-gray-400 mt-0.5">Ref: {payment.referencia}</p>
@@ -497,18 +502,23 @@ export function ClientPayments({ organizationName }: { organizationName: string 
                 {filtered.map((pago) => {
                   const isInitial = pago.concepto.toLowerCase().includes("contratación") ||
                     pago.concepto.toLowerCase().includes("inicial");
+                  const isAddon = pago.concepto.toLowerCase().includes("complemento") ||
+                    pago.concepto.toLowerCase().includes("extra") ||
+                    pago.concepto.toLowerCase().includes("ajuste");
                   return (
                     <tr key={pago.id} className="hover:bg-gray-50/70 transition-colors">
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                            isInitial
+                            isAddon
+                              ? "bg-purple-50 text-purple-700 border border-purple-200"
+                              : isInitial
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
                               : "bg-blue-50 text-blue-700 border border-blue-200"
                           }`}
                         >
-                          <span className={`w-1.5 h-1.5 rounded-full ${isInitial ? "bg-emerald-500" : "bg-blue-500"}`} />
-                          {isInitial ? "Pago Inicial" : "Pago Mensual"}
+                          <span className={`w-1.5 h-1.5 rounded-full ${isAddon ? "bg-purple-500" : isInitial ? "bg-emerald-500" : "bg-blue-500"}`} />
+                          {isAddon ? "Complemento Extra" : isInitial ? "Pago Inicial" : "Pago Mensual"}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-xs text-gray-600 whitespace-nowrap font-medium">

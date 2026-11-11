@@ -83,6 +83,30 @@ class SubscriptionServiceImplTest {
     }
 
     @Test
+    void confirmPlanChangeWithDifferentialAmountRegistersExactAmountAndConcept() {
+        UUID userId = UUID.randomUUID();
+        SubscriptionEntity current = subscription(userId, SubscriptionStatus.active, "plan-finca");
+        current.setAmount(new BigDecimal("25.00"));
+        current.setMaxInstances(1);
+
+        SubscriptionEntity pending = subscription(userId, SubscriptionStatus.pending_payment, "plan-finca");
+        pending.setAmount(new BigDecimal("85.00"));
+        pending.setMaxInstances(2);
+        pending.setPendingPaymentAmount(new BigDecimal("60.00"));
+        pending.setPaymentConcept("Ajuste de complementos - Instancia extra (+1)");
+
+        when(subscriptions.findById(pending.getId())).thenReturn(java.util.Optional.of(pending));
+        when(subscriptions.findByUserIdOrderByCreatedAtDesc(userId)).thenReturn(List.of(pending, current));
+
+        var response = service.confirmPlanChange(userId, pending.getId());
+
+        verify(payments).registerAutomaticPayment(pending.getId(), new BigDecimal("60.00"), "Ajuste de complementos - Instancia extra (+1)");
+        assertEquals(SubscriptionStatus.active, response.status());
+        assertEquals(2, response.maxInstances());
+        assertEquals(new BigDecimal("85.00"), response.amount());
+    }
+
+    @Test
     void scheduledCancellationClosesSubscriptionWhenPaidPeriodEnds() {
         SubscriptionEntity due = subscription(UUID.randomUUID(), SubscriptionStatus.active, "plan-basic");
         due.setCancelAtPeriodEnd(true);

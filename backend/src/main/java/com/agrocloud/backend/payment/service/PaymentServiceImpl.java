@@ -61,10 +61,21 @@ public class PaymentServiceImpl implements PaymentService {
     public PaymentEntity registerAutomaticPayment(UUID subscriptionId, String concept) {
         SubscriptionEntity subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new SubscriptionNotFoundException("Suscripción no encontrada con ID: " + subscriptionId));
+        return registerAutomaticPayment(subscriptionId, subscription.getAmount(), concept);
+    }
+
+    @Override
+    public PaymentEntity registerAutomaticPayment(UUID subscriptionId, java.math.BigDecimal amount, String concept) {
+        SubscriptionEntity subscription = subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new SubscriptionNotFoundException("Suscripción no encontrada con ID: " + subscriptionId));
+
+        java.math.BigDecimal chargedAmount = (amount != null && amount.compareTo(java.math.BigDecimal.ZERO) >= 0)
+                ? amount
+                : subscription.getAmount();
 
         PaymentEntity payment = PaymentEntity.builder()
                 .subscription(subscription)
-                .amount(subscription.getAmount())
+                .amount(chargedAmount)
                 .paymentDate(Instant.now())
                 .status(PaymentStatus.COMPLETED)
                 .reference("REF-RENOV-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
